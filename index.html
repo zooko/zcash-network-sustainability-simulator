@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zcash Network Sustainability Simulator — Supply &amp; Issuance</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #111827;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    min-height: 100vh;
+}
+h1 { font-size: 1.5rem; color: #fbbf24; margin-bottom: 4px; }
+.subtitle { font-size: 0.85rem; color: #6b7280; margin-bottom: 16px; }
+canvas {
+    display: block;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+}
+#tooltip {
+    display: none;
+    position: fixed;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    line-height: 1.6;
+    color: #e2e8f0;
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+}
+.legend {
+    display: flex; gap: 24px; margin-top: 12px;
+    font-size: 0.8rem; flex-wrap: wrap; justify-content: center;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.sw { width: 20px; height: 3px; border-radius: 1px; }
+.info {
+    margin-top: 16px; font-size: 0.75rem; color: #4b5563;
+    text-align: center; max-width: 800px; line-height: 1.6;
+}
+.info a { color: #60a5fa; text-decoration: none; }
+.info a:hover { text-decoration: underline; }
+.info code { color: #6ee7b7; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<h1>Zcash Supply &amp; Issuance</h1>
+<div class="subtitle">Block height → cumulative supply &amp; per-block issuance</div>
+
+<canvas id="chart"></canvas>
+<div id="tooltip"></div>
+
+<div class="legend">
+    <div class="legend-item"><div class="sw" style="background:#f59e0b"></div> Cumulative Supply (ZEC) — left axis</div>
+    <div class="legend-item"><div class="sw" style="background:#22d3ee"></div> Issuance / Block (ZEC) — right axis</div>
+    <div class="legend-item"><div class="sw" style="background:#475569; border-top:1px dashed #94a3b8"></div> 21 M ZEC cap</div>
+</div>
+
+<div class="info">
+    Computed using the exact <code>issuance_per_block()</code> from
+    <a href="https://github.com/zooko/zcash-network-sustainability-simulator/blob/c520a6030254e9c91abbe2d2670f8d852f206414/issuance_per_block.js">zooko/zcash-network-sustainability-simulator</a>,
+    cross-verified against zcashd (C++), Zebra (Rust), and theoretical.py (Python).
+    No other calculation is used.
+</div>
+
+<script>
+// ====================================================================
+// EXACT copy of issuance_per_block.js — NOT modified in any way.
+// https://github.com/zooko/zcash-network-sustainability-simulator/
+//   blob/c520a6030254e9c91abbe2d2670f8d852f206414/issuance_per_block.js
+// ====================================================================
+function issuance_per_block(blockheight) {
+    // === Constants (with source references) ===
+
+    // amount.h:        static const CAmount COIN = 100000000;
+    // params.cpp:      CAmount nSubsidy = 12.5 * COIN;
+    const MAX_BLOCK_SUBSIDY = 1250000000n;
+
+    // chainparams.cpp: consensus.nSubsidySlowStartInterval = 20000;
+    const SLOW_START_INTERVAL = 20000;
+    // params.h:        SubsidySlowStartShift() { return nSubsidySlowStartInterval / 2; }
+    const SLOW_START_SHIFT = 10000;
+    // theoretical.py:  SlowStartRate = exact_div(MaxBlockSubsidy, SlowStartInterval)
+    // params.h comment: "Needs to evenly divide MAX_SUBSIDY to avoid rounding errors"
+    const SLOW_START_RATE = 62500n;
+
+    // chainparams.cpp: vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 653600;
+    const BLOSSOM_ACTIVATION_HEIGHT = 653600;
+    // params.h:        PRE_BLOSSOM_POW_TARGET_SPACING = 150; POST = 75; RATIO = 150/75
+    const BLOSSOM_POW_TARGET_SPACING_RATIO = 2n;
+
+    // params.h:        PRE_BLOSSOM_HALVING_INTERVAL = 840000
+    const PRE_BLOSSOM_HALVING_INTERVAL = 840000;
+    // params.h macro:  POST_BLOSSOM_HALVING_INTERVAL = PRE * RATIO
+    const POST_BLOSSOM_HALVING_INTERVAL = 1680000n;
+
+    const h = BigInt(blockheight);
+
+    // === Slow start (params.cpp GetBlockSubsidy, theoretical.py BlockSubsidy) ===
+
+    // C++: nSubsidy /= nSubsidySlowStartInterval; nSubsidy *= nHeight;
+    // Py:  SlowStartRate * height
+    if (blockheight < SLOW_START_SHIFT) {
+        return SLOW_START_RATE * h;
+    }
+
+    // C++: nSubsidy /= nSubsidySlowStartInterval; nSubsidy *= (nHeight+1);
+    // Py:  SlowStartRate * (height + 1)
+    if (blockheight < SLOW_START_INTERVAL) {
+        return SLOW_START_RATE * (h + 1n);
+    }
+
+    // === Halving index (params.cpp Halving(), theoretical.py Halving()) ===
+
+    let halvings;
+    if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT) {
+        // C++: scaledHalvings = (blossomActivationHeight - SubsidySlowStartShift())
+        //        * BLOSSOM_POW_TARGET_SPACING_RATIO + (nHeight - blossomActivationHeight);
+        //      return scaledHalvings / nPostBlossomSubsidyHalvingInterval;
+        // Py:  div2(BlossomActivationHeight - SlowStartShift, PreBlossomHalvingInterval,
+        //           height - BlossomActivationHeight, PostBlossomHalvingInterval)
+        const scaledHalvings =
+            BigInt(BLOSSOM_ACTIVATION_HEIGHT - SLOW_START_SHIFT) * BLOSSOM_POW_TARGET_SPACING_RATIO
+            + (h - BigInt(BLOSSOM_ACTIVATION_HEIGHT));
+        halvings = Number(scaledHalvings / POST_BLOSSOM_HALVING_INTERVAL);
+    } else {
+        // C++: (nHeight - SubsidySlowStartShift()) / nPreBlossomSubsidyHalvingInterval
+        // Py:  (height - SlowStartShift) // PreBlossomHalvingInterval
+        halvings = Math.floor((blockheight - SLOW_START_SHIFT) / PRE_BLOSSOM_HALVING_INTERVAL);
+    }
+
+    // C++: if (halvings >= 64) return 0;
+    if (halvings >= 64) return 0n;
+
+    // === Block subsidy (params.cpp GetBlockSubsidy, theoretical.py BlockSubsidy) ===
+
+    if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT) {
+        // C++: (nSubsidy / BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings
+        // Py:  MaxBlockSubsidy // (BlossomPoWTargetSpacingRatio << Halving(height))
+        return (MAX_BLOCK_SUBSIDY / BLOSSOM_POW_TARGET_SPACING_RATIO) >> BigInt(halvings);
+    } else {
+        // C++: nSubsidy >> halvings
+        // Py:  MaxBlockSubsidy // (1 << Halving(height))
+        return MAX_BLOCK_SUBSIDY >> BigInt(halvings);
+    }
+}
+// ====================================================================
+// END exact copy — everything below is visualisation only.
+// ====================================================================
+
+// ---------- data generation ----------
+const ZATOSHI = 1e8;
+const MAX_CHART_HEIGHT = 12_000_000;
+const SLOW_END = 20_000;
+
+// Heights where per-block issuance changes value
+const changeHeights = [SLOW_END, 653_600];
+for (let n = 1; n <= 30; n++) {
+    const hh = 1_680_000 * n - 633_600;
+    if (hh > 653_600) changeHeights.push(hh);
+}
+const boundaries = changeHeights
+    .filter(h => h >= SLOW_END && h <= MAX_CHART_HEIGHT)
+    .sort((a, b) => a - b);
+if (boundaries[boundaries.length - 1] < MAX_CHART_HEIGHT)
+    boundaries.push(MAX_CHART_HEIGHT);
+
+// Phase 1 — slow start (iterate every block, sample for chart)
+const data = [];
+let cumZat = 0n;
+const SAMPLE = 500;
+for (let b = 0; b < SLOW_END; b++) {
+    cumZat += issuance_per_block(b);
+    if (b % SAMPLE === 0 || b === SLOW_END - 1) {
+        data.push({
+            h: b,
+            supply: Number(cumZat) / ZATOSHI,
+            iss: Number(issuance_per_block(b)) / ZATOSHI
+        });
+    }
+}
+
+// Phase 2 — constant-issuance regions (boundary points only;
+// supply is exactly linear between them so lines are correct)
+for (let i = 0; i < boundaries.length; i++) {
+    const bh = boundaries[i];
+    if (i > 0) {
+        const prev = boundaries[i - 1];
+        cumZat += issuance_per_block(prev) * BigInt(bh - prev);
+    }
+    data.push({
+        h: bh,
+        supply: Number(cumZat) / ZATOSHI,
+        iss: Number(issuance_per_block(bh)) / ZATOSHI
+    });
+}
+
+// ---------- canvas setup ----------
+const canvas = document.getElementById('chart');
+const dpr = window.devicePixelRatio || 1;
+const CSS_W = Math.min(1200, window.innerWidth - 48);
+const CSS_H = Math.round(CSS_W * 0.5);
+canvas.style.width  = CSS_W + 'px';
+canvas.style.height = CSS_H + 'px';
+canvas.width  = CSS_W * dpr;
+canvas.height = CSS_H * dpr;
+const ctx = canvas.getContext('2d');
+ctx.scale(dpr, dpr);
+
+const MG = { top: 36, right: 76, bottom: 52, left: 80 };
+const PW = CSS_W - MG.left - MG.right;
+const PH = CSS_H - MG.top  - MG.bottom;
+
+const xMax    = MAX_CHART_HEIGHT;
+const ySupMax = 21_000_000;
+const yIssMax = 14;
+
+const xP  = h => MG.left + (h / xMax) * PW;
+const ySP = v => MG.top + PH - (v / ySupMax) * PH;
+const yIP = v => MG.top + PH - (v / yIssMax) * PH;
+
+// ---------- draw ----------
+ctx.fillStyle = '#0f172a';
+ctx.fillRect(0, 0, CSS_W, CSS_H);
+
+// horizontal grid
+ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+ctx.lineWidth = 1;
+for (let s = 0; s <= ySupMax; s += 3_000_000) {
+    ctx.beginPath(); ctx.moveTo(MG.left, ySP(s));
+    ctx.lineTo(MG.left + PW, ySP(s)); ctx.stroke();
+}
+
+// 21 M cap dashed line
+ctx.save();
+ctx.strokeStyle = '#475569'; ctx.setLineDash([6, 5]);
+ctx.beginPath(); ctx.moveTo(MG.left, ySP(ySupMax));
+ctx.lineTo(MG.left + PW, ySP(ySupMax)); ctx.stroke();
+ctx.restore();
+ctx.fillStyle = '#64748b'; ctx.font = '10px system-ui'; ctx.textAlign = 'left';
+ctx.fillText('21 M ZEC cap', MG.left + 4, ySP(ySupMax) - 4);
+
+// halving + Blossom vertical markers
+const halvArr = [];
+for (let n = 1; n <= 30; n++) {
+    const hh = 1_680_000 * n - 633_600;
+    if (hh > xMax) break;
+    halvArr.push(hh);
+}
+ctx.save(); ctx.setLineDash([3, 4]);
+ctx.strokeStyle = 'rgba(239,68,68,0.18)';
+for (const hh of halvArr) {
+    ctx.beginPath(); ctx.moveTo(xP(hh), MG.top);
+    ctx.lineTo(xP(hh), MG.top + PH); ctx.stroke();
+}
+ctx.strokeStyle = 'rgba(96,165,250,0.22)';
+ctx.beginPath(); ctx.moveTo(xP(653_600), MG.top);
+ctx.lineTo(xP(653_600), MG.top + PH); ctx.stroke();
+ctx.restore();
+
+// supply area fill
+const grad = ctx.createLinearGradient(0, MG.top, 0, MG.top + PH);
+grad.addColorStop(0, 'rgba(245,158,11,0.25)');
+grad.addColorStop(1, 'rgba(245,158,11,0.01)');
+ctx.beginPath();
+ctx.moveTo(xP(data[0].h), MG.top + PH);
+for (const d of data) ctx.lineTo(xP(d.h), ySP(d.supply));
+ctx.lineTo(xP(data[data.length - 1].h), MG.top + PH);
+ctx.closePath();
+ctx.fillStyle = grad; ctx.fill();
+
+// supply line
+ctx.beginPath();
+for (let i = 0; i < data.length; i++) {
+    const px = xP(data[i].h), py = ySP(data[i].supply);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+}
+ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
+
+// issuance step curve
+ctx.beginPath();
+for (let i = 0; i < data.length; i++) {
+    const px = xP(data[i].h), py = yIP(data[i].iss);
+    if (i === 0) { ctx.moveTo(px, py); }
+    else {
+        ctx.lineTo(px, yIP(data[i - 1].iss));   // horizontal at old level
+        ctx.lineTo(px, py);                       // vertical to new level
+    }
+}
+ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
+
+// left axis labels (Supply)
+ctx.fillStyle = '#f59e0b'; ctx.font = '11px system-ui'; ctx.textAlign = 'right';
+for (let s = 0; s <= ySupMax; s += 3_000_000)
+    ctx.fillText((s / 1e6).toFixed(0) + ' M', MG.left - 6, ySP(s) + 4);
+ctx.save(); ctx.translate(14, MG.top + PH / 2); ctx.rotate(-Math.PI / 2);
+ctx.fillStyle = '#d97706'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+ctx.fillText('Cumulative Supply (ZEC)', 0, 0); ctx.restore();
+
+// right axis labels (Issuance)
+ctx.fillStyle = '#22d3ee'; ctx.font = '11px system-ui'; ctx.textAlign = 'left';
+for (let v = 0; v <= yIssMax; v += 2)
+    ctx.fillText(v.toFixed(1), MG.left + PW + 6, yIP(v) + 4);
+ctx.save(); ctx.translate(CSS_W - 8, MG.top + PH / 2); ctx.rotate(Math.PI / 2);
+ctx.fillStyle = '#0891b2'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+ctx.fillText('Issuance per Block (ZEC)', 0, 0); ctx.restore();
+
+// x axis
+ctx.fillStyle = '#9ca3af'; ctx.font = '11px system-ui'; ctx.textAlign = 'center';
+for (let bh = 0; bh <= xMax; bh += 2_000_000) {
+    ctx.fillText((bh / 1e6).toFixed(0) + ' M', xP(bh), MG.top + PH + 20);
+    ctx.strokeStyle = 'rgba(148,163,184,0.15)';
+    ctx.beginPath(); ctx.moveTo(xP(bh), MG.top + PH);
+    ctx.lineTo(xP(bh), MG.top + PH + 4); ctx.stroke();
+}
+ctx.font = '12px system-ui';
+ctx.fillText('Block Height', MG.left + PW / 2, MG.top + PH + 42);
+
+// event labels (rotated)
+ctx.font = '9px system-ui';
+ctx.fillStyle = 'rgba(96,165,250,0.55)';
+ctx.save(); ctx.translate(xP(653_600) - 2, MG.top + PH - 4);
+ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left';
+ctx.fillText('Blossom', 0, 0); ctx.restore();
+ctx.fillStyle = 'rgba(239,68,68,0.5)';
+for (let i = 0; i < halvArr.length; i++) {
+    ctx.save(); ctx.translate(xP(halvArr[i]) - 2, MG.top + PH - 4);
+    ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left';
+    ctx.fillText('Halving ' + (i + 1), 0, 0); ctx.restore();
+}
+
+// frame
+ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+ctx.strokeRect(MG.left, MG.top, PW, PH);
+
+// ---------- tooltip on hover ----------
+const tooltip = document.getElementById('tooltip');
+
+canvas.addEventListener('mousemove', function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (CSS_W / rect.width);
+    const my = (e.clientY - rect.top)  * (CSS_H / rect.height);
+
+    if (mx < MG.left || mx > MG.left + PW || my < MG.top || my > MG.top + PH) {
+        tooltip.style.display = 'none'; return;
+    }
+
+    const blockH = Math.max(0, Math.round(((mx - MG.left) / PW) * xMax));
+    const issZec = Number(issuance_per_block(blockH)) / ZATOSHI;
+
+    // interpolate supply from precomputed data
+    let supZec = data[data.length - 1].supply;
+    for (let i = 1; i < data.length; i++) {
+        if (data[i].h >= blockH) {
+            const span = data[i].h - data[i - 1].h;
+            const t = span ? (blockH - data[i - 1].h) / span : 0;
+            supZec = data[i - 1].supply + t * (data[i].supply - data[i - 1].supply);
+            break;
+        }
+    }
+
+    tooltip.innerHTML =
+        '<b>Block ' + blockH.toLocaleString() + '</b><br>' +
+        '<span style="color:#f59e0b">Supply:</span> ' +
+        supZec.toLocaleString(undefined, { maximumFractionDigits: 0 }) +
+        ' ZEC (' + (supZec / 21_000_000 * 100).toFixed(2) + '%)<br>' +
+        '<span style="color:#22d3ee">Issuance:</span> ' +
+        issZec.toFixed(8) + ' ZEC/block';
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(e.clientX + 16, window.innerWidth - 240) + 'px';
+    tooltip.style.top  = (e.clientY - 76) + 'px';
+});
+
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+</script>
+</body>
+</html>
