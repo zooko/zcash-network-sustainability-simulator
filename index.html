@@ -19,6 +19,41 @@
       --eventObs:  rgba(96,165,250,0.45);
       --eventHalv: rgba(239,68,68,0.35);
       --written:   rgba(167,139,250,0.65);
+      --controlsBg: rgba(2,6,23,0.25);
+      --controlsBorder: rgba(148,163,184,0.15);
+      --btnBg: rgba(2,6,23,0.25);
+      --btnBorder: rgba(148,163,184,0.22);
+      --btnHover: rgba(148,163,184,0.4);
+      --tooltipBg: rgba(15,23,42,0.98);
+      --tooltipBorder: rgba(148,163,184,0.25);
+      --gridLine: rgba(148,163,184,0.08);
+      --capLine: rgba(245,158,11,0.20);
+      --frameBorder: rgba(148,163,184,0.10);
+    }
+    [data-theme="light"]{
+      --bg: #f8fafc;
+      --fg: #1e293b;
+      --muted: #64748b;
+      --panel: #ffffff;
+      --supplyObs: #d97706;
+      --issObs:    #0891b2;
+      --supplyExp: rgba(217,119,6,0.55);
+      --issExp:    rgba(8,145,178,0.55);
+      --annualObs: #16a34a;
+      --annualExp: rgba(22,163,74,0.55);
+      --eventObs:  rgba(59,130,246,0.35);
+      --eventHalv: rgba(220,38,38,0.30);
+      --written:   rgba(124,58,237,0.55);
+      --controlsBg: rgba(241,245,249,0.85);
+      --controlsBorder: rgba(148,163,184,0.25);
+      --btnBg: rgba(255,255,255,0.8);
+      --btnBorder: rgba(148,163,184,0.35);
+      --btnHover: rgba(148,163,184,0.55);
+      --tooltipBg: rgba(255,255,255,0.98);
+      --tooltipBorder: rgba(148,163,184,0.35);
+      --gridLine: rgba(148,163,184,0.12);
+      --capLine: rgba(217,119,6,0.25);
+      --frameBorder: rgba(148,163,184,0.18);
     }
     * { margin:0; padding:0; box-sizing: border-box; }
     body {
@@ -38,20 +73,20 @@
       width:min(1100px,96vw); display:flex; gap:10px; flex-wrap:wrap;
       align-items:center; justify-content:center; color:var(--muted);
       font-size:0.82rem; padding:8px 10px;
-      border:1px solid rgba(148,163,184,0.15); border-radius:10px;
-      background:rgba(2,6,23,0.25); backdrop-filter:blur(6px);
+      border:1px solid var(--controlsBorder); border-radius:10px;
+      background:var(--controlsBg); backdrop-filter:blur(6px);
     }
     .controls .btn {
       cursor:pointer; user-select:none;
-      border:1px solid rgba(148,163,184,0.22); background:rgba(2,6,23,0.25);
+      border:1px solid var(--btnBorder); background:var(--btnBg);
       color:var(--fg); padding:7px 10px; border-radius:9px; font-size:0.82rem;
     }
-    .controls .btn:hover { border-color:rgba(148,163,184,0.4); }
+    .controls .btn:hover { border-color:var(--btnHover); }
     .controls .btn:active { transform:translateY(1px); }
     .controls .sep { opacity:0.35; padding:0 4px; }
     canvas {
       width:min(1100px,96vw); height:auto; border-radius:10px;
-      background:var(--panel); border:1px solid rgba(148,163,184,0.12);
+      background:var(--panel); border:1px solid var(--controlsBorder);
       touch-action:none;
     }
     .legend {
@@ -61,19 +96,19 @@
     }
     .legend .sw { width:11px; height:11px; border-radius:999px; display:inline-block; margin-right:7px; }
     .legend .dash {
-      width:18px; height:0; border-top:2px dashed rgba(148,163,184,0.65);
+      width:18px; height:0; border-top:2px dashed var(--muted);
       display:inline-block; transform:translateY(-1px); margin-right:7px;
     }
     #tooltip {
-      position:fixed; display:none; background:rgba(15,23,42,0.98);
-      color:var(--fg); border:1px solid rgba(148,163,184,0.25);
+      position:fixed; display:none; background:var(--tooltipBg);
+      color:var(--fg); border:1px solid var(--tooltipBorder);
       border-radius:9px; padding:10px 12px; font-size:0.80rem;
       pointer-events:none; z-index:100; line-height:1.45;
-      min-width:280px; box-shadow:0 10px 28px rgba(0,0,0,0.35);
+      min-width:280px; box-shadow:0 10px 28px rgba(0,0,0,0.15);
     }
-    .tt-muted { color:rgba(148,163,184,0.95); }
-    .tt-obs { color:rgba(34,197,94,0.95); font-weight:650; }
-    .tt-exp { color:rgba(245,158,11,0.95); font-weight:650; }
+    .tt-muted { color:var(--muted); }
+    .tt-obs { color:var(--annualObs); font-weight:650; }
+    .tt-exp { color:var(--supplyObs); font-weight:650; }
 
     @media (max-width: 600px) {
       body { padding: 10px; gap: 6px; }
@@ -97,6 +132,8 @@
     <button class="btn" id="btnObserved">Observed</button>
     <button class="btn" id="btnWritten">Center on written</button>
     <button class="btn" id="btnFuture">More future</button>
+    <span class="sep">|</span>
+    <button class="btn" id="btnTheme">☀️ Light</button>
   </div>
   <canvas id="chart" width="1100" height="540"></canvas>
   <div class="legend">
@@ -109,6 +146,66 @@
   <div id="tooltip"></div>
 
 <script>
+/* ==================================================================
+   Theme management
+   ================================================================== */
+const themes = {
+  dark: {
+    panel: "#0b1224",
+    supplyObs: "#f59e0b", supplyExp: "rgba(245,158,11,0.55)",
+    issObs: "#22d3ee", issExp: "rgba(34,211,238,0.55)",
+    annualObs: "#4ade80", annualExp: "rgba(74,222,128,0.55)",
+    eventBlossom: "rgba(96,165,250,0.45)", eventHalv: "rgba(239,68,68,0.35)",
+    written: "rgba(167,139,250,0.65)",
+    grid: "rgba(148,163,184,0.08)", capLine: "rgba(245,158,11,0.20)", capText: "rgba(245,158,11,0.28)",
+    frame: "rgba(148,163,184,0.10)", axisText: "#94a3b8", axisTickLine: "rgba(148,163,184,0.15)",
+    supplyAxisLabel: "rgba(245,158,11,0.75)", issAxisLabel: "rgba(34,211,238,0.72)", annAxisLabel: "rgba(74,222,128,0.72)",
+    blossomLabel: "rgba(96,165,250,0.62)", halvLabel: "rgba(239,68,68,0.55)", writtenLabel: "rgba(167,139,250,0.72)",
+    supplyFillObs: ["rgba(245,158,11,0.20)","rgba(245,158,11,0.02)"],
+    supplyFillExp: ["rgba(245,158,11,0.10)","rgba(245,158,11,0.01)"],
+  },
+  light: {
+    panel: "#ffffff",
+    supplyObs: "#d97706", supplyExp: "rgba(217,119,6,0.55)",
+    issObs: "#0891b2", issExp: "rgba(8,145,178,0.55)",
+    annualObs: "#16a34a", annualExp: "rgba(22,163,74,0.55)",
+    eventBlossom: "rgba(59,130,246,0.35)", eventHalv: "rgba(220,38,38,0.30)",
+    written: "rgba(124,58,237,0.55)",
+    grid: "rgba(148,163,184,0.15)", capLine: "rgba(217,119,6,0.25)", capText: "rgba(217,119,6,0.45)",
+    frame: "rgba(148,163,184,0.22)", axisText: "#64748b", axisTickLine: "rgba(148,163,184,0.25)",
+    supplyAxisLabel: "rgba(180,83,9,0.85)", issAxisLabel: "rgba(14,116,144,0.85)", annAxisLabel: "rgba(21,128,61,0.85)",
+    blossomLabel: "rgba(37,99,235,0.75)", halvLabel: "rgba(185,28,28,0.70)", writtenLabel: "rgba(109,40,217,0.75)",
+    supplyFillObs: ["rgba(217,119,6,0.18)","rgba(217,119,6,0.02)"],
+    supplyFillExp: ["rgba(217,119,6,0.10)","rgba(217,119,6,0.01)"],
+  }
+};
+
+let currentTheme = "dark";
+function getTheme() { return themes[currentTheme]; }
+
+function initTheme() {
+  const stored = localStorage.getItem("theme");
+  if (stored === "light" || stored === "dark") {
+    currentTheme = stored;
+  } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+    currentTheme = "light";
+  }
+  applyTheme();
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  const btn = document.getElementById("btnTheme");
+  if (btn) btn.textContent = currentTheme === "dark" ? "☀️ Light" : "🌙 Dark";
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", currentTheme);
+  applyTheme();
+  requestDraw();
+}
+
 /* ==================================================================
    Time anchors — observed on-chain timestamps at known block heights
    ================================================================== */
@@ -496,7 +593,8 @@ function draw() {
   const PH = CSS_H - MG.top - MG.bottom;
   Object.assign(layout, { CSS_W, CSS_H, MG, PW, PH });
 
-  ctx.fillStyle = "#0b1224";
+  const T = getTheme();
+  ctx.fillStyle = T.panel;
   ctx.fillRect(0, 0, CSS_W, CSS_H);
 
   /* fixed y-axis ranges */
@@ -510,17 +608,17 @@ function draw() {
   const yAP = p => MG.top + PH - (p / yAnnMax) * PH;
 
   /* ---- grid ---- */
-  ctx.strokeStyle = "rgba(148,163,184,0.08)"; ctx.lineWidth = 1;
+  ctx.strokeStyle = T.grid; ctx.lineWidth = 1;
   for (let s = 0; s <= ySupMax; s += 3_000_000) {
     ctx.beginPath(); ctx.moveTo(MG.left, ySP(s));
     ctx.lineTo(MG.left + PW, ySP(s)); ctx.stroke();
   }
 
   /* 21M cap */
-  ctx.setLineDash([6,4]); ctx.strokeStyle = "rgba(245,158,11,0.20)";
+  ctx.setLineDash([6,4]); ctx.strokeStyle = T.capLine;
   ctx.beginPath(); ctx.moveTo(MG.left, ySP(21e6));
   ctx.lineTo(MG.left + PW, ySP(21e6)); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(245,158,11,0.28)";
+  ctx.fillStyle = T.capText;
   ctx.font = isNarrow ? "8px system-ui" : "10px system-ui";
   ctx.textAlign = "left"; ctx.fillText("21 M cap", MG.left + 4, ySP(21e6) - 3);
 
@@ -536,10 +634,10 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top + PH); ctx.stroke();
     ctx.restore();
   }
-  vline(TIME_ANCHORS[1].time, "rgba(96,165,250,0.45)", true);
-  vline(TIME_ANCHORS[2].time, "rgba(239,68,68,0.35)", true);
-  vline(TIME_ANCHORS[3].time, "rgba(239,68,68,0.35)", true);
-  vline(writtenTime, "rgba(167,139,250,0.65)", false);
+  vline(TIME_ANCHORS[1].time, T.eventBlossom, true);
+  vline(TIME_ANCHORS[2].time, T.eventHalv, true);
+  vline(TIME_ANCHORS[3].time, T.eventHalv, true);
+  vline(writtenTime, T.written, false);
 
   /* ---- visible data slice ---- */
   const pad = 2 * (view.tMax - view.tMin);
@@ -587,13 +685,11 @@ function draw() {
     });
   }
 
-  fillArea(D, WRITTEN_HEIGHT, p => ySP(p.supply),
-    ["rgba(245,158,11,0.20)","rgba(245,158,11,0.02)"],
-    ["rgba(245,158,11,0.10)","rgba(245,158,11,0.01)"]);
+  fillArea(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyFillObs, T.supplyFillExp);
 
-  drawSplit(D, WRITTEN_HEIGHT, p => ySP(p.supply), "#f59e0b", "rgba(245,158,11,0.55)", 2);
-  drawSplit(D, WRITTEN_HEIGHT, p => yIP(p.issDay), "#22d3ee", "rgba(34,211,238,0.55)", 2);
-  drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => yAP(p.annualPct), "#4ade80", "rgba(74,222,128,0.55)", 1.8);
+  drawSplit(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyObs, T.supplyExp, 2);
+  drawSplit(D, WRITTEN_HEIGHT, p => yIP(p.issDay), T.issObs, T.issExp, 2);
+  drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => yAP(p.annualPct), T.annualObs, T.annualExp, 1.8);
 
   /* ---- event labels (inside clip) ---- */
   function evLabel(t, label, color) {
@@ -604,21 +700,21 @@ function draw() {
     ctx.fillText(label,0,0); ctx.restore();
   }
   if (isNarrow) {
-    evLabel(TIME_ANCHORS[1].time, "Blossom", "rgba(96,165,250,0.62)");
-    evLabel(TIME_ANCHORS[2].time, "Halving 1", "rgba(239,68,68,0.55)");
-    evLabel(TIME_ANCHORS[3].time, "Halving 2", "rgba(239,68,68,0.55)");
-    evLabel(writtenTime, "Written", "rgba(167,139,250,0.72)");
+    evLabel(TIME_ANCHORS[1].time, "Blossom", T.blossomLabel);
+    evLabel(TIME_ANCHORS[2].time, "Halving 1", T.halvLabel);
+    evLabel(TIME_ANCHORS[3].time, "Halving 2", T.halvLabel);
+    evLabel(writtenTime, "Written", T.writtenLabel);
   } else {
-    evLabel(TIME_ANCHORS[1].time, "Blossom — Dec 2019", "rgba(96,165,250,0.62)");
-    evLabel(TIME_ANCHORS[2].time, "Halving 1 — Nov 2020", "rgba(239,68,68,0.55)");
-    evLabel(TIME_ANCHORS[3].time, "Halving 2 — Nov 2024", "rgba(239,68,68,0.55)");
-    evLabel(writtenTime, `Simulator written — block ${WRITTEN_HEIGHT.toLocaleString()} (${fmtDate(writtenTime)})`, "rgba(167,139,250,0.72)");
+    evLabel(TIME_ANCHORS[1].time, "Blossom — Dec 2019", T.blossomLabel);
+    evLabel(TIME_ANCHORS[2].time, "Halving 1 — Nov 2020", T.halvLabel);
+    evLabel(TIME_ANCHORS[3].time, "Halving 2 — Nov 2024", T.halvLabel);
+    evLabel(writtenTime, `Simulator written — block ${WRITTEN_HEIGHT.toLocaleString()} (${fmtDate(writtenTime)})`, T.writtenLabel);
   }
 
   ctx.restore(); /* end clip */
 
   /* ---- left axis: Supply ---- */
-  ctx.fillStyle = "#f59e0b";
+  ctx.fillStyle = T.supplyObs;
   ctx.font = isNarrow ? "9px system-ui" : "11px system-ui";
   ctx.textAlign = "right";
   for (let s = 0; s <= ySupMax; s += 3e6)
@@ -626,12 +722,12 @@ function draw() {
 
   if (!isNarrow) {
     ctx.save(); ctx.translate(16, MG.top+PH/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle="rgba(245,158,11,0.75)"; ctx.font="12px system-ui"; ctx.textAlign="center";
+    ctx.fillStyle=T.supplyAxisLabel; ctx.font="12px system-ui"; ctx.textAlign="center";
     ctx.fillText("Cumulative Supply (ZEC)",0,0); ctx.restore();
   }
 
   /* ---- right axis 1: Issuance/day ---- */
-  ctx.fillStyle="#22d3ee";
+  ctx.fillStyle=T.issObs;
   ctx.font = isNarrow ? "8px system-ui" : "11px system-ui";
   ctx.textAlign="left";
   for (let v=0; v<=yIssDayMax; v+=2000) {
@@ -641,14 +737,14 @@ function draw() {
 
   if (!isNarrow) {
     ctx.save(); ctx.translate(MG.left+PW+52, MG.top+PH/2); ctx.rotate(Math.PI/2);
-    ctx.fillStyle="rgba(34,211,238,0.72)"; ctx.font="11px system-ui"; ctx.textAlign="center";
+    ctx.fillStyle=T.issAxisLabel; ctx.font="11px system-ui"; ctx.textAlign="center";
     ctx.fillText("Issuance / day (ZEC)",0,0); ctx.restore();
 
     /* ---- right axis 2: Annualized % (wide only) ---- */
-    ctx.fillStyle="#4ade80"; ctx.font="10px system-ui"; ctx.textAlign="left";
+    ctx.fillStyle=T.annualObs; ctx.font="10px system-ui"; ctx.textAlign="left";
     for (let p=0; p<=yAnnMax; p+=10) ctx.fillText(p+"%", MG.left+PW+82, yAP(p)+4);
     ctx.save(); ctx.translate(MG.left+PW+130, MG.top+PH/2); ctx.rotate(Math.PI/2);
-    ctx.fillStyle="rgba(74,222,128,0.72)"; ctx.font="11px system-ui"; ctx.textAlign="center";
+    ctx.fillStyle=T.annAxisLabel; ctx.font="11px system-ui"; ctx.textAlign="center";
     ctx.fillText("Annualized issuance %",0,0); ctx.restore();
   }
 
@@ -662,24 +758,24 @@ function draw() {
   else if (pixPerYear < 35) step = 5;
   else if (pixPerYear < 55) step = 2;
 
-  ctx.fillStyle="#94a3b8";
+  ctx.fillStyle=T.axisText;
   ctx.font = isNarrow ? "9px system-ui" : "11px system-ui";
   ctx.textAlign="center";
   for (let yr = startYr - (startYr % step); yr <= endYr + step; yr += step) {
     const t = Date.UTC(yr,0,1);
     if (t < view.tMin || t > view.tMax) continue;
     const xx = xP(t);
-    ctx.strokeStyle="rgba(148,163,184,0.15)"; ctx.lineWidth=1;
+    ctx.strokeStyle=T.axisTickLine; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(xx,MG.top+PH); ctx.lineTo(xx,MG.top+PH+4); ctx.stroke();
     ctx.fillText(String(yr), xx, MG.top+PH + (isNarrow ? 16 : 22));
   }
   if (!isNarrow) {
-    ctx.font="12px system-ui"; ctx.fillStyle="rgba(148,163,184,0.85)";
+    ctx.font="12px system-ui"; ctx.fillStyle=T.axisText;
     ctx.fillText("Date (UTC)", MG.left+PW/2, MG.top+PH+46);
   }
 
   /* frame */
-  ctx.strokeStyle="rgba(148,163,184,0.10)"; ctx.lineWidth=1;
+  ctx.strokeStyle=T.frame; ctx.lineWidth=1;
   ctx.strokeRect(MG.left, MG.top, PW, PH);
 }
 
@@ -755,9 +851,12 @@ document.getElementById("btnFuture").addEventListener("click", () => {
   clampView(); requestDraw(); requestComputeForView();
 });
 
+document.getElementById("btnTheme").addEventListener("click", () => toggleTheme());
+
 /* ==================================================================
    Boot
    ================================================================== */
+initTheme();
 clampView();
 targetHeightWanted = Math.max(0, Math.ceil(timeToHeight(view.tMax + ONE_YEAR_MS)) + 10_000);
 requestDraw();
