@@ -218,6 +218,9 @@ const TIME_ANCHORS = [
 const WRITTEN_HEIGHT = 3_234_946;
 const ONE_YEAR_MS = 365.25 * 86400 * 1000;
 
+/* Blossom activation height — used to detect cross-boundary annual % */
+const BLOSSOM_H = 653600;
+
 /* ==================================================================
    Segment-based block ↔ time mapping
    ================================================================== */
@@ -345,6 +348,38 @@ function sumIssuanceRangeClean(startInc, endExc) {
 }
 
 /* ==================================================================
+   Correct annualized issuance % — accounts for block-time changes
+
+   The naive approach (sum issuance over a height range corresponding
+   to "one year" of time) produces spikes when the look-ahead window
+   straddles the Blossom boundary, because pre-Blossom blocks take
+   ~150s while post-Blossom blocks take ~75s. A height range computed
+   from a single secPerBlock rate will over- or under-count blocks
+   in the other regime.
+
+   Fix: compute the one-year-forward height by walking through
+   segments properly, accumulating time across boundaries.
+   ================================================================== */
+function heightAfterDuration(startH, durationMs) {
+  let remaining = durationMs / 1000; /* seconds */
+  let h = startH;
+  for (const s of SEGMENTS) {
+    if (h >= s.endH) continue;             /* already past this segment */
+    const hStart = Math.max(h, s.startH);
+    const blocksInSeg = s.endH - hStart;
+    const timeInSeg = blocksInSeg * s.secPerBlock;
+    if (remaining <= timeInSeg) {
+      return hStart + remaining / s.secPerBlock;
+    }
+    remaining -= timeInSeg;
+    h = s.endH;
+  }
+  /* Past last anchor — extrapolate with last segment rate */
+  const last = SEGMENTS[SEGMENTS.length - 1];
+  return Math.max(h, last.endH) + remaining / last.secPerBlock;
+}
+
+/* ==================================================================
    Data sampling — lazy progressive compute
    ================================================================== */
 const ZATOSHI = 100_000_000;
@@ -368,10 +403,10 @@ function pushPoint(h) {
   const spb = secsPerBlockAtHeight(h);
   const t = blockToTime(h);
 
-  const t1yr = t + ONE_YEAR_MS;
-  const h1yr = Math.floor(timeToHeight(t1yr));
+  /* Compute annualized issuance % using segment-aware forward projection */
+  const h1yr = Math.floor(heightAfterDuration(h, ONE_YEAR_MS));
   let annualPct = NaN;
-  if (cumulative > 0n) {
+  if (cumulative > 0n && h1yr > h) {
     const issYear = sumIssuanceRangeClean(h + 1, h1yr + 1);
     annualPct = Number(issYear * 10000n / cumulative) / 100;
   }
@@ -473,8 +508,6 @@ function resetView() {
 let drawRAF = 0;
 function requestDraw() { if (!drawRAF) drawRAF = requestAnimationFrame(() => { drawRAF = 0; draw(); }); }
 
-/* Helper: apply a pan delta while preserving the view span at boundaries.
-   This prevents "scroll left into the wall → accidental zoom" artifacts. */
 function panView(dt, baseTMin, baseTMax) {
   const span = baseTMax - baseTMin;
   let newMin = baseTMin + dt;
@@ -512,13 +545,11 @@ canvas.addEventListener("wheel", e => {
   const mouseTime = view.tMin + frac * (view.tMax - view.tMin);
 
   if (e.ctrlKey || e.metaKey) {
-    /* zoom */
     const z = Math.pow(1.002, e.deltaY);
     view.tMin = mouseTime - (mouseTime - view.tMin) * z;
     view.tMax = mouseTime + (view.tMax - mouseTime) * z;
     clampView();
   } else {
-    /* pan — preserve span at boundaries */
     const span = view.tMax - view.tMin;
     const dt = ((e.deltaX + e.deltaY) / 600) * span;
     panView(dt, view.tMin, view.tMax);
