@@ -62,769 +62,719 @@
       display: flex; flex-direction: column; align-items: center;
       padding: 22px; gap: 10px;
     }
-    h1 { font-size:1.35rem; color:var(--supplyObs); margin-bottom:2px; letter-spacing:0.2px; }
-    .sub {
-      font-size:0.86rem; color:var(--muted); margin-bottom:6px;
-      text-align:center; line-height:1.35; max-width:980px;
-    }
-    .sub a { color:#38bdf8; text-decoration:none; }
-    .sub a:hover { text-decoration:underline; }
+    h1 { font-size:1.35rem; color:var(--supplyObs); margin-bottom:2px; }
+    .sub { font-size:0.82rem; color:var(--muted); text-align:center; max-width:720px; line-height:1.45; }
+    .sub b { color:var(--fg); }
     .controls {
-      width:min(1100px,96vw); display:flex; gap:10px; flex-wrap:wrap;
-      align-items:center; justify-content:center; color:var(--muted);
-      font-size:0.82rem; padding:8px 10px;
-      border:1px solid var(--controlsBorder); border-radius:10px;
-      background:var(--controlsBg); backdrop-filter:blur(6px);
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;
+      background:var(--controlsBg); border:1px solid var(--controlsBorder);
+      border-radius:10px; padding:10px 18px;
     }
-    .controls .btn {
-      cursor:pointer; user-select:none;
-      border:1px solid var(--btnBorder); background:var(--btnBg);
-      color:var(--fg); padding:7px 10px; border-radius:9px; font-size:0.82rem;
+    .controls button, .controls .range-label {
+      font:600 0.78rem/1 system-ui; color:var(--fg);
+      background:var(--btnBg); border:1px solid var(--btnBorder);
+      border-radius:6px; padding:7px 14px; cursor:pointer;
+      transition: background .12s;
     }
-    .controls .btn:hover { border-color:var(--btnHover); }
-    .controls .btn:active { transform:translateY(1px); }
-    .controls .sep { opacity:0.35; padding:0 4px; }
-    canvas {
-      width:min(1100px,96vw); height:auto; border-radius:10px;
-      background:var(--panel); border:1px solid var(--controlsBorder);
-      touch-action:none;
-    }
+    .controls button:hover { background:var(--btnHover); }
+    .range-label { cursor:default!important; font-weight:400!important; color:var(--muted)!important; font-size:0.75rem!important; }
+    canvas { border-radius:8px; background:var(--panel); display:block; }
     .legend {
-      display:flex; gap:18px; flex-wrap:wrap; justify-content:center;
-      align-items:center; margin-top:4px; font-size:0.82rem;
-      color:var(--muted); max-width:1100px;
+      display:flex; flex-wrap:wrap; gap:10px 20px; font-size:0.78rem;
+      align-items:center; justify-content:center; color:var(--muted);
     }
-    .legend .sw { width:11px; height:11px; border-radius:999px; display:inline-block; margin-right:7px; }
-    .legend .dash {
-      width:18px; height:0; border-top:2px dashed var(--muted);
-      display:inline-block; transform:translateY(-1px); margin-right:7px;
+    .legend span { display:flex; align-items:center; gap:5px; }
+    .sw { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .dash { width:18px; height:0; border-top:2px dashed var(--muted); display:inline-block; }
+    .ltoggle {
+      cursor: pointer; user-select: none;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1.5px solid transparent;
+      transition: opacity 0.15s, border-color 0.15s;
     }
+    .ltoggle.active { border-color: var(--btnBorder); opacity: 1; }
+    .ltoggle:not(.active) { opacity: 0.38; }
+    .ltoggle:not(.active) .sw { background: var(--muted) !important; }
+    .ltoggle:hover { opacity: 0.85; }
     #tooltip {
-      position:fixed; display:none; background:var(--tooltipBg);
-      color:var(--fg); border:1px solid var(--tooltipBorder);
-      border-radius:9px; padding:10px 12px; font-size:0.80rem;
-      pointer-events:none; z-index:100; line-height:1.45;
-      min-width:280px; box-shadow:0 10px 28px rgba(0,0,0,0.15);
+      position:fixed; display:none; border-radius:8px; padding:10px 14px;
+      font-size:0.76rem; pointer-events:none; z-index:10; line-height:1.55;
+      max-width:380px;
+      background:var(--tooltipBg); color:var(--fg);
+      border:1px solid var(--tooltipBorder);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
     }
-    .tt-muted { color:var(--muted); }
-    .tt-obs { color:var(--annualObs); font-weight:650; }
-    .tt-exp { color:var(--supplyObs); font-weight:650; }
-
-    @media (max-width: 600px) {
-      body { padding: 10px; gap: 6px; }
-      h1 { font-size: 1.1rem; }
-      .sub { font-size: 0.74rem; }
-      .controls { gap: 6px; padding: 6px 8px; }
-      .controls .btn { padding: 8px 10px; font-size: 0.76rem; }
-      .legend { font-size: 0.72rem; gap: 8px; }
-      #tooltip { font-size: 0.72rem; min-width: 200px; padding: 8px 10px; }
+    #tooltip .tt-muted { color:var(--muted); }
+    #tooltip .tt-obs  { color:#38bdf8; font-weight:600; }
+    #tooltip .tt-exp  { color:var(--written); font-weight:600; }
+    @media(max-width:600px){
+      body { padding:10px; gap:8px; }
+      h1 { font-size:1.1rem; }
+      .sub { font-size:0.72rem; }
+      .controls { padding:8px 10px; gap:6px; }
+      .controls button { padding:8px 10px; font-size:0.72rem; min-height:36px; }
+      .legend { font-size:0.7rem; gap:6px 12px; }
+      .ltoggle { padding: 6px 12px; min-height: 36px; }
     }
   </style>
 </head>
 <body>
-  <h1>Zcash Supply &amp; Issuance</h1>
-  <div class="sub">
-    Uses Zcash consensus issuance logic and a time axis interpolated from on-chain timestamps.
-    <br/>Interactions: <b>scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
-  </div>
-  <div class="controls">
-    <button class="btn" id="btnReset">Reset view</button>
-    <button class="btn" id="btnObserved">Observed</button>
-    <button class="btn" id="btnWritten">Center on written</button>
-    <button class="btn" id="btnFuture">More future</button>
-    <span class="sep">|</span>
-    <button class="btn" id="btnTheme">☀️ Light</button>
-  </div>
-  <canvas id="chart" width="1100" height="540"></canvas>
-  <div class="legend">
-    <span><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
-    <span><span class="sw" style="background:var(--issObs)"></span>Issuance/day</span>
-    <span><span class="sw" style="background:var(--annualObs)"></span>Annualized issuance %</span>
-    <span><span class="dash"></span>Dashed = <b>Expected</b></span>
-    <span><span class="sw" style="background:rgba(167,139,250,0.85)"></span>"Simulator written" marker</span>
-  </div>
-  <div id="tooltip"></div>
+
+<h1>Zcash Supply &amp; Issuance</h1>
+<p class="sub">
+  Uses Zcash consensus issuance logic and a time axis interpolated from on-chain timestamps.<br>
+  <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
+</p>
+
+<div class="controls">
+  <button id="btnReset">Reset view</button>
+  <button id="btnObserved">Observed</button>
+  <button id="btnWritten">Center on written</button>
+  <button id="btnFuture">More future</button>
+  <button id="btnTheme">☀/🌙</button>
+  <span class="range-label" id="rangeLabel"></span>
+</div>
+
+<canvas id="chart"></canvas>
+
+<div class="legend" id="legend">
+  <span class="ltoggle active" data-series="supply">
+    <span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
+  <span class="ltoggle active" data-series="issDay">
+    <span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
+  <span class="ltoggle active" data-series="annPct">
+    <span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
+  <span><span class="dash"></span> Dashed = <b>Expected</b></span>
+  <span><span class="sw" style="background:rgba(167,139,250,0.85)"></span>"Written" marker</span>
+</div>
+
+<div id="tooltip"></div>
 
 <script>
 /* ==================================================================
+   Toggle state for three data series
+   ================================================================== */
+const show = { supply: true, issDay: true, annPct: true };
+
+/* ==================================================================
    Theme management
    ================================================================== */
-const themes = {
-  dark: {
-    panel: "#0b1224",
-    supplyObs: "#f59e0b", supplyExp: "rgba(245,158,11,0.55)",
-    issObs: "#22d3ee", issExp: "rgba(34,211,238,0.55)",
-    annualObs: "#4ade80", annualExp: "rgba(74,222,128,0.55)",
-    eventBlossom: "rgba(96,165,250,0.45)", eventHalv: "rgba(239,68,68,0.35)",
-    written: "rgba(167,139,250,0.65)",
-    grid: "rgba(148,163,184,0.08)", capLine: "rgba(245,158,11,0.20)", capText: "rgba(245,158,11,0.28)",
-    frame: "rgba(148,163,184,0.10)", axisText: "#94a3b8", axisTickLine: "rgba(148,163,184,0.15)",
-    supplyAxisLabel: "rgba(245,158,11,0.75)", issAxisLabel: "rgba(34,211,238,0.72)", annAxisLabel: "rgba(74,222,128,0.72)",
-    blossomLabel: "rgba(96,165,250,0.62)", halvLabel: "rgba(239,68,68,0.55)", writtenLabel: "rgba(167,139,250,0.72)",
-    supplyFillObs: ["rgba(245,158,11,0.20)","rgba(245,158,11,0.02)"],
-    supplyFillExp: ["rgba(245,158,11,0.10)","rgba(245,158,11,0.01)"],
-  },
-  light: {
-    panel: "#ffffff",
-    supplyObs: "#d97706", supplyExp: "rgba(217,119,6,0.55)",
-    issObs: "#0891b2", issExp: "rgba(8,145,178,0.55)",
-    annualObs: "#16a34a", annualExp: "rgba(22,163,74,0.55)",
-    eventBlossom: "rgba(59,130,246,0.35)", eventHalv: "rgba(220,38,38,0.30)",
-    written: "rgba(124,58,237,0.55)",
-    grid: "rgba(148,163,184,0.15)", capLine: "rgba(217,119,6,0.25)", capText: "rgba(217,119,6,0.45)",
-    frame: "rgba(148,163,184,0.22)", axisText: "#64748b", axisTickLine: "rgba(148,163,184,0.25)",
-    supplyAxisLabel: "rgba(180,83,9,0.85)", issAxisLabel: "rgba(14,116,144,0.85)", annAxisLabel: "rgba(21,128,61,0.85)",
-    blossomLabel: "rgba(37,99,235,0.75)", halvLabel: "rgba(185,28,28,0.70)", writtenLabel: "rgba(109,40,217,0.75)",
-    supplyFillObs: ["rgba(217,119,6,0.18)","rgba(217,119,6,0.02)"],
-    supplyFillExp: ["rgba(217,119,6,0.10)","rgba(217,119,6,0.01)"],
-  }
-};
-
-let currentTheme = "dark";
-function getTheme() { return themes[currentTheme]; }
-
-function initTheme() {
-  const stored = localStorage.getItem("theme");
-  if (stored === "light" || stored === "dark") {
-    currentTheme = stored;
-  } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-    currentTheme = "light";
-  }
-  applyTheme();
+function getTheme() {
+  return document.documentElement.getAttribute("data-theme") || "dark";
 }
-
-function applyTheme() {
-  document.documentElement.setAttribute("data-theme", currentTheme);
-  const btn = document.getElementById("btnTheme");
-  if (btn) btn.textContent = currentTheme === "dark" ? "☀️ Light" : "🌙 Dark";
+function setTheme(t) {
+  if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+  else document.documentElement.removeAttribute("data-theme");
+  try { localStorage.setItem("zec-theme", t); } catch(e){}
 }
-
 function toggleTheme() {
-  currentTheme = currentTheme === "dark" ? "light" : "dark";
-  localStorage.setItem("theme", currentTheme);
-  applyTheme();
+  setTheme(getTheme() === "dark" ? "light" : "dark");
   requestDraw();
+}
+function initTheme() {
+  try {
+    const saved = localStorage.getItem("zec-theme");
+    if (saved) { setTheme(saved); return; }
+  } catch(e){}
+  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) setTheme("light");
 }
 
 /* ==================================================================
-   Time anchors — observed on-chain timestamps at known block heights
+   CSS variable reader (for canvas drawing)
+   ================================================================== */
+function cv(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ==================================================================
+   Time anchors — on-chain timestamps at known block heights
    ================================================================== */
 const TIME_ANCHORS = [
-  { h: 0,         time: Date.UTC(2016,9,28,7,56),  label:"Genesis"   },
-  { h: 653_600,   time: Date.UTC(2019,11,11,21,50), label:"Blossom"   },
-  { h: 1_046_400, time: Date.UTC(2020,10,18,12,34), label:"Halving 1" },
-  { h: 2_726_400, time: Date.UTC(2024,10,23,1,51),  label:"Halving 2" },
+  { h: 0,         time: Date.UTC(2016,9,28,7,56),   label: "Genesis" },
+  { h: 653_600,   time: Date.UTC(2019,11,11,21,50), label: "Blossom" },
+  { h: 1_046_400, time: Date.UTC(2020,10,18,12,34), label: "Halving 1" },
+  { h: 2_726_400, time: Date.UTC(2024,10,23,1,51),  label: "Halving 2" },
 ];
+
+const BLOSSOM_ACTIVATION_HEIGHT = 653_600;
 const WRITTEN_HEIGHT = 3_234_946;
 const ONE_YEAR_MS = 365.25 * 86400 * 1000;
 
-/* Blossom activation height — used to detect cross-boundary annual % */
-const BLOSSOM_H = 653600;
-
-/* ==================================================================
-   Segment-based block ↔ time mapping
-   ================================================================== */
+/* Precompute segments */
 const SEGMENTS = [];
 for (let i = 0; i < TIME_ANCHORS.length - 1; i++) {
   const a = TIME_ANCHORS[i], b = TIME_ANCHORS[i+1];
-  const dtSec = (b.time - a.time) / 1000;
   SEGMENTS.push({
-    startH: a.h, endH: b.h,
-    startTime: a.time, endTime: b.time,
-    secPerBlock: dtSec / (b.h - a.h),
+    startH: a.h, endH: b.h, startTime: a.time,
+    secPerBlock: (b.time - a.time) / 1000 / (b.h - a.h),
   });
 }
 
 function segmentForHeight(h) {
-  for (const s of SEGMENTS) { if (h < s.endH) return s; }
-  return SEGMENTS[SEGMENTS.length - 1];
-}
-function segmentForTime(t) {
-  for (const s of SEGMENTS) { if (t < s.endTime) return s; }
+  for (let i = 0; i < SEGMENTS.length; i++) if (h <= SEGMENTS[i].endH) return SEGMENTS[i];
   return SEGMENTS[SEGMENTS.length - 1];
 }
 function blockToTime(h) {
   const s = segmentForHeight(h);
   return s.startTime + (h - s.startH) * s.secPerBlock * 1000;
 }
+function secsPerBlock(h) { return segmentForHeight(h).secPerBlock; }
+
 function timeToHeight(t) {
-  const s = segmentForTime(t);
-  return s.startH + ((t - s.startTime) / 1000) / s.secPerBlock;
+  for (let i = SEGMENTS.length - 1; i >= 0; i--) {
+    const s = SEGMENTS[i];
+    if (t >= s.startTime) return s.startH + (t - s.startTime) / 1000 / s.secPerBlock;
+  }
+  const s = SEGMENTS[0];
+  return s.startH + (t - s.startTime) / 1000 / s.secPerBlock;
 }
-function secsPerBlockAtHeight(h) {
-  if (!Number.isFinite(h) || h < 0) throw new Error("bad height: " + h);
-  return segmentForHeight(h).secPerBlock;
+
+/**
+ * Walk forward from height h by durationMs of wall-clock time,
+ * properly crossing segment boundaries. Returns the resulting height (fractional).
+ */
+function heightAfterDuration(h, durationMs) {
+  let remaining = durationMs / 1000; // seconds
+  let cur = h;
+  for (let i = 0; i < SEGMENTS.length; i++) {
+    const s = SEGMENTS[i];
+    if (cur > s.endH) continue;
+    const hStart = Math.max(cur, s.startH);
+    const secsToEnd = (s.endH - hStart) * s.secPerBlock;
+    if (remaining <= secsToEnd) return hStart + remaining / s.secPerBlock;
+    remaining -= secsToEnd;
+    cur = s.endH;
+  }
+  // Past last segment — extrapolate with last segment's rate
+  const last = SEGMENTS[SEGMENTS.length - 1];
+  return Math.max(cur, last.endH) + remaining / last.secPerBlock;
 }
+
+const genTime = blockToTime(0);
+const writtenTime = blockToTime(WRITTEN_HEIGHT);
+
 function fmtDate(ms) {
   const d = new Date(ms);
-  const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${mo[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mo[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
 }
 
-/* Derived constants */
-const ANNUAL_PCT_SPLIT_HEIGHT = Math.floor(
-  timeToHeight(blockToTime(WRITTEN_HEIGHT) - ONE_YEAR_MS)
-);
-const SAFETY_MAX_TIME = Date.UTC(2500, 0, 1);
-
 /* ==================================================================
-   issuance_per_block() — unchanged from zcashd consensus
+   issuance_per_block() — from zcash consensus
    ================================================================== */
 function issuance_per_block(blockheight) {
   const MAX_BLOCK_SUBSIDY = 1250000000n;
   const SLOW_START_INTERVAL = 20000;
   const SLOW_START_SHIFT = 10000;
   const SLOW_START_RATE = 62500n;
-  const BLOSSOM_ACTIVATION_HEIGHT = 653600;
-  const BLOSSOM_POW_TARGET_SPACING_RATIO = 2n;
-  const PRE_BLOSSOM_HALVING_INTERVAL = 840000;
-  const POST_BLOSSOM_HALVING_INTERVAL = 1680000n;
+  const BLOSSOM_ACT = 653600;
+  const BLOSSOM_RATIO = 2n;
+  const PRE_HALVING = 840000;
+  const POST_HALVING = 1680000n;
   const h = BigInt(blockheight);
   if (blockheight < SLOW_START_SHIFT) return SLOW_START_RATE * h;
   if (blockheight < SLOW_START_INTERVAL) return SLOW_START_RATE * (h + 1n);
   let halvings;
-  if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT) {
-    const sc = BigInt(BLOSSOM_ACTIVATION_HEIGHT - SLOW_START_SHIFT) *
-               BLOSSOM_POW_TARGET_SPACING_RATIO +
-               (h - BigInt(BLOSSOM_ACTIVATION_HEIGHT));
-    halvings = Number(sc / POST_BLOSSOM_HALVING_INTERVAL);
+  if (blockheight >= BLOSSOM_ACT) {
+    const sc = BigInt(BLOSSOM_ACT - SLOW_START_SHIFT) * BLOSSOM_RATIO + (h - BigInt(BLOSSOM_ACT));
+    halvings = Number(sc / POST_HALVING);
   } else {
-    halvings = Math.floor((blockheight - SLOW_START_SHIFT) / PRE_BLOSSOM_HALVING_INTERVAL);
+    halvings = Math.floor((blockheight - SLOW_START_SHIFT) / PRE_HALVING);
   }
   if (halvings >= 64) return 0n;
-  if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT)
-    return (MAX_BLOCK_SUBSIDY / BLOSSOM_POW_TARGET_SPACING_RATIO) >> BigInt(halvings);
+  if (blockheight >= BLOSSOM_ACT) return (MAX_BLOCK_SUBSIDY / BLOSSOM_RATIO) >> BigInt(halvings);
   return MAX_BLOCK_SUBSIDY >> BigInt(halvings);
 }
 
 /* ==================================================================
-   Fast piecewise summation (matches issuance_per_block for mainnet)
+   Data & computation
    ================================================================== */
-const G_MAX_SUB = 1250000000n;
-const G_SLOW_INT = 20000;
-const G_SLOW_SHIFT = 10000;
-const G_SLOW_RATE = 62500n;
-const G_BLOSSOM_H = 653600;
-const G_RATIO = 2n;
-const G_POST_HALV = 1680000;
-const G_HALV_OFF = 633600;
+const ZATOSHI = 100_000_000;
+const SAMPLE_EVERY = 1000;
+const data = [];
+let computedUpTo = -1;
+let cumulativeBig = 0n;
+let targetHeightWanted = 0;
+let computing = false;
 
-function sumArith(a, b) {
-  if (b < a) return 0n;
-  const A = BigInt(a), B = BigInt(b), n = B - A + 1n;
-  return (A + B) * n / 2n;
+/* Brute-force sum of issuance over a height range */
+function sumIssuanceRange(hLo, hHi) {
+  let s = 0n;
+  for (let h = hLo; h < hHi; h++) s += issuance_per_block(h);
+  return s;
 }
-function halvIdxPost(h) { return Math.floor((h + G_HALV_OFF) / G_POST_HALV); }
-function nextHalvPost(h) { return (halvIdxPost(h) + 1) * G_POST_HALV - G_HALV_OFF; }
 
-function sumIssuanceRangeClean(startInc, endExc) {
-  if (endExc <= startInc) return 0n;
-  let h = startInc, total = 0n;
-  while (h < endExc) {
-    if (h < G_SLOW_SHIFT) {
-      const e = Math.min(endExc, G_SLOW_SHIFT);
-      total += G_SLOW_RATE * sumArith(h, e - 1);
-      h = e; continue;
-    }
-    if (h < G_SLOW_INT) {
-      const e = Math.min(endExc, G_SLOW_INT);
-      total += G_SLOW_RATE * sumArith(h + 1, e);
-      h = e; continue;
-    }
-    if (h < G_BLOSSOM_H) {
-      const e = Math.min(endExc, G_BLOSSOM_H);
-      total += G_MAX_SUB * BigInt(e - h);
-      h = e; continue;
-    }
-    const k = halvIdxPost(h);
-    if (k >= 64) break;
-    const nxt = nextHalvPost(h);
-    const e = Math.min(endExc, nxt);
-    const sub = (G_MAX_SUB / G_RATIO) >> BigInt(k);
-    total += sub * BigInt(e - h);
-    h = e;
+/* Efficient: jump between "change points" where issuance changes */
+function nextChangeHeight(h) {
+  if (h < 10000) return 10000;
+  if (h < 20000) return 20000;
+  if (h < 653600) {
+    const next = 10000 + Math.ceil((h - 10000 + 1) / 840000) * 840000;
+    return Math.min(next, 653600);
+  }
+  /* Post-Blossom: halvings at scaled intervals */
+  const sc = BigInt(653600 - 10000) * 2n + (BigInt(h) - 653600n);
+  const cur = Number(sc / 1680000n);
+  const nextSc = BigInt(cur + 1) * 1680000n;
+  const nextH = Number(nextSc - BigInt(653600 - 10000) * 2n + 653600n);
+  return nextH;
+}
+
+function sumIssuanceRangeClean(hLo, hHi) {
+  if (hHi <= hLo) return 0n;
+  let total = 0n;
+  let h = hLo;
+  while (h < hHi) {
+    const iss = issuance_per_block(h);
+    const nc = nextChangeHeight(h);
+    const blocksTilChange = nc - h;
+    const blocksTilEnd = hHi - h;
+    const run = Math.min(blocksTilChange, blocksTilEnd);
+    total += iss * BigInt(run);
+    h += run;
   }
   return total;
 }
 
-/* ==================================================================
-   Correct annualized issuance % — accounts for block-time changes
+function pushPoint(h, cumBig) {
+  const issBlock = Number(issuance_per_block(h)) / ZATOSHI;
+  const spb = secsPerBlock(h);
+  const time = blockToTime(h);
+  const supply = Number(cumBig) / ZATOSHI;
+  const issDay = issBlock * (86400 / spb);
 
-   The naive approach (sum issuance over a height range corresponding
-   to "one year" of time) produces spikes when the look-ahead window
-   straddles the Blossom boundary, because pre-Blossom blocks take
-   ~150s while post-Blossom blocks take ~75s. A height range computed
-   from a single secPerBlock rate will over- or under-count blocks
-   in the other regime.
+  /* Annual percentage issuance — use heightAfterDuration to properly
+     walk across time-segment boundaries */
+  let annualPct = 2 ** 32;
+  let annualPctIsExpected = false;
+  if (supply > 0 && h >= 20000) {
+    const h1yr = Math.floor(heightAfterDuration(h, ONE_YEAR_MS));
+    const annIss = Number(sumIssuanceRangeClean(h, h1yr)) / ZATOSHI;
+    annualPct = (annIss / supply) * 100;
+    annualPctIsExpected = (h1yr > WRITTEN_HEIGHT);
+  }
 
-   Fix: compute the one-year-forward height by walking through
-   segments properly, accumulating time across boundaries.
-   ================================================================== */
-function heightAfterDuration(startH, durationMs) {
-  let remaining = durationMs / 1000; /* seconds */
+  data.push({ h, time, supply, issBlock, issDay, annualPct, annualPctIsExpected });
+}
+
+function advanceTo(targetH) {
+  const startH = computedUpTo + 1;
+  if (startH > targetH) return;
   let h = startH;
-  for (const s of SEGMENTS) {
-    if (h >= s.endH) continue;             /* already past this segment */
-    const hStart = Math.max(h, s.startH);
-    const blocksInSeg = s.endH - hStart;
-    const timeInSeg = blocksInSeg * s.secPerBlock;
-    if (remaining <= timeInSeg) {
-      return hStart + remaining / s.secPerBlock;
-    }
-    remaining -= timeInSeg;
-    h = s.endH;
+  while (h <= targetH) {
+    const iss = issuance_per_block(h);
+    cumulativeBig += iss;
+    if (h % SAMPLE_EVERY === 0) pushPoint(h, cumulativeBig);
+    h++;
   }
-  /* Past last anchor — extrapolate with last segment rate */
-  const last = SEGMENTS[SEGMENTS.length - 1];
-  return Math.max(h, last.endH) + remaining / last.secPerBlock;
+  computedUpTo = targetH;
 }
 
-/* ==================================================================
-   Data sampling — lazy progressive compute
-   ================================================================== */
-const ZATOSHI = 100_000_000;
-const SAMPLE_EVERY = 1000;
-
-const SPECIAL_HEIGHTS = Array.from(new Set([
-  ...TIME_ANCHORS.map(a => a.h),
-  WRITTEN_HEIGHT,
-  ANNUAL_PCT_SPLIT_HEIGHT,
-])).sort((a,b) => a - b);
-
-const data = [];
-let computedHeight = -1;
-let cumulative = 0n;
-let nextSampleH = 0;
-let specialIdx = 0;
-
-function pushPoint(h) {
-  const iss = issuance_per_block(h);
-  const issBlock = Number(iss) / ZATOSHI;
-  const spb = secsPerBlockAtHeight(h);
-  const t = blockToTime(h);
-
-  /* Compute annualized issuance % using segment-aware forward projection */
-  const h1yr = Math.floor(heightAfterDuration(h, ONE_YEAR_MS));
-  let annualPct = NaN;
-  if (cumulative > 0n && h1yr > h) {
-    const issYear = sumIssuanceRangeClean(h + 1, h1yr + 1);
-    annualPct = Number(issYear * 10000n / cumulative) / 100;
-  }
-  const annualPctIsExpected = h1yr > WRITTEN_HEIGHT;
-
-  if (data.length && t < data[data.length - 1].time) {
-    throw new Error(`Non-monotonic time at h=${h}`);
-  }
-  data.push({
-    h, time: t,
-    supply: Number(cumulative) / ZATOSHI,
-    issBlock,
-    issDay: issBlock * (86400 / spb),
-    annualPct,
-    annualPctIsExpected,
-  });
-}
-
-let targetHeightWanted = 0;
-let computeRunning = false;
-
-function requestComputeForView() {
-  let needH = Math.max(0, Math.ceil(timeToHeight(view.tMax)) + 10_000);
-  const needH2 = Math.ceil(timeToHeight(view.tMax + ONE_YEAR_MS)) + 1000;
-  needH = Math.max(needH, needH2);
-  targetHeightWanted = Math.max(targetHeightWanted, needH);
-  runComputeLoop();
-}
-
-function computeChunk(maxPts) {
-  maxPts = maxPts || 1200;
-  let pts = 0;
-  while (specialIdx < SPECIAL_HEIGHTS.length && SPECIAL_HEIGHTS[specialIdx] <= computedHeight)
-    specialIdx++;
-
-  while (pts < maxPts) {
-    const nextSpec = (specialIdx < SPECIAL_HEIGHTS.length) ? SPECIAL_HEIGHTS[specialIdx] : Infinity;
-    const nextH = Math.min(nextSampleH, nextSpec, targetHeightWanted);
-    if (nextH > targetHeightWanted) break;
-    if (nextH <= computedHeight) {
-      if (nextSampleH <= computedHeight) nextSampleH = computedHeight + SAMPLE_EVERY - (computedHeight % SAMPLE_EVERY);
-      if (nextSpec <= computedHeight) specialIdx++;
-      if (nextSampleH > targetHeightWanted && nextSpec > targetHeightWanted) break;
-      continue;
-    }
-
-    cumulative += sumIssuanceRangeClean(computedHeight + 1, nextH + 1);
-    computedHeight = nextH;
-    pushPoint(nextH);
-    pts++;
-
-    if (nextH === nextSampleH) nextSampleH += SAMPLE_EVERY;
-    if (nextH === nextSpec) specialIdx++;
-  }
-  return pts;
-}
-
-async function runComputeLoop() {
-  if (computeRunning) return;
-  computeRunning = true;
-  while (computedHeight < targetHeightWanted) {
-    computeChunk(1500);
-    draw();
+async function computeAsync(targetH) {
+  if (computing) return;
+  computing = true;
+  const BATCH = 80_000;
+  while (computedUpTo < targetH) {
+    const batchEnd = Math.min(computedUpTo + BATCH, targetH);
+    advanceTo(batchEnd);
+    requestDraw();
     await new Promise(r => setTimeout(r, 0));
   }
-  draw();
-  computeRunning = false;
+  computing = false;
+  requestDraw();
+}
+
+function requestComputeForView() {
+  const needed = Math.max(0, Math.ceil(timeToHeight(view.tMax + ONE_YEAR_MS)) + 10_000);
+  if (needed > targetHeightWanted) targetHeightWanted = needed;
+  if (targetHeightWanted > computedUpTo) computeAsync(targetHeightWanted);
 }
 
 /* ==================================================================
-   View state & interactions
+   View (pan/zoom state)
    ================================================================== */
-const canvas = document.getElementById("chart");
-const tooltip = document.getElementById("tooltip");
-const layout = {};
-
-const writtenTime = blockToTime(WRITTEN_HEIGHT);
-const genTime = TIME_ANCHORS[0].time;
-const initFuture = 4 * ONE_YEAR_MS;
+const MAX_TIME = Date.UTC(2100, 0, 1);
+const MIN_SPAN = 30 * 86400_000;
 
 const view = {
   tMin: genTime,
-  tMax: writtenTime + initFuture,
+  tMax: blockToTime(3_400_000),
 };
 
 function clampView() {
-  if (view.tMin < genTime) view.tMin = genTime;
-  if (view.tMax > SAFETY_MAX_TIME) view.tMax = SAFETY_MAX_TIME;
-  const MIN_SPAN = 86400_000;
-  if (view.tMax - view.tMin < MIN_SPAN) view.tMax = view.tMin + MIN_SPAN;
+  let span = view.tMax - view.tMin;
+  if (span < MIN_SPAN) { const mid = (view.tMin+view.tMax)/2; view.tMin=mid-MIN_SPAN/2; view.tMax=mid+MIN_SPAN/2; span=MIN_SPAN; }
+  if (view.tMin < genTime - 2*ONE_YEAR_MS) { view.tMax += (genTime - 2*ONE_YEAR_MS - view.tMin); view.tMin = genTime - 2*ONE_YEAR_MS; }
+  if (view.tMax > MAX_TIME) { view.tMin -= (view.tMax - MAX_TIME); view.tMax = MAX_TIME; }
+  if (view.tMin < genTime - 2*ONE_YEAR_MS) view.tMin = genTime - 2*ONE_YEAR_MS;
 }
-
 function resetView() {
-  view.tMin = genTime;
-  view.tMax = writtenTime + initFuture;
+  view.tMin = genTime; view.tMax = blockToTime(3_400_000);
   clampView(); requestDraw(); requestComputeForView();
 }
-
-let drawRAF = 0;
-function requestDraw() { if (!drawRAF) drawRAF = requestAnimationFrame(() => { drawRAF = 0; draw(); }); }
-
-function panView(dt, baseTMin, baseTMax) {
-  const span = baseTMax - baseTMin;
-  let newMin = baseTMin + dt;
-  let newMax = baseTMax + dt;
-  if (newMin < genTime)        { newMin = genTime;          newMax = genTime + span; }
-  if (newMax > SAFETY_MAX_TIME){ newMax = SAFETY_MAX_TIME;  newMin = SAFETY_MAX_TIME - span; }
-  view.tMin = newMin;
-  view.tMax = newMax;
-  clampView();
-}
-
-/* ---- mouse drag ---- */
-let dragStart = null;
-canvas.addEventListener("mousedown", e => {
-  dragStart = { x: e.clientX, tMin: view.tMin, tMax: view.tMax };
-});
-window.addEventListener("mousemove", e => {
-  if (!dragStart || !layout.PW) return;
-  const rect = canvas.getBoundingClientRect();
-  const dx = e.clientX - dragStart.x;
-  const pxToTime = (dragStart.tMax - dragStart.tMin) / (layout.PW * (rect.width / layout.CSS_W));
-  const dt = -dx * pxToTime;
-  panView(dt, dragStart.tMin, dragStart.tMax);
-  requestDraw(); requestComputeForView();
-});
-window.addEventListener("mouseup", () => { dragStart = null; });
-
-/* ---- wheel ---- */
-canvas.addEventListener("wheel", e => {
-  e.preventDefault();
-  if (!layout.PW) return;
-  const rect = canvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) * (layout.CSS_W / rect.width);
-  const frac = (mx - layout.MG.left) / layout.PW;
-  const mouseTime = view.tMin + frac * (view.tMax - view.tMin);
-
-  if (e.ctrlKey || e.metaKey) {
-    const z = Math.pow(1.002, e.deltaY);
-    view.tMin = mouseTime - (mouseTime - view.tMin) * z;
-    view.tMax = mouseTime + (view.tMax - mouseTime) * z;
-    clampView();
-  } else {
-    const span = view.tMax - view.tMin;
-    const dt = ((e.deltaX + e.deltaY) / 600) * span;
-    panView(dt, view.tMin, view.tMax);
-  }
-  requestDraw(); requestComputeForView();
-}, { passive: false });
-
-canvas.addEventListener("dblclick", () => resetView());
-
-/* ---- touch gestures ---- */
-let touches0 = null;
-canvas.addEventListener("touchstart", e => {
-  if (e.touches.length === 1) {
-    touches0 = { x: e.touches[0].clientX, tMin: view.tMin, tMax: view.tMax, mode: "pan" };
-  } else if (e.touches.length === 2) {
-    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const dist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
-    touches0 = { cx, dist, tMin: view.tMin, tMax: view.tMax, mode: "pinch" };
-  }
-});
-canvas.addEventListener("touchmove", e => {
-  e.preventDefault();
-  if (!touches0 || !layout.PW) return;
-  const rect = canvas.getBoundingClientRect();
-  const pxToTime = (touches0.tMax - touches0.tMin) / (layout.PW * (rect.width / layout.CSS_W));
-
-  if (touches0.mode === "pan" && e.touches.length === 1) {
-    const dx = e.touches[0].clientX - touches0.x;
-    const dt = -dx * pxToTime;
-    panView(dt, touches0.tMin, touches0.tMax);
-  } else if (touches0.mode === "pinch" && e.touches.length === 2) {
-    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const dist = Math.abs(e.touches[0].clientX - e.touches[1].clientX) || 1;
-    const z = touches0.dist / dist;
-    const anchorFrac = (cx - rect.left) * (layout.CSS_W / rect.width);
-    const anchorTime = touches0.tMin + ((anchorFrac - layout.MG.left) / layout.PW) *
-                       (touches0.tMax - touches0.tMin);
-    view.tMin = anchorTime - (anchorTime - touches0.tMin) * z;
-    view.tMax = anchorTime + (touches0.tMax - anchorTime) * z;
-    clampView();
-  }
-  requestDraw(); requestComputeForView();
-}, { passive: false });
-canvas.addEventListener("touchend", () => { touches0 = null; });
-
-/* ---- resize ---- */
-window.addEventListener("resize", () => { requestDraw(); });
 
 /* ==================================================================
    Drawing
    ================================================================== */
+let drawRAF = null;
+function requestDraw() { if (!drawRAF) drawRAF = requestAnimationFrame(() => { drawRAF = null; draw(); }); }
+
+/* Halving heights (post-Blossom) */
+function halvingHeights(maxH) {
+  const res = [];
+  // Halving 1 at 1_046_400, then every 1_680_000 blocks
+  let h = 1_046_400;
+  while (h <= maxH) { res.push(h); h += 1_680_000; }
+  return res;
+}
+
 function draw() {
   if (data.length < 2) return;
-
+  const canvas = document.getElementById("chart");
   const dpr = window.devicePixelRatio || 1;
-  const cssW = Math.min(1100, window.innerWidth * 0.96);
-  const isNarrow = cssW < 600;
-  const cssH = Math.round(cssW * (isNarrow ? 0.7 : 540 / 1100));
-
-  canvas.width = Math.floor(cssW * dpr);
-  canvas.height = Math.floor(cssH * dpr);
-  canvas.style.height = cssH + "px";
-
+  const isNarrow = window.innerWidth < 600;
+  const CSS_W = Math.min(960, window.innerWidth - 20);
+  const CSS_H = isNarrow ? Math.round(CSS_W * 0.62) : Math.round(CSS_W * 0.54);
+  canvas.width = CSS_W * dpr; canvas.height = CSS_H * dpr;
+  canvas.style.width = CSS_W + "px"; canvas.style.height = CSS_H + "px";
   const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.scale(dpr, dpr);
 
-  const CSS_W = cssW, CSS_H = cssH;
-  const MG = isNarrow
-    ? { top: 22, right: 44, bottom: 34, left: 36 }
-    : { top: 34, right: 170, bottom: 58, left: 74 };
+  const MG = { top:28, right: (isNarrow ? 58 : (show.annPct ? 110 : 80)), bottom:52, left: isNarrow ? 48 : 64 };
   const PW = CSS_W - MG.left - MG.right;
   const PH = CSS_H - MG.top - MG.bottom;
-  Object.assign(layout, { CSS_W, CSS_H, MG, PW, PH });
 
-  const T = getTheme();
-  ctx.fillStyle = T.panel;
-  ctx.fillRect(0, 0, CSS_W, CSS_H);
+  // Read CSS vars for current theme
+  const T = {
+    bg: cv("--bg"), fg: cv("--fg"), muted: cv("--muted"), panel: cv("--panel"),
+    supplyObs: cv("--supplyObs"), issObs: cv("--issObs"),
+    supplyExp: cv("--supplyExp"), issExp: cv("--issExp"),
+    annualObs: cv("--annualObs"), annualExp: cv("--annualExp"),
+    eventObs: cv("--eventObs"), eventHalv: cv("--eventHalv"),
+    written: cv("--written"), gridLine: cv("--gridLine"),
+    capLine: cv("--capLine"), frameBorder: cv("--frameBorder"),
+    supplyFillObs: getTheme()==="dark" ? "rgba(245,158,11,0.14)" : "rgba(217,119,6,0.10)",
+    supplyFillExp: getTheme()==="dark" ? "rgba(245,158,11,0.06)" : "rgba(217,119,6,0.05)",
+  };
 
-  /* fixed y-axis ranges */
+  ctx.fillStyle = T.panel; ctx.fillRect(0, 0, CSS_W, CSS_H);
+
+  // Axis ranges
   const ySupMax = 22_000_000;
   const yIssDayMax = 8_000;
   const yAnnMax = 30;
 
-  const xP  = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
+  const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
   const ySP = s => MG.top + PH - (s / ySupMax) * PH;
   const yIP = v => MG.top + PH - (v / yIssDayMax) * PH;
   const yAP = p => MG.top + PH - (p / yAnnMax) * PH;
 
-  /* ---- grid ---- */
-  ctx.strokeStyle = T.grid; ctx.lineWidth = 1;
-  for (let s = 0; s <= ySupMax; s += 3_000_000) {
-    ctx.beginPath(); ctx.moveTo(MG.left, ySP(s));
-    ctx.lineTo(MG.left + PW, ySP(s)); ctx.stroke();
+  // Range label
+  document.getElementById("rangeLabel").textContent = "Range limit: through Jan 1, 2100 (UTC)";
+
+  // Filter visible data
+  const D = data.filter(d => d.time >= view.tMin && d.time <= view.tMax);
+  if (D.length < 1) { ctx.fillStyle = T.muted; ctx.font = "14px system-ui"; ctx.textAlign = "center"; ctx.fillText("No data in view — try Reset", CSS_W/2, CSS_H/2); return; }
+
+  // --- Grid ---
+  ctx.strokeStyle = T.gridLine; ctx.lineWidth = 1;
+  if (show.supply) {
+    for (let s = 0; s <= ySupMax; s += 3_000_000) {
+      ctx.beginPath(); ctx.moveTo(MG.left, ySP(s)); ctx.lineTo(MG.left+PW, ySP(s)); ctx.stroke();
+    }
   }
 
-  /* 21M cap */
-  ctx.setLineDash([6,4]); ctx.strokeStyle = T.capLine;
-  ctx.beginPath(); ctx.moveTo(MG.left, ySP(21e6));
-  ctx.lineTo(MG.left + PW, ySP(21e6)); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = T.capText;
-  ctx.font = isNarrow ? "8px system-ui" : "10px system-ui";
-  ctx.textAlign = "left"; ctx.fillText("21 M cap", MG.left + 4, ySP(21e6) - 3);
-
-  /* ---- clip to plot area ---- */
-  ctx.save();
-  ctx.beginPath(); ctx.rect(MG.left, MG.top, PW, PH); ctx.clip();
-
-  /* ---- vertical event lines ---- */
-  function vline(t, color, dashed) {
-    if (t < view.tMin || t > view.tMax) return;
-    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 1;
-    if (dashed) ctx.setLineDash([4,4]);
-    ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top + PH); ctx.stroke();
+  // --- 21M cap ---
+  if (show.supply) {
+    ctx.save(); ctx.setLineDash([6,4]); ctx.strokeStyle = T.capLine; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(MG.left, ySP(21_000_000)); ctx.lineTo(MG.left+PW, ySP(21_000_000)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = T.capLine; ctx.font = "10px system-ui"; ctx.textAlign = "left";
+    ctx.fillText("21 M cap", MG.left+4, ySP(21_000_000)-4);
     ctx.restore();
   }
-  vline(TIME_ANCHORS[1].time, T.eventBlossom, true);
-  vline(TIME_ANCHORS[2].time, T.eventHalv, true);
-  vline(TIME_ANCHORS[3].time, T.eventHalv, true);
-  vline(writtenTime, T.written, false);
 
-  /* ---- visible data slice ---- */
-  const pad = 2 * (view.tMax - view.tMin);
-  const vis = data.filter(d => d.time >= view.tMin - pad && d.time <= view.tMax + pad);
-  const D = vis.length >= 2 ? vis : data;
+  // --- Event verticals ---
+  ctx.save(); ctx.setLineDash([4,4]); ctx.lineWidth = 1;
+  // Blossom
+  { const t = blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
+    if (t >= view.tMin && t <= view.tMax) {
+      ctx.strokeStyle = T.eventObs;
+      ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top+PH); ctx.stroke();
+    }
+  }
+  // Halvings
+  for (const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax)) + 100_000)) {
+    const t = blockToTime(hh);
+    if (t >= view.tMin && t <= view.tMax) {
+      ctx.strokeStyle = T.eventHalv;
+      ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top+PH); ctx.stroke();
+    }
+  }
+  // Written marker
+  { const t = writtenTime;
+    if (t >= view.tMin && t <= view.tMax) {
+      ctx.strokeStyle = T.written; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top+PH); ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]); ctx.restore();
 
-  /* helper: draw a split line (obs solid / exp dashed) */
-  function drawSplit(pts, splitH, yFn, obsC, expC, w) {
-    w = w || 2;
-    const obs = [], exp = [];
+  // --- Helper: draw a line split at a height into solid (observed) + dashed (expected) ---
+  function drawSplit(pts, splitH, yFn, obsColor, expColor, lw) {
+    // Observed portion (solid)
+    ctx.beginPath(); ctx.strokeStyle = obsColor; ctx.lineWidth = lw; ctx.setLineDash([]);
+    let started = false;
     for (const p of pts) {
-      const y = yFn(p);
-      if (!isFinite(y)) continue;
-      if (p.h <= splitH) obs.push(p);
-      if (p.h >= splitH) exp.push(p);
+      if (p.h > splitH) break;
+      const px = xP(p.time), py = yFn(p);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
     }
-    if (obs.length >= 2) {
-      ctx.beginPath();
-      obs.forEach((p,i) => { const px = xP(p.time), py = yFn(p); i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); });
-      ctx.strokeStyle = obsC; ctx.lineWidth = w; ctx.setLineDash([]); ctx.stroke();
+    ctx.stroke();
+    // Expected portion (dashed)
+    ctx.beginPath(); ctx.strokeStyle = expColor; ctx.lineWidth = lw; ctx.setLineDash([6,4]);
+    started = false;
+    for (const p of pts) {
+      if (p.h < splitH) {
+        const px = xP(p.time), py = yFn(p);
+        // carry forward last observed point as start
+        ctx.moveTo(px, py); started = true;
+        continue;
+      }
+      const px = xP(p.time), py = yFn(p);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
     }
-    if (exp.length >= 2) {
-      ctx.beginPath();
-      exp.forEach((p,i) => { const px = xP(p.time), py = yFn(p); i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); });
-      ctx.strokeStyle = expC; ctx.lineWidth = w; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
-    }
+    ctx.stroke(); ctx.setLineDash([]);
   }
 
-  /* supply fill */
-  function fillArea(pts, splitH, yFn, obsGrad, expGrad) {
-    const obs = pts.filter(p => p.h <= splitH);
-    const exp = pts.filter(p => p.h >= splitH);
-    [obs, exp].forEach((seg, idx) => {
-      if (seg.length < 2) return;
-      ctx.beginPath();
-      ctx.moveTo(xP(seg[0].time), yFn(seg[0]));
-      seg.forEach(p => ctx.lineTo(xP(p.time), yFn(p)));
-      ctx.lineTo(xP(seg[seg.length-1].time), ySP(0));
-      ctx.lineTo(xP(seg[0].time), ySP(0));
-      ctx.closePath();
-      const g = ctx.createLinearGradient(0, MG.top, 0, MG.top + PH);
-      const c = idx === 0 ? obsGrad : expGrad;
-      g.addColorStop(0, c[0]); g.addColorStop(1, c[1]);
-      ctx.fillStyle = g; ctx.fill();
-    });
+  // --- Helper: fill area under supply curve ---
+  function fillArea(pts, splitH, yFn, obsColor, expColor) {
+    // Observed fill
+    ctx.beginPath();
+    let started = false;
+    let lastX = MG.left, lastY = ySP(0);
+    for (const p of pts) {
+      if (p.h > splitH) break;
+      const px = xP(p.time), py = yFn(p);
+      if (!started) { ctx.moveTo(px, ySP(0)); ctx.lineTo(px, py); started = true; }
+      else ctx.lineTo(px, py);
+      lastX = px; lastY = py;
+    }
+    if (started) { ctx.lineTo(lastX, ySP(0)); ctx.closePath(); ctx.fillStyle = obsColor; ctx.fill(); }
+
+    // Expected fill
+    ctx.beginPath(); started = false;
+    for (const p of pts) {
+      if (p.h < splitH) { lastX = xP(p.time); lastY = yFn(p); continue; }
+      const px = xP(p.time), py = yFn(p);
+      if (!started) { ctx.moveTo(lastX, ySP(0)); ctx.lineTo(lastX, lastY); ctx.lineTo(px, py); started = true; }
+      else ctx.lineTo(px, py);
+      lastX = px; lastY = py;
+    }
+    if (started) { ctx.lineTo(lastX, ySP(0)); ctx.closePath(); ctx.fillStyle = expColor; ctx.fill(); }
   }
 
-  fillArea(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyFillObs, T.supplyFillExp);
+  const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT;
 
-  drawSplit(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyObs, T.supplyExp, 2);
-  drawSplit(D, WRITTEN_HEIGHT, p => yIP(p.issDay), T.issObs, T.issExp, 2);
-  drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => yAP(p.annualPct), T.annualObs, T.annualExp, 1.8);
+  // --- Draw series (conditionally) ---
+  if (show.supply) {
+    fillArea(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyFillObs, T.supplyFillExp);
+    drawSplit(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyObs, T.supplyExp, 2);
+  }
+  if (show.issDay) {
+    drawSplit(D, WRITTEN_HEIGHT, p => yIP(p.issDay), T.issObs, T.issExp, 2);
+  }
+  if (show.annPct) {
+    drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => yAP(p.annualPct), T.annualObs, T.annualExp, 1.8);
+  }
 
-  /* ---- event labels (inside clip) ---- */
-  function evLabel(t, label, color) {
+  // --- Event labels ---
+  ctx.font = "9px system-ui";
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function eventLabel(h, label, color) {
+    const t = blockToTime(h);
     if (t < view.tMin || t > view.tMax) return;
-    ctx.save(); ctx.translate(xP(t)-2, MG.top+PH-4); ctx.rotate(-Math.PI/2);
-    ctx.textAlign="left"; ctx.fillStyle=color;
-    ctx.font = isNarrow ? "8px system-ui" : "9.5px system-ui";
-    ctx.fillText(label,0,0); ctx.restore();
+    const d = new Date(t);
+    ctx.fillStyle = color;
+    ctx.save(); ctx.translate(xP(t)-2, MG.top+PH-4); ctx.rotate(-Math.PI/2); ctx.textAlign = "left";
+    ctx.fillText(label + " — " + mo[d.getUTCMonth()] + " " + d.getUTCFullYear(), 0, 0);
+    ctx.restore();
   }
-  if (isNarrow) {
-    evLabel(TIME_ANCHORS[1].time, "Blossom", T.blossomLabel);
-    evLabel(TIME_ANCHORS[2].time, "Halving 1", T.halvLabel);
-    evLabel(TIME_ANCHORS[3].time, "Halving 2", T.halvLabel);
-    evLabel(writtenTime, "Written", T.writtenLabel);
-  } else {
-    evLabel(TIME_ANCHORS[1].time, "Blossom — Dec 2019", T.blossomLabel);
-    evLabel(TIME_ANCHORS[2].time, "Halving 1 — Nov 2020", T.halvLabel);
-    evLabel(TIME_ANCHORS[3].time, "Halving 2 — Nov 2024", T.halvLabel);
-    evLabel(writtenTime, `Simulator written — block ${WRITTEN_HEIGHT.toLocaleString()} (${fmtDate(writtenTime)})`, T.writtenLabel);
+  eventLabel(BLOSSOM_ACTIVATION_HEIGHT, "Blossom", T.eventObs);
+  for (const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax)) + 100_000)) {
+    const idx = Math.round((hh - 1_046_400) / 1_680_000) + 1;
+    eventLabel(hh, "Halving " + idx, T.eventHalv);
   }
-
-  ctx.restore(); /* end clip */
-
-  /* ---- left axis: Supply ---- */
-  ctx.fillStyle = T.supplyObs;
-  ctx.font = isNarrow ? "9px system-ui" : "11px system-ui";
-  ctx.textAlign = "right";
-  for (let s = 0; s <= ySupMax; s += 3e6)
-    ctx.fillText((s/1e6).toFixed(0)+"M", MG.left - (isNarrow ? 4 : 7), ySP(s)+4);
-
-  if (!isNarrow) {
-    ctx.save(); ctx.translate(16, MG.top+PH/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle=T.supplyAxisLabel; ctx.font="12px system-ui"; ctx.textAlign="center";
-    ctx.fillText("Cumulative Supply (ZEC)",0,0); ctx.restore();
+  // Written label
+  { const t = writtenTime;
+    if (t >= view.tMin && t <= view.tMax) {
+      ctx.fillStyle = T.written; ctx.save();
+      ctx.translate(xP(t)-2, MG.top+PH-4); ctx.rotate(-Math.PI/2); ctx.textAlign = "left";
+      ctx.fillText("Written at", 0, 0); ctx.restore();
+    }
   }
 
-  /* ---- right axis 1: Issuance/day ---- */
-  ctx.fillStyle=T.issObs;
-  ctx.font = isNarrow ? "8px system-ui" : "11px system-ui";
-  ctx.textAlign="left";
-  for (let v=0; v<=yIssDayMax; v+=2000) {
-    const label = isNarrow ? (v >= 1000 ? (v/1000)+"k" : String(v)) : v.toLocaleString();
-    ctx.fillText(label, MG.left+PW + (isNarrow ? 4 : 8), yIP(v)+4);
+  // --- Left axis (Supply) ---
+  if (show.supply) {
+    ctx.fillStyle = T.supplyObs; ctx.font = "11px system-ui"; ctx.textAlign = "right";
+    for (let s = 0; s <= ySupMax; s += 3_000_000)
+      ctx.fillText((s/1e6).toFixed(0) + " M", MG.left-6, ySP(s)+4);
+    ctx.save(); ctx.translate(14, MG.top+PH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = T.supplyObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
+    ctx.fillText("Cumulative Supply (ZEC)", 0, 0); ctx.restore();
   }
 
-  if (!isNarrow) {
-    ctx.save(); ctx.translate(MG.left+PW+52, MG.top+PH/2); ctx.rotate(Math.PI/2);
-    ctx.fillStyle=T.issAxisLabel; ctx.font="11px system-ui"; ctx.textAlign="center";
-    ctx.fillText("Issuance / day (ZEC)",0,0); ctx.restore();
-
-    /* ---- right axis 2: Annualized % (wide only) ---- */
-    ctx.fillStyle=T.annualObs; ctx.font="10px system-ui"; ctx.textAlign="left";
-    for (let p=0; p<=yAnnMax; p+=10) ctx.fillText(p+"%", MG.left+PW+82, yAP(p)+4);
-    ctx.save(); ctx.translate(MG.left+PW+130, MG.top+PH/2); ctx.rotate(Math.PI/2);
-    ctx.fillStyle=T.annAxisLabel; ctx.font="11px system-ui"; ctx.textAlign="center";
-    ctx.fillText("Annualized issuance %",0,0); ctx.restore();
+  // --- Right axis 1 (Issuance/Day) ---
+  if (show.issDay) {
+    ctx.fillStyle = T.issObs; ctx.font = "11px system-ui"; ctx.textAlign = "left";
+    for (let v = 0; v <= yIssDayMax; v += 2_000)
+      ctx.fillText(v.toLocaleString(), MG.left+PW+6, yIP(v)+4);
+    ctx.save(); ctx.translate(CSS_W - (show.annPct && !isNarrow ? 56 : 16), MG.top+PH/2);
+    ctx.rotate(Math.PI/2); ctx.fillStyle = T.issObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
+    ctx.fillText("Issuance per Day (ZEC)", 0, 0); ctx.restore();
   }
 
-  /* ---- x axis ---- */
-  const startYr = new Date(view.tMin).getUTCFullYear();
-  const endYr = new Date(view.tMax).getUTCFullYear();
-  const spanYr = Math.max(1, endYr - startYr);
-  const pixPerYear = PW / Math.max(1, spanYr);
-  let step = 1;
-  if (pixPerYear < 20) step = 10;
-  else if (pixPerYear < 35) step = 5;
-  else if (pixPerYear < 55) step = 2;
+  // --- Right axis 2 (Annual %) ---
+  if (show.annPct && !isNarrow) {
+    ctx.fillStyle = T.annualObs; ctx.font = "10px system-ui"; ctx.textAlign = "left";
+    const xOff = MG.left + PW + (show.issDay ? 52 : 6);
+    for (let p = 0; p <= yAnnMax; p += 5)
+      ctx.fillText(p + "%", xOff, yAP(p)+3);
+    ctx.save(); ctx.translate(CSS_W - 10, MG.top+PH/2);
+    ctx.rotate(Math.PI/2); ctx.fillStyle = T.annualObs; ctx.font = "11px system-ui"; ctx.textAlign = "center";
+    ctx.fillText("Annualized Issuance %", 0, 0); ctx.restore();
+  }
 
-  ctx.fillStyle=T.axisText;
-  ctx.font = isNarrow ? "9px system-ui" : "11px system-ui";
-  ctx.textAlign="center";
-  for (let yr = startYr - (startYr % step); yr <= endYr + step; yr += step) {
-    const t = Date.UTC(yr,0,1);
+  // --- X axis ---
+  ctx.fillStyle = T.muted; ctx.font = "11px system-ui"; ctx.textAlign = "center";
+  const spanYears = (view.tMax - view.tMin) / ONE_YEAR_MS;
+  const yearStep = spanYears > 40 ? 10 : spanYears > 15 ? 5 : spanYears > 6 ? 2 : 1;
+  for (let yr = 2016; yr <= 2100; yr += yearStep) {
+    const t = Date.UTC(yr, 0, 1);
     if (t < view.tMin || t > view.tMax) continue;
-    const xx = xP(t);
-    ctx.strokeStyle=T.axisTickLine; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(xx,MG.top+PH); ctx.lineTo(xx,MG.top+PH+4); ctx.stroke();
-    ctx.fillText(String(yr), xx, MG.top+PH + (isNarrow ? 16 : 22));
+    ctx.fillText(yr, xP(t), MG.top+PH+20);
+    ctx.strokeStyle = T.gridLine; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xP(t), MG.top+PH); ctx.lineTo(xP(t), MG.top+PH+4); ctx.stroke();
   }
-  if (!isNarrow) {
-    ctx.font="12px system-ui"; ctx.fillStyle=T.axisText;
-    ctx.fillText("Date (UTC)", MG.left+PW/2, MG.top+PH+46);
-  }
+  ctx.font = "12px system-ui"; ctx.fillText("Date (UTC)", MG.left+PW/2, MG.top+PH+42);
 
-  /* frame */
-  ctx.strokeStyle=T.frame; ctx.lineWidth=1;
+  // --- Frame ---
+  ctx.strokeStyle = T.frameBorder; ctx.lineWidth = 1;
   ctx.strokeRect(MG.left, MG.top, PW, PH);
 }
 
 /* ==================================================================
+   Interaction: pan/zoom
+   ================================================================== */
+const canvas = document.getElementById("chart");
+const tooltip = document.getElementById("tooltip");
+
+let dragging = false, dragStartX = 0, dragStartTMin = 0, dragStartTMax = 0;
+
+canvas.addEventListener("mousedown", e => {
+  dragging = true; dragStartX = e.clientX;
+  dragStartTMin = view.tMin; dragStartTMax = view.tMax;
+  canvas.style.cursor = "grabbing";
+});
+window.addEventListener("mousemove", e => {
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const dx = e.clientX - dragStartX;
+  const pxPerMs = (dragStartTMax - dragStartTMin) / rect.width;
+  view.tMin = dragStartTMin - dx * pxPerMs;
+  view.tMax = dragStartTMax - dx * pxPerMs;
+  clampView(); requestDraw(); requestComputeForView();
+});
+window.addEventListener("mouseup", () => {
+  dragging = false; canvas.style.cursor = "crosshair";
+});
+
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const frac = (e.clientX - rect.left) / rect.width;
+
+  if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 50 && Math.abs(e.deltaX) < 5) {
+    // Zoom
+    const zf = Math.pow(1.002, e.deltaY);
+    const span = view.tMax - view.tMin;
+    const pivot = view.tMin + frac * span;
+    view.tMin = pivot - (pivot - view.tMin) * zf;
+    view.tMax = pivot + (view.tMax - pivot) * zf;
+  } else {
+    // Pan
+    const span = view.tMax - view.tMin;
+    const shift = (e.deltaX || e.deltaY) * span * 0.001;
+    view.tMin += shift; view.tMax += shift;
+  }
+  clampView(); requestDraw(); requestComputeForView();
+}, { passive: false });
+
+canvas.addEventListener("dblclick", () => resetView());
+
+// Touch support
+let lastTouchDist = 0, lastTouchMid = 0;
+canvas.addEventListener("touchstart", e => {
+  if (e.touches.length === 1) {
+    dragging = true; dragStartX = e.touches[0].clientX;
+    dragStartTMin = view.tMin; dragStartTMax = view.tMax;
+  } else if (e.touches.length === 2) {
+    dragging = false;
+    lastTouchDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+    lastTouchMid = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+  }
+}, { passive: true });
+canvas.addEventListener("touchmove", e => {
+  if (e.touches.length === 1 && dragging) {
+    const dx = e.touches[0].clientX - dragStartX;
+    const rect = canvas.getBoundingClientRect();
+    const pxPerMs = (dragStartTMax - dragStartTMin) / rect.width;
+    view.tMin = dragStartTMin - dx * pxPerMs;
+    view.tMax = dragStartTMax - dx * pxPerMs;
+    clampView(); requestDraw(); requestComputeForView();
+  } else if (e.touches.length === 2) {
+    const dist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+    const mid = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    if (lastTouchDist > 0) {
+      const zf = lastTouchDist / dist;
+      const rect = canvas.getBoundingClientRect();
+      const frac = (mid - rect.left) / rect.width;
+      const span = view.tMax - view.tMin;
+      const pivot = view.tMin + frac * span;
+      view.tMin = pivot - (pivot - view.tMin) * zf;
+      view.tMax = pivot + (view.tMax - pivot) * zf;
+      clampView(); requestDraw(); requestComputeForView();
+    }
+    lastTouchDist = dist; lastTouchMid = mid;
+  }
+}, { passive: true });
+canvas.addEventListener("touchend", () => { dragging = false; lastTouchDist = 0; });
+
+canvas.style.cursor = "crosshair";
+
+/* ==================================================================
    Tooltip
    ================================================================== */
-canvas.addEventListener("mousemove", e => {
-  if (data.length < 2 || !layout.PW) { tooltip.style.display="none"; return; }
+canvas.addEventListener("mousemove", function(e) {
+  if (dragging || data.length < 2) { tooltip.style.display = "none"; return; }
   const rect = canvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) * (layout.CSS_W / rect.width);
-  const my = (e.clientY - rect.top)  * (layout.CSS_H / rect.height);
-  const {MG,PW,PH} = layout;
-  if (mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH) { tooltip.style.display="none"; return; }
+  const CSS_W = parseInt(canvas.style.width);
+  const CSS_H = parseInt(canvas.style.height);
+  const isNarrow = window.innerWidth < 600;
+  const MG = { top:28, right: (isNarrow ? 58 : (show.annPct ? 110 : 80)), bottom:52, left: isNarrow ? 48 : 64 };
+  const PW = CSS_W - MG.left - MG.right;
+  const PH = CSS_H - MG.top - MG.bottom;
 
-  const mouseTime = view.tMin + ((mx-MG.left)/PW) * (view.tMax-view.tMin);
-  let lo=0, hi=data.length-1;
-  while (lo<hi) { const mid=(lo+hi)>>1; data[mid].time<mouseTime ? lo=mid+1 : hi=mid; }
-  if (lo>0 && Math.abs(data[lo-1].time-mouseTime)<Math.abs(data[lo].time-mouseTime)) lo--;
+  const mx = (e.clientX - rect.left) * (CSS_W / rect.width);
+  const my = (e.clientY - rect.top) * (CSS_H / rect.height);
+  if (mx < MG.left || mx > MG.left+PW || my < MG.top || my > MG.top+PH) {
+    tooltip.style.display = "none"; return;
+  }
+
+  const mouseTime = view.tMin + ((mx - MG.left) / PW) * (view.tMax - view.tMin);
+  let lo = 0, hi = data.length - 1;
+  while (lo < hi) { const mid = (lo+hi)>>1; data[mid].time < mouseTime ? lo=mid+1 : hi=mid; }
+  if (lo > 0 && Math.abs(data[lo-1].time-mouseTime) < Math.abs(data[lo].time-mouseTime)) lo--;
   const d = data[lo];
 
   const isExp = d.h > WRITTEN_HEIGHT;
@@ -836,24 +786,31 @@ canvas.addEventListener("mousemove", e => {
   const annVal = isFinite(d.annualPct) ? d.annualPct.toFixed(2)+"%" : "—";
   const annColor = d.annualPctIsExpected ? "var(--annualExp)" : "var(--annualObs)";
 
-  tooltip.innerHTML =
-    `<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
-    `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`+
-    `<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> `+
-    `${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC `+
-    `<span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`+
-    `<div><span style="color:var(--issObs)">Issuance:</span> `+
-    `${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div>`+
-    `<div class="tt-muted">Per block: ${d.issBlock.toFixed(8)} ZEC</div>`+
-    `<div><span style="color:${annColor}">Annual issuance:</span> ${annVal} `+
-    `<span class="tt-muted">(${annStatus})</span></div>`;
+  let html = `<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>` +
+    `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-  tooltip.style.display="block";
+  if (show.supply) {
+    html += `<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ` +
+      `${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC ` +
+      `<span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
+  }
+  if (show.issDay) {
+    html += `<div><span style="color:var(--issObs)">Issuance:</span> ` +
+      `${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div>` +
+      `<div class="tt-muted">Per block: ${d.issBlock.toFixed(8)} ZEC</div>`;
+  }
+  if (show.annPct) {
+    html += `<div><span style="color:${annColor}">Annual issuance:</span> ${annVal} ` +
+      `<span class="tt-muted">(${annStatus})</span></div>`;
+  }
+
+  tooltip.innerHTML = html;
+  tooltip.style.display = "block";
   const tipW = Math.min(380, window.innerWidth - 20);
-  tooltip.style.left = Math.min(e.clientX+14, window.innerWidth - tipW - 10)+"px";
-  tooltip.style.top  = Math.max(10, e.clientY-130)+"px";
+  tooltip.style.left = Math.min(e.clientX+14, window.innerWidth - tipW - 10) + "px";
+  tooltip.style.top = Math.max(10, e.clientY - 130) + "px";
 });
-canvas.addEventListener("mouseleave", () => { tooltip.style.display="none"; });
+canvas.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
 
 /* ==================================================================
    Buttons
@@ -883,6 +840,16 @@ document.getElementById("btnFuture").addEventListener("click", () => {
 });
 
 document.getElementById("btnTheme").addEventListener("click", () => toggleTheme());
+
+/* Legend toggles */
+document.querySelectorAll('.ltoggle').forEach(el => {
+  el.addEventListener('click', () => {
+    const key = el.dataset.series;
+    show[key] = !show[key];
+    el.classList.toggle('active', show[key]);
+    requestDraw();
+  });
+});
 
 /* ==================================================================
    Boot
