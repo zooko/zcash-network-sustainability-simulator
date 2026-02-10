@@ -9,307 +9,235 @@
   body { background: #0f172a; color: #e2e8f0; font-family: system-ui, sans-serif;
          display: flex; flex-direction: column; align-items: center; padding: 24px; }
   h1 { font-size: 1.4rem; color: #f59e0b; margin-bottom: 4px; }
-  .sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; text-align: center; }
+  .sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 16px; }
   .sub a { color: #38bdf8; }
-  #progress-box { margin-bottom: 16px; text-align: center; }
-  #progress-bar-outer { width: 600px; max-width: 90vw; height: 18px; background: #1e293b;
-    border-radius: 9px; overflow: hidden; margin: 8px auto; }
-  #progress-bar-inner { width: 0%; height: 100%; background: #f59e0b;
-    transition: width 0.1s; }
-  #progress-text { font-size: 0.8rem; color: #94a3b8; }
   canvas { border-radius: 8px; background: #0f172a; }
-  .legend { display: flex; gap: 24px; margin-top: 12px; font-size: 0.82rem;
-    flex-wrap: wrap; justify-content: center; }
+  .legend { display: flex; gap: 24px; margin-top: 12px; font-size: 0.82rem; }
   .legend span { display: flex; align-items: center; gap: 6px; }
   .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  #tooltip { position: fixed; display: none; background: rgba(15,23,42,0.96); color: #e2e8f0;
+  #tooltip { position: fixed; display: none; background: #1e293b; color: #e2e8f0;
     border: 1px solid #334155; border-radius: 6px; padding: 8px 12px;
-    font-size: 0.78rem; pointer-events: none; z-index: 10; line-height: 1.6;
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; white-space: nowrap; }
-  .info { margin-top: 16px; font-size: 0.75rem; color: #4b5563;
-    text-align: center; max-width: 800px; line-height: 1.6; }
-  .info a { color: #60a5fa; text-decoration: none; }
-  .info code { color: #6ee7b7; }
+    font-size: 0.78rem; pointer-events: none; z-index: 10; line-height: 1.5; }
 </style>
 </head>
 <body>
 
 <h1>Zcash Supply &amp; Issuance</h1>
-<p class="sub">
-  Brute-force: calls
-  <a href="https://github.com/zooko/zcash-network-sustainability-simulator/blob/c520a60/issuance_per_block.js"
-     target="_blank">issuance_per_block()</a>
-  for every block 0 → 3,000,000
-</p>
-
-<div id="progress-box">
-  <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
-  <div id="progress-text">Initializing…</div>
-</div>
+<p class="sub">Calls <a href="https://github.com/zooko/zcash-network-sustainability-simulator/blob/c520a60/issuance_per_block.js"
+   target="_blank">issuance_per_block()</a> for every block 0 → 3,000,000</p>
 
 <canvas id="chart" width="900" height="500"></canvas>
 
 <div class="legend">
-  <span><span class="dot" style="background:#f59e0b"></span> Cumulative Supply (ZEC) — left axis</span>
-  <span><span class="dot" style="background:#22d3ee"></span> Issuance per Day (ZEC) — right axis</span>
+  <span><span class="dot" style="background:#f59e0b"></span> Cumulative Supply (left axis)</span>
+  <span><span class="dot" style="background:#22d3ee"></span> Issuance per Day (right axis)</span>
   <span><span class="dot" style="background:rgba(239,68,68,0.5)"></span> Halvings</span>
 </div>
 
 <div id="tooltip"></div>
 
-<div class="info">
-  Time axis interpolated from on-chain timestamps at genesis, Blossom, 1st &amp; 2nd halvings.
-  <code>issuance_per_block()</code> is the
-  <a href="https://github.com/zooko/zcash-network-sustainability-simulator/blob/c520a60/issuance_per_block.js">exact verified copy</a>,
-  not modified in any way. Issuance per day = per-block issuance × observed blocks/day for that epoch.
-</div>
-
 <script>
-// ============================================================
-// TIME ANCHOR POINTS — observed on-chain block timestamps
-//
-// Sources:
-//   Block 0:         https://3xpl.com/zcash/block/0
-//   Block 653,600:   https://3xpl.com/zcash/block/653600
-//   Block 1,046,400: https://3xpl.com/zcash/block/1046400
-//   Block 2,726,400: https://3xpl.com/zcash/block/2726400
-//
-// Note: Date.UTC months are 0-indexed (9 = October, 10 = November, 11 = December)
-// ============================================================
+// ================================================================
+// Time anchors — on-chain timestamps at known block heights
+// ================================================================
 const TIME_ANCHORS = [
-    { block: 0,         time: Date.UTC(2016,  9, 28,  7, 56), label: 'Genesis'      },
-    { block: 653_600,   time: Date.UTC(2019, 11, 11, 21, 50), label: 'Blossom'      },
-    { block: 1_046_400, time: Date.UTC(2020, 10, 18, 12, 34), label: '1st Halving'  },
-    { block: 2_726_400, time: Date.UTC(2024, 10, 23, 11,  2), label: '2nd Halving'  },
+    { h: 0,         time: Date.UTC(2016, 9, 28, 7, 56),  label: 'Genesis' },
+    { h: 653_600,   time: Date.UTC(2019, 11, 11, 21, 50), label: 'Blossom' },
+    { h: 1_046_400, time: Date.UTC(2020, 10, 18, 12, 34), label: 'Halving 1' },
+    { h: 2_726_400, time: Date.UTC(2024, 10, 23, 1, 51),  label: 'Halving 2' },
 ];
 
-// Observed seconds-per-block in each segment between consecutive anchors
-const SEG_RATES = [];
-for (let i = 1; i < TIME_ANCHORS.length; i++) {
-    const dtMs = TIME_ANCHORS[i].time  - TIME_ANCHORS[i - 1].time;
-    const dBlk = TIME_ANCHORS[i].block - TIME_ANCHORS[i - 1].block;
-    SEG_RATES.push((dtMs / 1000) / dBlk);  // seconds per block
+// Precompute segments in ascending order
+const SEGMENTS = [];
+for (let i = 0; i < TIME_ANCHORS.length - 1; i++) {
+  const a = TIME_ANCHORS[i];
+  const b = TIME_ANCHORS[i + 1];
+  const dtSec = (b.time - a.time) / 1000;
+  const dh = b.h - a.h;
+  SEGMENTS.push({
+    startH: a.h,
+    endH: b.h,
+    startTime: a.time,
+    secPerBlock: dtSec / dh,
+  });
 }
 
-// Which anchor segment a block height falls in (clamped to last segment for extrapolation)
-function segmentIndex(blockheight) {
-    let seg = 0;
-    for (let i = 1; i < TIME_ANCHORS.length; i++)
-        if (blockheight >= TIME_ANCHORS[i].block) seg = i;
-    return Math.min(seg, SEG_RATES.length - 1);
+function segmentForHeight(h) {
+  // Find the segment whose [startH, endH] contains h.
+  for (let i = 0; i < SEGMENTS.length; i++) {
+    const s = SEGMENTS[i];
+    if (h <= s.endH) return s;
+  }
+  // After the last anchor: extrapolate using the last segment rate.
+  return SEGMENTS[SEGMENTS.length - 1];
 }
 
-function secsPerBlock(blockheight) {
-    return SEG_RATES[segmentIndex(blockheight)];
+function blockToTime(h) {
+  const s = segmentForHeight(h);
+  return s.startTime + (h - s.startH) * s.secPerBlock * 1000;
 }
 
-// Linear-interpolated timestamp for any block height
-function blockToTime(blockheight) {
-    const i = segmentIndex(blockheight);
-    const anchor = TIME_ANCHORS[i];
-    return anchor.time + (blockheight - anchor.block) * SEG_RATES[i] * 1000;
+function secsPerBlock(h) {
+  return segmentForHeight(h).secPerBlock;
 }
 
 function fmtDate(ms) {
     const d = new Date(ms);
-    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return mo[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear()
-         + '  ' + String(d.getUTCHours()).padStart(2, '0')
-         + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ' UTC';
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
+    return mo[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
 }
 
-// ============================================================
-// EXACT copy of issuance_per_block.js — NOT modified in any way.
-// https://github.com/zooko/zcash-network-sustainability-simulator/
-//   blob/c520a6030254e9c91abbe2d2670f8d852f206414/issuance_per_block.js
-// ============================================================
+// ================================================================
+// issuance_per_block() — unchanged from repo
+// ================================================================
 function issuance_per_block(blockheight) {
-    // === Constants (with source references) ===
-
-    // amount.h:        static const CAmount COIN = 100000000;
-    // params.cpp:      CAmount nSubsidy = 12.5 * COIN;
     const MAX_BLOCK_SUBSIDY = 1250000000n;
-
-    // chainparams.cpp: consensus.nSubsidySlowStartInterval = 20000;
     const SLOW_START_INTERVAL = 20000;
-    // params.h:        SubsidySlowStartShift() { return nSubsidySlowStartInterval / 2; }
     const SLOW_START_SHIFT = 10000;
-    // theoretical.py:  SlowStartRate = exact_div(MaxBlockSubsidy, SlowStartInterval)
-    // params.h comment: "Needs to evenly divide MAX_SUBSIDY to avoid rounding errors"
     const SLOW_START_RATE = 62500n;
-
-    // chainparams.cpp: vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 653600;
     const BLOSSOM_ACTIVATION_HEIGHT = 653600;
-    // params.h:        PRE_BLOSSOM_POW_TARGET_SPACING = 150; POST = 75; RATIO = 150/75
     const BLOSSOM_POW_TARGET_SPACING_RATIO = 2n;
-
-    // params.h:        PRE_BLOSSOM_HALVING_INTERVAL = 840000
     const PRE_BLOSSOM_HALVING_INTERVAL = 840000;
-    // params.h macro:  POST_BLOSSOM_HALVING_INTERVAL = PRE * RATIO
     const POST_BLOSSOM_HALVING_INTERVAL = 1680000n;
-
     const h = BigInt(blockheight);
-
-    // === Slow start (params.cpp GetBlockSubsidy, theoretical.py BlockSubsidy) ===
-
-    // C++: nSubsidy /= nSubsidySlowStartInterval; nSubsidy *= nHeight;
-    // Py:  SlowStartRate * height
-    if (blockheight < SLOW_START_SHIFT) {
-        return SLOW_START_RATE * h;
-    }
-
-    // C++: nSubsidy /= nSubsidySlowStartInterval; nSubsidy *= (nHeight+1);
-    // Py:  SlowStartRate * (height + 1)
-    if (blockheight < SLOW_START_INTERVAL) {
-        return SLOW_START_RATE * (h + 1n);
-    }
-
-    // === Halving index (params.cpp Halving(), theoretical.py Halving()) ===
-
+    if (blockheight < SLOW_START_SHIFT) return SLOW_START_RATE * h;
+    if (blockheight < SLOW_START_INTERVAL) return SLOW_START_RATE * (h + 1n);
     let halvings;
     if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT) {
-        // C++: scaledHalvings = (blossomActivationHeight - SubsidySlowStartShift())
-        //        * BLOSSOM_POW_TARGET_SPACING_RATIO + (nHeight - blossomActivationHeight);
-        //      return scaledHalvings / nPostBlossomSubsidyHalvingInterval;
-        // Py:  div2(BlossomActivationHeight - SlowStartShift, PreBlossomHalvingInterval,
-        //           height - BlossomActivationHeight, PostBlossomHalvingInterval)
         const scaledHalvings =
             BigInt(BLOSSOM_ACTIVATION_HEIGHT - SLOW_START_SHIFT) * BLOSSOM_POW_TARGET_SPACING_RATIO
             + (h - BigInt(BLOSSOM_ACTIVATION_HEIGHT));
         halvings = Number(scaledHalvings / POST_BLOSSOM_HALVING_INTERVAL);
     } else {
-        // C++: (nHeight - SubsidySlowStartShift()) / nPreBlossomSubsidyHalvingInterval
-        // Py:  (height - SlowStartShift) // PreBlossomHalvingInterval
         halvings = Math.floor((blockheight - SLOW_START_SHIFT) / PRE_BLOSSOM_HALVING_INTERVAL);
     }
-
-    // C++: if (halvings >= 64) return 0;
     if (halvings >= 64) return 0n;
-
-    // === Block subsidy (params.cpp GetBlockSubsidy, theoretical.py BlockSubsidy) ===
-
-    if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT) {
-        // C++: (nSubsidy / BLOSSOM_POW_TARGET_SPACING_RATIO) >> halvings
-        // Py:  MaxBlockSubsidy // (BlossomPoWTargetSpacingRatio << Halving(height))
+    if (blockheight >= BLOSSOM_ACTIVATION_HEIGHT)
         return (MAX_BLOCK_SUBSIDY / BLOSSOM_POW_TARGET_SPACING_RATIO) >> BigInt(halvings);
-    } else {
-        // C++: nSubsidy >> halvings
-        // Py:  MaxBlockSubsidy // (1 << Halving(height))
+    else
         return MAX_BLOCK_SUBSIDY >> BigInt(halvings);
-    }
 }
-// ============================================================
-// END exact copy
-// ============================================================
 
-const ZATOSHI = 1e8;
-const MAX_HEIGHT = 3_000_000;
-const SAMPLE_EVERY = 1000;
+// ================================================================
+// Brute-force computation with progressive rendering
+// ================================================================
+const MAX_HEIGHT   = 3_000_000;
+const SAMPLE_EVERY = 1_000;
+const BATCH        = 50_000;
+const ZATOSHI      = 100_000_000;
 
-// ---------- brute-force computation ----------
+const data   = [];
+const layout = {};
+
 async function compute() {
-    const bar = document.getElementById('progress-bar-inner');
-    const txt = document.getElementById('progress-text');
-    const data = [];
-    let cumZat = 0n;
-    const BATCH = 50_000;
+    let cumulative = 0n;
 
-    for (let start = 0; start <= MAX_HEIGHT; start += BATCH) {
-        const end = Math.min(start + BATCH, MAX_HEIGHT + 1);
-        for (let b = start; b < end; b++) {
-            const iss = issuance_per_block(b);
-            cumZat += iss;
-            if (b % SAMPLE_EVERY === 0 || b === MAX_HEIGHT) {
-                const issZec = Number(iss) / ZATOSHI;
-                const spb = secsPerBlock(b);
-                const blocksPerDay = 86400 / spb;
-                data.push({
-                    h: b,
-                    time: blockToTime(b),
-                    supply: Number(cumZat) / ZATOSHI,
-                    issBlock: issZec,
-                    issDay: issZec * blocksPerDay,
-                });
+    for (let h = 0; h <= MAX_HEIGHT; h++) {
+        const iss = issuance_per_block(h);
+        cumulative += iss;
+
+        if (h % SAMPLE_EVERY === 0 || h === MAX_HEIGHT) {
+            const issBlock = Number(iss) / ZATOSHI;
+            const spb = secsPerBlock(h);
+            const time = blockToTime(h);
+            if (data.length && time < data[data.length - 1].time) {
+                throw new Error(`Non-monotonic time at height ${h}: ${new Date(time).toISOString()}`);
             }
+            data.push({
+                h,
+                time:     blockToTime(h),
+                supply:   Number(cumulative) / ZATOSHI,
+                issBlock,
+                issDay:   issBlock * (86400 / spb)
+            });
         }
-        const pct = Math.min(100, (end / (MAX_HEIGHT + 1)) * 100);
-        bar.style.width = pct + '%';
-        txt.textContent = 'Block ' + Math.min(end - 1, MAX_HEIGHT).toLocaleString() +
-            ' / ' + MAX_HEIGHT.toLocaleString() + '  (' + pct.toFixed(0) + '%)';
-        await new Promise(r => setTimeout(r, 0));
+
+        if (h % BATCH === 0 && h > 0) {
+            draw();
+            await new Promise(r => setTimeout(r, 0));
+        }
     }
 
-    bar.style.background = '#22c55e';
-    txt.textContent = 'Done — ' + data.length + ' samples. Drawing…';
-    requestAnimationFrame(() => draw(data));
+    draw();
 }
 
-// ---------- drawing ----------
-function draw(data) {
+// ================================================================
+// Drawing — called repeatedly during computation
+// ================================================================
+function draw() {
+    if (data.length < 2) return;
+
     const canvas = document.getElementById('chart');
     const dpr = window.devicePixelRatio || 1;
-    const CSS_W = Math.min(1100, window.innerWidth - 48);
-    const CSS_H = Math.round(CSS_W * 0.5);
-    canvas.style.width  = CSS_W + 'px';
-    canvas.style.height = CSS_H + 'px';
+    const CSS_W = 900, CSS_H = 500;
     canvas.width  = CSS_W * dpr;
     canvas.height = CSS_H * dpr;
+    canvas.style.width  = CSS_W + 'px';
+    canvas.style.height = CSS_H + 'px';
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const MG = { top: 36, right: 82, bottom: 52, left: 80 };
+    const MG = { top: 32, right: 100, bottom: 52, left: 64 };
     const PW = CSS_W - MG.left - MG.right;
     const PH = CSS_H - MG.top  - MG.bottom;
 
-    const tMin = data[0].time;
-    const tMax = data[data.length - 1].time;
-    const ySupMax    = 21_000_000;
-    const yIssDayMax = 8_000;
-
-    const xP  = t => MG.left + ((t - tMin) / (tMax - tMin)) * PW;
-    const ySP = v => MG.top + PH - (v / ySupMax) * PH;
-    const yIP = v => MG.top + PH - (v / yIssDayMax) * PH;
-
-    // background
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, CSS_W, CSS_H);
 
-    // horizontal grid
+    // fixed axis ranges
+    const tMin = TIME_ANCHORS[0].time;
+    const tMax = blockToTime(MAX_HEIGHT);
+    const ySupMax   = 22_000_000;
+    const yIssDayMax = 8_000;
+
+    const xP  = t => MG.left + ((t - tMin) / (tMax - tMin)) * PW;
+    const ySP = s => MG.top + PH - (s / ySupMax) * PH;
+    const yIP = v => MG.top + PH - (v / yIssDayMax) * PH;
+
+    // save layout for tooltip
+    Object.assign(layout, { CSS_W, CSS_H, MG, PW, PH, tMin, tMax,
+                            ySupMax, yIssDayMax, xP, ySP, yIP });
+
+    // ── grid ──
     ctx.strokeStyle = 'rgba(148,163,184,0.08)'; ctx.lineWidth = 1;
     for (let s = 0; s <= ySupMax; s += 3_000_000) {
         ctx.beginPath(); ctx.moveTo(MG.left, ySP(s));
         ctx.lineTo(MG.left + PW, ySP(s)); ctx.stroke();
     }
 
-    // 21 M cap dashed line
-    ctx.save(); ctx.strokeStyle = '#475569'; ctx.setLineDash([6, 5]);
-    ctx.beginPath(); ctx.moveTo(MG.left, ySP(ySupMax));
-    ctx.lineTo(MG.left + PW, ySP(ySupMax)); ctx.stroke(); ctx.restore();
-    ctx.fillStyle = '#64748b'; ctx.font = '10px system-ui'; ctx.textAlign = 'left';
-    ctx.fillText('21 M cap', MG.left + 4, ySP(ySupMax) - 4);
+    // ── 21M cap ──
+    ctx.setLineDash([6, 4]); ctx.strokeStyle = 'rgba(245,158,11,0.25)';
+    ctx.beginPath(); ctx.moveTo(MG.left, ySP(21_000_000));
+    ctx.lineTo(MG.left + PW, ySP(21_000_000)); ctx.stroke();
+    ctx.fillStyle = 'rgba(245,158,11,0.3)'; ctx.font = '10px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('21 M cap', MG.left + 4, ySP(21_000_000) - 4);
+    ctx.setLineDash([]);
 
-    // event vertical lines
-    ctx.save(); ctx.setLineDash([3, 4]);
+    // ── event verticals ──
+    ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
     for (let i = 1; i < TIME_ANCHORS.length; i++) {
         const a = TIME_ANCHORS[i];
-        const ax = xP(a.time);
-        ctx.strokeStyle = i === 1 ? 'rgba(96,165,250,0.25)' : 'rgba(239,68,68,0.22)';
-        ctx.beginPath(); ctx.moveTo(ax, MG.top);
-        ctx.lineTo(ax, MG.top + PH); ctx.stroke();
+        ctx.strokeStyle = i === 1 ? 'rgba(96,165,250,0.35)' : 'rgba(239,68,68,0.35)';
+        ctx.beginPath(); ctx.moveTo(xP(a.time), MG.top);
+        ctx.lineTo(xP(a.time), MG.top + PH); ctx.stroke();
     }
-    ctx.restore();
+    ctx.setLineDash([]);
 
-    // supply area fill
-    const grad = ctx.createLinearGradient(0, MG.top, 0, MG.top + PH);
-    grad.addColorStop(0, 'rgba(245,158,11,0.25)');
-    grad.addColorStop(1, 'rgba(245,158,11,0.01)');
+    // ── supply fill ──
     ctx.beginPath();
-    ctx.moveTo(xP(data[0].time), MG.top + PH);
+    ctx.moveTo(xP(data[0].time), ySP(data[0].supply));
     for (const d of data) ctx.lineTo(xP(d.time), ySP(d.supply));
-    ctx.lineTo(xP(data[data.length - 1].time), MG.top + PH);
-    ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.lineTo(xP(data[data.length - 1].time), ySP(0));
+    ctx.lineTo(xP(data[0].time), ySP(0));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, MG.top, 0, MG.top + PH);
+    grad.addColorStop(0, 'rgba(245,158,11,0.18)');
+    grad.addColorStop(1, 'rgba(245,158,11,0.01)');
+    ctx.fillStyle = grad; ctx.fill();
 
-    // supply line
+    // ── supply line ──
     ctx.beginPath();
     for (let i = 0; i < data.length; i++) {
         const px = xP(data[i].time), py = ySP(data[i].supply);
@@ -317,7 +245,7 @@ function draw(data) {
     }
     ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke();
 
-    // issuance-per-day line
+    // ── issuance-per-day line ──
     ctx.beginPath();
     for (let i = 0; i < data.length; i++) {
         const px = xP(data[i].time), py = yIP(data[i].issDay);
@@ -325,7 +253,7 @@ function draw(data) {
     }
     ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.stroke();
 
-    // left axis labels (Supply)
+    // ── left axis (Supply) ──
     ctx.fillStyle = '#f59e0b'; ctx.font = '11px system-ui'; ctx.textAlign = 'right';
     for (let s = 0; s <= ySupMax; s += 3_000_000)
         ctx.fillText((s / 1e6).toFixed(0) + ' M', MG.left - 6, ySP(s) + 4);
@@ -333,17 +261,19 @@ function draw(data) {
     ctx.fillStyle = '#d97706'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
     ctx.fillText('Cumulative Supply (ZEC)', 0, 0); ctx.restore();
 
-    // right axis labels (Issuance per Day)
+    // ── right axis (Issuance / Day) ──
     ctx.fillStyle = '#22d3ee'; ctx.font = '11px system-ui'; ctx.textAlign = 'left';
     for (let v = 0; v <= yIssDayMax; v += 2_000)
         ctx.fillText(v.toLocaleString(), MG.left + PW + 6, yIP(v) + 4);
-    ctx.save(); ctx.translate(CSS_W - 6, MG.top + PH / 2); ctx.rotate(Math.PI / 2);
+    ctx.save();
+    ctx.translate(CSS_W - 16, MG.top + PH / 2);
+    ctx.rotate(Math.PI / 2);
     ctx.fillStyle = '#0891b2'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
     ctx.fillText('Issuance per Day (ZEC)', 0, 0); ctx.restore();
 
-    // x axis — year ticks
+    // ── x axis — year ticks ──
     ctx.fillStyle = '#94a3b8'; ctx.font = '11px system-ui'; ctx.textAlign = 'center';
-    for (let yr = 2017; yr <= 2026; yr++) {
+    for (let yr = 2017; yr <= 2050; yr++) {
         const t = Date.UTC(yr, 0, 1);
         if (t < tMin || t > tMax) continue;
         const xx = xP(t);
@@ -355,9 +285,10 @@ function draw(data) {
     ctx.font = '12px system-ui';
     ctx.fillText('Date (UTC)', MG.left + PW / 2, MG.top + PH + 42);
 
-    // event labels (rotated)
+    // ── event labels (rotated) ──
     ctx.font = '9px system-ui';
-    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
     for (let i = 1; i < TIME_ANCHORS.length; i++) {
         const a = TIME_ANCHORS[i];
         const ax = xP(a.time);
@@ -365,55 +296,69 @@ function draw(data) {
         ctx.fillStyle = i === 1 ? 'rgba(96,165,250,0.55)' : 'rgba(239,68,68,0.5)';
         ctx.save(); ctx.translate(ax - 2, MG.top + PH - 4);
         ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left';
-        ctx.fillText(a.label + ' — ' + mo[d.getUTCMonth()] + ' ' + d.getUTCFullYear(), 0, 0);
+        ctx.fillText(a.label + ' — ' + mo[d.getUTCMonth()] + ' ' +
+                     d.getUTCFullYear(), 0, 0);
         ctx.restore();
     }
 
-    // frame
+    // ── frame ──
     ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
     ctx.strokeRect(MG.left, MG.top, PW, PH);
+}
 
-    // ---------- tooltip ----------
+// ================================================================
+// Tooltip — registered once
+// ================================================================
+(function setupInteraction() {
+    const canvas  = document.getElementById('chart');
     const tooltip = document.getElementById('tooltip');
 
-    canvas.addEventListener('mousemove', function (e) {
+    canvas.addEventListener('mousemove', function(e) {
+        if (data.length < 2 || !layout.CSS_W) {
+            tooltip.style.display = 'none'; return;
+        }
+        const { CSS_W, CSS_H, MG, PW, PH, tMin, tMax } = layout;
         const rect = canvas.getBoundingClientRect();
         const mx = (e.clientX - rect.left) * (CSS_W / rect.width);
         const my = (e.clientY - rect.top)  * (CSS_H / rect.height);
-        if (mx < MG.left || mx > MG.left + PW || my < MG.top || my > MG.top + PH) {
+
+        if (mx < MG.left || mx > MG.left + PW ||
+            my < MG.top  || my > MG.top  + PH) {
             tooltip.style.display = 'none'; return;
         }
 
         const mouseTime = tMin + ((mx - MG.left) / PW) * (tMax - tMin);
 
-        // binary search for nearest sample
         let lo = 0, hi = data.length - 1;
         while (lo < hi) {
             const mid = (lo + hi) >> 1;
-            if (data[mid].time < mouseTime) lo = mid + 1; else hi = mid;
+            data[mid].time < mouseTime ? lo = mid + 1 : hi = mid;
         }
-        if (lo > 0 && Math.abs(data[lo - 1].time - mouseTime) < Math.abs(data[lo].time - mouseTime))
-            lo--;
+        if (lo > 0 &&
+            Math.abs(data[lo-1].time - mouseTime) <
+            Math.abs(data[lo].time   - mouseTime)) lo--;
         const d = data[lo];
 
         tooltip.innerHTML =
             '<b>Block ' + d.h.toLocaleString() + '</b><br>' +
             fmtDate(d.time) + '<br>' +
             '<span style="color:#f59e0b">Supply:</span> ' +
-            d.supply.toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+            d.supply.toLocaleString(undefined,{maximumFractionDigits:2}) +
             ' ZEC (' + (d.supply / 21_000_000 * 100).toFixed(2) + '%)<br>' +
             '<span style="color:#22d3ee">Issuance:</span> ' +
-            d.issDay.toLocaleString(undefined, { maximumFractionDigits: 1 }) +
+            d.issDay.toLocaleString(undefined,{maximumFractionDigits:1}) +
             ' ZEC/day<br>' +
             '<span style="color:#94a3b8">Per block:</span> ' +
             d.issBlock.toFixed(8) + ' ZEC';
         tooltip.style.display = 'block';
-        tooltip.style.left = Math.min(e.clientX + 16, window.innerWidth - 320) + 'px';
-        tooltip.style.top  = (e.clientY - 100) + 'px';
+        tooltip.style.left =
+            Math.min(e.clientX + 16, window.innerWidth - 320) + 'px';
+        tooltip.style.top = (e.clientY - 100) + 'px';
     });
 
-    canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
-}
+    canvas.addEventListener('mouseleave',
+        () => { tooltip.style.display = 'none'; });
+})();
 
 compute();
 </script>
