@@ -297,13 +297,6 @@ let cumulativeBig = 0n;
 let targetHeightWanted = 0;
 let computing = false;
 
-/* Brute-force sum of issuance over a height range */
-function sumIssuanceRange(hLo, hHi) {
-  let s = 0n;
-  for (let h = hLo; h < hHi; h++) s += issuance_per_block(h);
-  return s;
-}
-
 /* Efficient: jump between "change points" where issuance changes */
 function nextChangeHeight(h) {
   if (h < 10000) return 10000;
@@ -345,7 +338,7 @@ function pushPoint(h, cumBig) {
 
   /* Annual percentage issuance — use heightAfterDuration to properly
      walk across time-segment boundaries */
-  let annualPct = 2 ** 32;
+  let annualPct = NaN;
   let annualPctIsExpected = false;
   if (supply > 0 && h >= 20000) {
     const h1yr = Math.floor(heightAfterDuration(h, ONE_YEAR_MS));
@@ -414,15 +407,68 @@ function resetView() {
 }
 
 /* ==================================================================
+   Right margin layout helper
+   ================================================================== */
+function computeRightMargin(isNarrow) {
+  /* Each visible right axis needs space for:
+       - tick labels (~46px)
+       - rotated title (~18px)
+       - gap (~6px)
+     We stack them: issDay first (closest to plot), then annPct.
+     On narrow screens we skip rotated titles and use smaller widths. */
+  if (isNarrow) {
+    // On narrow: just one column of ticks for whichever is visible
+    if (show.issDay || show.annPct) return 52;
+    return 16;
+  }
+  const AXIS_WIDTH = 62; // tick labels + rotated title + gap
+  let count = 0;
+  if (show.issDay) count++;
+  if (show.annPct) count++;
+  if (count === 0) return 20;
+  return 8 + count * AXIS_WIDTH; // 8px base gap from plot edge
+}
+
+/* Returns the x-offset from the right edge of the plot area for each axis's tick labels and title */
+function rightAxisLayout(isNarrow) {
+  /* Returns { issDay: {tickX, titleX} | null, annPct: {tickX, titleX} | null }
+     tickX = x offset from (MG.left + PW) for tick label left edge
+     titleX = x position for rotated title center */
+  const result = { issDay: null, annPct: null };
+  if (isNarrow) {
+    // On narrow, only show tick labels, no rotated titles
+    if (show.issDay) result.issDay = { tickX: 6, titleX: null };
+    else if (show.annPct) result.annPct = { tickX: 6, titleX: null };
+    // If both, issDay wins the tick column on narrow
+    if (show.issDay && show.annPct) {
+      // Can't fit both on narrow — only show issDay ticks
+      result.annPct = null;
+    }
+    return result;
+  }
+  // Wide layout: stack axes left to right
+  let offset = 6; // initial gap from plot edge
+  if (show.issDay) {
+    result.issDay = { tickX: offset, titleX: offset + 44 };
+    offset += 62;
+  }
+  if (show.annPct) {
+    result.annPct = { tickX: offset, titleX: offset + 44 };
+    offset += 62;
+  }
+  return result;
+}
+
+/* ==================================================================
    Drawing
    ================================================================== */
 let drawRAF = null;
+const layout = {};
 function requestDraw() { if (!drawRAF) drawRAF = requestAnimationFrame(() => { drawRAF = null; draw(); }); }
 
 /* Halving heights (post-Blossom) */
 function halvingHeights(maxH) {
   const res = [];
-  // Halving 1 at 1_046_400, then every 1_680_000 blocks
   let h = 1_046_400;
   while (h <= maxH) { res.push(h); h += 1_680_000; }
   return res;
@@ -440,9 +486,13 @@ function draw() {
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
 
-  const MG = { top:28, right: (isNarrow ? 58 : (show.annPct ? 110 : 80)), bottom:52, left: isNarrow ? 48 : 64 };
+  const rightMar = computeRightMargin(isNarrow);
+  const MG = { top:28, right: rightMar, bottom:52, left: isNarrow ? 48 : 64 };
   const PW = CSS_W - MG.left - MG.right;
   const PH = CSS_H - MG.top - MG.bottom;
+  Object.assign(layout, { CSS_W, CSS_H, MG, PW, PH });
+
+  const axLayout = rightAxisLayout(isNarrow);
 
   // Read CSS vars for current theme
   const T = {
@@ -528,6 +578,7 @@ function draw() {
     for (const p of pts) {
       if (p.h > splitH) break;
       const px = xP(p.time), py = yFn(p);
+      if (!isFinite(py)) continue;
       if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
     }
     ctx.stroke();
@@ -536,12 +587,14 @@ function draw() {
     started = false;
     for (const p of pts) {
       if (p.h < splitH) {
-        const px = xP(p.time), py = yFn(p);
-        // carry forward last observed point as start
+        const py = yFn(p);
+        if (!isFinite(py)) continue;
+        const px = xP(p.time);
         ctx.moveTo(px, py); started = true;
         continue;
       }
       const px = xP(p.time), py = yFn(p);
+      if (!isFinite(py)) continue;
       if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
     }
     ctx.stroke(); ctx.setLineDash([]);
@@ -585,7 +638,11 @@ function draw() {
     drawSplit(D, WRITTEN_HEIGHT, p => yIP(p.issDay), T.issObs, T.issExp, 2);
   }
   if (show.annPct) {
-    drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => yAP(p.annualPct), T.annualObs, T.annualExp, 1.8);
+    drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => {
+      const v = p.annualPct;
+      if (!isFinite(v) || v > 200) return NaN;
+      return yAP(v);
+    }, T.annualObs, T.annualExp, 1.8);
   }
 
   // --- Event labels ---
@@ -619,30 +676,41 @@ function draw() {
     ctx.fillStyle = T.supplyObs; ctx.font = "11px system-ui"; ctx.textAlign = "right";
     for (let s = 0; s <= ySupMax; s += 3_000_000)
       ctx.fillText((s/1e6).toFixed(0) + " M", MG.left-6, ySP(s)+4);
-    ctx.save(); ctx.translate(14, MG.top+PH/2); ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = T.supplyObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
-    ctx.fillText("Cumulative Supply (ZEC)", 0, 0); ctx.restore();
+    if (!isNarrow) {
+      ctx.save(); ctx.translate(14, MG.top+PH/2); ctx.rotate(-Math.PI/2);
+      ctx.fillStyle = T.supplyObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
+      ctx.fillText("Cumulative Supply (ZEC)", 0, 0); ctx.restore();
+    }
   }
 
   // --- Right axis 1 (Issuance/Day) ---
-  if (show.issDay) {
+  if (show.issDay && axLayout.issDay) {
+    const ax = axLayout.issDay;
+    const tickBaseX = MG.left + PW + ax.tickX;
     ctx.fillStyle = T.issObs; ctx.font = "11px system-ui"; ctx.textAlign = "left";
-    for (let v = 0; v <= yIssDayMax; v += 2_000)
-      ctx.fillText(v.toLocaleString(), MG.left+PW+6, yIP(v)+4);
-    ctx.save(); ctx.translate(CSS_W - (show.annPct && !isNarrow ? 56 : 16), MG.top+PH/2);
-    ctx.rotate(Math.PI/2); ctx.fillStyle = T.issObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
-    ctx.fillText("Issuance per Day (ZEC)", 0, 0); ctx.restore();
+    for (let v = 0; v <= yIssDayMax; v += 2_000) {
+      const label = isNarrow ? (v >= 1000 ? (v/1000)+"k" : String(v)) : v.toLocaleString();
+      ctx.fillText(label, tickBaseX, yIP(v)+4);
+    }
+    if (!isNarrow && ax.titleX != null) {
+      ctx.save(); ctx.translate(MG.left + PW + ax.titleX, MG.top+PH/2);
+      ctx.rotate(Math.PI/2); ctx.fillStyle = T.issObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
+      ctx.fillText("Issuance per Day (ZEC)", 0, 0); ctx.restore();
+    }
   }
 
   // --- Right axis 2 (Annual %) ---
-  if (show.annPct && !isNarrow) {
+  if (show.annPct && axLayout.annPct) {
+    const ax = axLayout.annPct;
+    const tickBaseX = MG.left + PW + ax.tickX;
     ctx.fillStyle = T.annualObs; ctx.font = "10px system-ui"; ctx.textAlign = "left";
-    const xOff = MG.left + PW + (show.issDay ? 52 : 6);
     for (let p = 0; p <= yAnnMax; p += 5)
-      ctx.fillText(p + "%", xOff, yAP(p)+3);
-    ctx.save(); ctx.translate(CSS_W - 10, MG.top+PH/2);
-    ctx.rotate(Math.PI/2); ctx.fillStyle = T.annualObs; ctx.font = "11px system-ui"; ctx.textAlign = "center";
-    ctx.fillText("Annualized Issuance %", 0, 0); ctx.restore();
+      ctx.fillText(p + "%", tickBaseX, yAP(p)+3);
+    if (!isNarrow && ax.titleX != null) {
+      ctx.save(); ctx.translate(MG.left + PW + ax.titleX, MG.top+PH/2);
+      ctx.rotate(Math.PI/2); ctx.fillStyle = T.annualObs; ctx.font = "11px system-ui"; ctx.textAlign = "center";
+      ctx.fillText("Annualized Issuance %", 0, 0); ctx.restore();
+    }
   }
 
   // --- X axis ---
@@ -758,15 +826,13 @@ canvas.style.cursor = "crosshair";
 canvas.addEventListener("mousemove", function(e) {
   if (dragging || data.length < 2) { tooltip.style.display = "none"; return; }
   const rect = canvas.getBoundingClientRect();
-  const CSS_W = parseInt(canvas.style.width);
-  const CSS_H = parseInt(canvas.style.height);
-  const isNarrow = window.innerWidth < 600;
-  const MG = { top:28, right: (isNarrow ? 58 : (show.annPct ? 110 : 80)), bottom:52, left: isNarrow ? 48 : 64 };
-  const PW = CSS_W - MG.left - MG.right;
-  const PH = CSS_H - MG.top - MG.bottom;
+  const cssW = parseInt(canvas.style.width);
+  const cssH = parseInt(canvas.style.height);
+  const {MG, PW, PH} = layout;
+  if (!PW) { tooltip.style.display = "none"; return; }
 
-  const mx = (e.clientX - rect.left) * (CSS_W / rect.width);
-  const my = (e.clientY - rect.top) * (CSS_H / rect.height);
+  const mx = (e.clientX - rect.left) * (cssW / rect.width);
+  const my = (e.clientY - rect.top) * (cssH / rect.height);
   if (mx < MG.left || mx > MG.left+PW || my < MG.top || my > MG.top+PH) {
     tooltip.style.display = "none"; return;
   }
