@@ -99,10 +99,6 @@
   Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
   <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
 </p>
-<div class="controls">
-  <button id="btnReset">Reset view</button>
-  <button id="btnTheme">☀/🌙</button>
-</div>
 <div class="chart-wrap" id="chartWrap">
   <canvas id="chart"></canvas>
   <div id="actHandle">
@@ -124,6 +120,10 @@
   <span><span class="dash"></span> Dashed = <b>Expected</b></span>
 </div>
 <div id="tooltip"></div>
+<div class="controls">
+  <button id="btnReset">Reset view</button>
+  <button id="btnTheme">☀/🌙</button>
+</div>
 <script>
 /* ================================================================
    Toggle state
@@ -351,12 +351,25 @@ function requestComputeForView(){
    Right margin layout
    ================================================================ */
 function computeRightMargin(isNarrow){
+  if(isNarrow){if(show.supply)return 52;return 16;}
+  return show.supply?70:20;
+}
+
+function rightAxisLayout(isNarrow){
+  const r={supply:null};
+  if(!show.supply)return r;
+  if(isNarrow){r.supply={tickX:6,titleX:null};return r;}
+  r.supply={tickX:6,titleX:50};
+  return r;
+}
+
+function computeLeftMargin(isNarrow){
   if(isNarrow){if(show.issDay||show.annPct)return 52;return 16;}
   const AXIS_W=62;let count=0;if(show.issDay)count++;if(show.annPct)count++;
   return count===0?20:8+count*AXIS_W;
 }
 
-function rightAxisLayout(isNarrow){
+function leftAxisLayout(isNarrow){
   const r={issDay:null,annPct:null};
   if(isNarrow){if(show.issDay)r.issDay={tickX:6,titleX:null};else if(show.annPct)r.annPct={tickX:6,titleX:null};return r;}
   let off=6;
@@ -394,11 +407,13 @@ function draw(){
   const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);
 
   const rightMar=computeRightMargin(isNarrow);
-  const MG={top:28,right:rightMar,bottom:52,left:isNarrow?48:64};
+  const leftMar=computeLeftMargin(isNarrow);
+  const MG={top:28,right:rightMar,bottom:52,left:leftMar};
   const PW=CSS_W-MG.left-MG.right,PH=CSS_H-MG.top-MG.bottom;
   Object.assign(layout,{CSS_W,CSS_H,MG,PW,PH});
 
-  const axL=rightAxisLayout(isNarrow);
+  const axR=rightAxisLayout(isNarrow);
+  const axL=leftAxisLayout(isNarrow);
 
   const T={bg:cv("--bg"),fg:cv("--fg"),muted:cv("--muted"),panel:cv("--panel"),
     supplyObs:cv("--supplyObs"),issObs:cv("--issObs"),supplyExp:cv("--supplyExp"),issExp:cv("--issExp"),
@@ -543,27 +558,27 @@ function draw(){
     ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
     ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
 
-  // Left axis (Supply)
-  if(show.supply){
-    ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="right";
-    for(let s=0;s<=ySupMax;s+=3_000_000)ctx.fillText((s/1e6).toFixed(0)+" M",MG.left-6,ySP(s)+4);
-    if(!isNarrow){ctx.save();ctx.translate(14,MG.top+PH/2);ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ZEC)",0,0);ctx.restore();}
-  }
-
-  // Right axis 1 (Issuance/Day)
-  if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left+PW+ax.tickX;
-    ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="left";
+  // Left axis 1 (Issuance/Day)
+  if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left-ax.tickX;
+    ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="right";
     for(let v=0;v<=yIssDayMax;v+=2_000){const lb=isNarrow?(v>=1000?(v/1000)+"k":String(v)):v.toLocaleString();ctx.fillText(lb,bx,yIP(v)+4);}
-    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
+    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
       ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ZEC)",0,0);ctx.restore();}}
 
-  // Right axis 2 (Annual %)
-  if(show.annPct&&axL.annPct){const ax=axL.annPct,bx=MG.left+PW+ax.tickX;
-    ctx.fillStyle=T.annualObs;ctx.font="10px system-ui";ctx.textAlign="left";
+  // Left axis 2 (Annual %)
+  if(show.annPct&&axL.annPct){const ax=axL.annPct,bx=MG.left-ax.tickX;
+    ctx.fillStyle=T.annualObs;ctx.font="10px system-ui";ctx.textAlign="right";
     for(let p=0;p<=yAnnMax;p+=5)ctx.fillText(p+"%",bx,yAP(p)+3);
-    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
+    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
       ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Issuance %",0,0);ctx.restore();}}
+
+  // Right axis (Supply)
+  if(show.supply&&axR.supply){const ax=axR.supply,bx=MG.left+PW+ax.tickX;
+    ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="left";
+    for(let s=0;s<=ySupMax;s+=3_000_000)ctx.fillText((s/1e6).toFixed(0)+" M",bx,ySP(s)+4);
+    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
+      ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ZEC)",0,0);ctx.restore();}}
+
   // X axis
   ctx.fillStyle=T.muted;ctx.font="10px system-ui";ctx.textAlign="center";
   const maxViewH=Math.ceil(timeToHeight(view.tMax))+200_000;
