@@ -643,7 +643,9 @@ window.addEventListener("mousemove",e=>{
   const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
   let h=Math.round(timeToHeight(t));
-  if(h<0)h=0;
+
+  if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
+
   if(h!==zip234ActivationHeight){
     zip234ActivationHeight=h;
     zip234CachedActH=-1;
@@ -670,7 +672,9 @@ window.addEventListener("touchmove",e=>{
   const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
   let h=Math.round(timeToHeight(t));
-  if(h<0)h=0;
+
+  if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
+
   if(h!==zip234ActivationHeight){
     zip234ActivationHeight=h;
     zip234CachedActH=-1;
@@ -687,6 +691,7 @@ actBlockInput.addEventListener("keydown",e=>{
     const v=parseInt(raw);
     if(!isNaN(v)&&v>=0&&v<=100_000_000){
       zip234ActivationHeight=v;
+      if(zip234ActivationHeight<WRITTEN_HEIGHT)zip234ActivationHeight=WRITTEN_HEIGHT;
       zip234CachedActH=-1;
       zoomToActivation(zip234ActivationHeight);
     }
@@ -704,8 +709,8 @@ actDateInput.addEventListener("keydown",e=>{
     const parsed=Date.parse(raw);
     if(!isNaN(parsed)){
       let h=Math.round(timeToHeight(parsed));
-      if(h<0)h=0;
       if(h>100_000_000)h=100_000_000;
+      if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
       zip234ActivationHeight=h;
       zip234CachedActH=-1;
       zoomToActivation(zip234ActivationHeight);
