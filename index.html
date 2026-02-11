@@ -6,925 +6,632 @@
   <title>Zcash Supply & Issuance</title>
   <style>
     :root{
-      --bg: #0f172a;
-      --fg: #e2e8f0;
-      --muted: #94a3b8;
-      --panel: #0b1224;
-      --supplyObs: #f59e0b;
-      --issObs:    #22d3ee;
-      --supplyExp: rgba(245,158,11,0.55);
-      --issExp:    rgba(34,211,238,0.55);
-      --annualObs: #4ade80;
-      --annualExp: rgba(74,222,128,0.55);
-      --eventObs:  rgba(96,165,250,0.45);
-      --eventHalv: rgba(239,68,68,0.35);
-      --written:   rgba(167,139,250,0.65);
-      --controlsBg: rgba(2,6,23,0.25);
-      --controlsBorder: rgba(148,163,184,0.15);
-      --btnBg: rgba(2,6,23,0.25);
-      --btnBorder: rgba(148,163,184,0.22);
-      --btnHover: rgba(148,163,184,0.4);
-      --tooltipBg: rgba(15,23,42,0.98);
-      --tooltipBorder: rgba(148,163,184,0.25);
-      --gridLine: rgba(148,163,184,0.08);
-      --capLine: rgba(245,158,11,0.20);
-      --frameBorder: rgba(148,163,184,0.10);
+      --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
+      --supplyObs:#f59e0b; --issObs:#22d3ee;
+      --supplyExp:rgba(245,158,11,0.55); --issExp:rgba(34,211,238,0.55);
+      --annualObs:#4ade80; --annualExp:rgba(74,222,128,0.55);
+      --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
+      --written:rgba(167,139,250,0.65);
+      --zip234Supply:#ec4899; --zip234Iss:#a78bfa; --zip234Ann:#fb7185;
+      --zip234Act:rgba(236,72,153,0.50);
+      --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
+      --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
+      --btnHover:rgba(148,163,184,0.4);
+      --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
+      --gridLine:rgba(148,163,184,0.08); --capLine:rgba(245,158,11,0.20);
+      --frameBorder:rgba(148,163,184,0.10);
     }
     [data-theme="light"]{
-      --bg: #f8fafc;
-      --fg: #1e293b;
-      --muted: #64748b;
-      --panel: #ffffff;
-      --supplyObs: #d97706;
-      --issObs:    #0891b2;
-      --supplyExp: rgba(217,119,6,0.55);
-      --issExp:    rgba(8,145,178,0.55);
-      --annualObs: #16a34a;
-      --annualExp: rgba(22,163,74,0.55);
-      --eventObs:  rgba(59,130,246,0.35);
-      --eventHalv: rgba(220,38,38,0.30);
-      --written:   rgba(124,58,237,0.55);
-      --controlsBg: rgba(241,245,249,0.85);
-      --controlsBorder: rgba(148,163,184,0.25);
-      --btnBg: rgba(255,255,255,0.8);
-      --btnBorder: rgba(148,163,184,0.35);
-      --btnHover: rgba(148,163,184,0.55);
-      --tooltipBg: rgba(255,255,255,0.98);
-      --tooltipBorder: rgba(148,163,184,0.35);
-      --gridLine: rgba(148,163,184,0.12);
-      --capLine: rgba(217,119,6,0.25);
-      --frameBorder: rgba(148,163,184,0.18);
+      --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
+      --supplyObs:#d97706; --issObs:#0891b2;
+      --supplyExp:rgba(217,119,6,0.55); --issExp:rgba(8,145,178,0.55);
+      --annualObs:#16a34a; --annualExp:rgba(22,163,74,0.55);
+      --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
+      --written:rgba(124,58,237,0.55);
+      --zip234Supply:#db2777; --zip234Iss:#7c3aed; --zip234Ann:#e11d48;
+      --zip234Act:rgba(219,39,119,0.40);
+      --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
+      --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
+      --btnHover:rgba(148,163,184,0.55);
+      --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
+      --gridLine:rgba(148,163,184,0.12); --capLine:rgba(217,119,6,0.25);
+      --frameBorder:rgba(148,163,184,0.18);
     }
-    * { margin:0; padding:0; box-sizing: border-box; }
-    body {
-      background: var(--bg); color: var(--fg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 22px; gap: 10px;
-    }
-    h1 { font-size:1.35rem; color:var(--supplyObs); margin-bottom:2px; }
-    .sub { font-size:0.82rem; color:var(--muted); text-align:center; max-width:720px; line-height:1.45; }
-    .sub b { color:var(--fg); }
-    .controls {
-      display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;
-      background:var(--controlsBg); border:1px solid var(--controlsBorder);
-      border-radius:10px; padding:10px 18px;
-    }
-    .controls button, .controls .range-label {
-      font:600 0.78rem/1 system-ui; color:var(--fg);
-      background:var(--btnBg); border:1px solid var(--btnBorder);
-      border-radius:6px; padding:7px 14px; cursor:pointer;
-      transition: background .12s;
-    }
-    .controls button:hover { background:var(--btnHover); }
-    .range-label { cursor:default!important; font-weight:400!important; color:var(--muted)!important; font-size:0.75rem!important; }
-    canvas { border-radius:8px; background:var(--panel); display:block; }
-    .legend {
-      display:flex; flex-wrap:wrap; gap:10px 20px; font-size:0.78rem;
-      align-items:center; justify-content:center; color:var(--muted);
-    }
-    .legend span { display:flex; align-items:center; gap:5px; }
-    .sw { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }
-    .dash { width:18px; height:0; border-top:2px dashed var(--muted); display:inline-block; }
-    .ltoggle {
-      cursor: pointer; user-select: none;
-      padding: 4px 10px; border-radius: 999px;
-      border: 1.5px solid transparent;
-      transition: opacity 0.15s, border-color 0.15s;
-    }
-    .ltoggle.active { border-color: var(--btnBorder); opacity: 1; }
-    .ltoggle:not(.active) { opacity: 0.38; }
-    .ltoggle:not(.active) .sw { background: var(--muted) !important; }
-    .ltoggle:hover { opacity: 0.85; }
-    #tooltip {
-      position:fixed; display:none; border-radius:8px; padding:10px 14px;
-      font-size:0.76rem; pointer-events:none; z-index:10; line-height:1.55;
-      max-width:380px;
-      background:var(--tooltipBg); color:var(--fg);
-      border:1px solid var(--tooltipBorder);
-      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    }
-    #tooltip .tt-muted { color:var(--muted); }
-    #tooltip .tt-obs  { color:#38bdf8; font-weight:600; }
-    #tooltip .tt-exp  { color:var(--written); font-weight:600; }
-    @media(max-width:600px){
-      body { padding:10px; gap:8px; }
-      h1 { font-size:1.1rem; }
-      .sub { font-size:0.72rem; }
-      .controls { padding:8px 10px; gap:6px; }
-      .controls button { padding:8px 10px; font-size:0.72rem; min-height:36px; }
-      .legend { font-size:0.7rem; gap:6px 12px; }
-      .ltoggle { padding: 6px 12px; min-height: 36px; }
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
+      display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
+    h1{font-size:1.35rem;color:var(--supplyObs);margin-bottom:2px}
+    .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
+    .sub b{color:var(--fg)}
+    .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
+      background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
+    .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
+      border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
+    .controls button:hover{background:var(--btnHover)}
+    .controls .inp-group{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--muted)}
+    .controls .inp-group input{width:90px;padding:5px 7px;border-radius:5px;border:1px solid var(--btnBorder);
+      background:var(--btnBg);color:var(--fg);font:inherit;font-size:.78rem;text-align:center}
+    canvas{border-radius:8px;background:var(--panel);display:block}
+    .legend{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:.78rem;align-items:center;justify-content:center;color:var(--muted)}
+    .legend span{display:flex;align-items:center;gap:5px}
+    .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+    .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
+    .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
+      border:1.5px solid transparent;transition:opacity .15s,border-color .15s}
+    .ltoggle.active{border-color:var(--btnBorder);opacity:1}
+    .ltoggle:not(.active){opacity:.38}
+    .ltoggle:not(.active) .sw{background:var(--muted)!important}
+    .ltoggle:hover{opacity:.85}
+    #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
+      pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
+      background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+    #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#38bdf8;font-weight:600}
+    #tooltip .tt-exp{color:var(--written);font-weight:600}
+    @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
+      .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
+      .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
   </style>
 </head>
 <body>
-
 <h1>Zcash Supply &amp; Issuance</h1>
 <p class="sub">
-  Uses Zcash consensus issuance logic and a time axis interpolated from on-chain timestamps.<br>
+  Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
   <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
 </p>
-
 <div class="controls">
   <button id="btnReset">Reset view</button>
   <button id="btnObserved">Observed</button>
   <button id="btnWritten">Center on written</button>
   <button id="btnFuture">More future</button>
   <button id="btnTheme">☀/🌙</button>
-  <span class="range-label" id="rangeLabel"></span>
+  <span class="inp-group">ZIP&nbsp;234 at block:
+    <input type="number" id="zip234Height" value="3500000" min="0" max="100000000" step="10000">
+  </span>
 </div>
-
 <canvas id="chart"></canvas>
-
 <div class="legend" id="legend">
-  <span class="ltoggle active" data-series="supply">
-    <span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
-  <span class="ltoggle active" data-series="issDay">
-    <span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
-  <span class="ltoggle active" data-series="annPct">
-    <span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
+  <span class="ltoggle active" data-series="default"><span class="sw" style="background:var(--supplyObs)"></span>Default</span>
+  <span class="ltoggle" data-series="zip234"><span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
+  <span style="color:var(--muted)">│</span>
+  <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
+  <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
+  <span class="ltoggle active" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
   <span><span class="dash"></span> Dashed = <b>Expected</b></span>
   <span><span class="sw" style="background:rgba(167,139,250,0.85)"></span>"Written" marker</span>
 </div>
-
 <div id="tooltip"></div>
 
 <script>
-/* ==================================================================
-   Toggle state for three data series
-   ================================================================== */
-const show = { supply: true, issDay: true, annPct: true };
+/* ================================================================
+   Toggle state
+   ================================================================ */
+const show = { supply:true, issDay:true, annPct:true, default:true, zip234:false };
 
-/* ==================================================================
-   Theme management
-   ================================================================== */
-function getTheme() {
-  return document.documentElement.getAttribute("data-theme") || "dark";
-}
-function setTheme(t) {
-  if (t === "light") document.documentElement.setAttribute("data-theme", "light");
-  else document.documentElement.removeAttribute("data-theme");
-  try { localStorage.setItem("zec-theme", t); } catch(e){}
-}
-function toggleTheme() {
-  setTheme(getTheme() === "dark" ? "light" : "dark");
-  requestDraw();
-}
-function initTheme() {
-  try {
-    const saved = localStorage.getItem("zec-theme");
-    if (saved) { setTheme(saved); return; }
-  } catch(e){}
-  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) setTheme("light");
-}
+/* ================================================================
+   Theme
+   ================================================================ */
+function getTheme(){ return document.documentElement.getAttribute("data-theme")||"dark"; }
+function setTheme(t){ if(t==="light") document.documentElement.setAttribute("data-theme","light");
+  else document.documentElement.removeAttribute("data-theme"); try{localStorage.setItem("zec-theme",t)}catch(e){} }
+function toggleTheme(){ setTheme(getTheme()==="dark"?"light":"dark"); requestDraw(); }
+function initTheme(){ try{ const s=localStorage.getItem("zec-theme"); if(s){setTheme(s);return;} }catch(e){}
+  if(window.matchMedia&&window.matchMedia("(prefers-color-scheme:light)").matches) setTheme("light"); }
+function cv(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
-/* ==================================================================
-   CSS variable reader (for canvas drawing)
-   ================================================================== */
-function cv(name) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
-
-/* ==================================================================
-   Time anchors — on-chain timestamps at known block heights
-   ================================================================== */
+/* ================================================================
+   Time anchors
+   ================================================================ */
 const TIME_ANCHORS = [
-  { h: 0,         time: Date.UTC(2016,9,28,7,56),   label: "Genesis" },
-  { h: 653_600,   time: Date.UTC(2019,11,11,21,50), label: "Blossom" },
-  { h: 1_046_400, time: Date.UTC(2020,10,18,12,34), label: "Halving 1" },
-  { h: 2_726_400, time: Date.UTC(2024,10,23,1,51),  label: "Halving 2" },
+  { h:0, time:Date.UTC(2016,9,28,7,56), label:"Genesis" },
+  { h:653_600, time:Date.UTC(2019,11,11,21,50), label:"Blossom" },
+  { h:1_046_400, time:Date.UTC(2020,10,18,12,34), label:"Halving 1" },
+  { h:2_726_400, time:Date.UTC(2024,10,23,1,51), label:"Halving 2" },
 ];
-
 const BLOSSOM_ACTIVATION_HEIGHT = 653_600;
 const WRITTEN_HEIGHT = 3_234_946;
-const ONE_YEAR_MS = 365.25 * 86400 * 1000;
+const ONE_YEAR_MS = 365.25*86400*1000;
 
-/* Precompute segments */
 const SEGMENTS = [];
-for (let i = 0; i < TIME_ANCHORS.length - 1; i++) {
-  const a = TIME_ANCHORS[i], b = TIME_ANCHORS[i+1];
-  SEGMENTS.push({
-    startH: a.h, endH: b.h, startTime: a.time,
-    secPerBlock: (b.time - a.time) / 1000 / (b.h - a.h),
-  });
+for(let i=0;i<TIME_ANCHORS.length-1;i++){
+  const a=TIME_ANCHORS[i],b=TIME_ANCHORS[i+1];
+  SEGMENTS.push({ startH:a.h, endH:b.h, startTime:a.time,
+    secPerBlock:(b.time-a.time)/1000/(b.h-a.h) });
 }
-
-function segmentForHeight(h) {
-  for (let i = 0; i < SEGMENTS.length; i++) if (h <= SEGMENTS[i].endH) return SEGMENTS[i];
-  return SEGMENTS[SEGMENTS.length - 1];
+function segmentForHeight(h){ for(let i=0;i<SEGMENTS.length;i++) if(h<=SEGMENTS[i].endH) return SEGMENTS[i]; return SEGMENTS[SEGMENTS.length-1]; }
+function blockToTime(h){ const s=segmentForHeight(h); return s.startTime+(h-s.startH)*s.secPerBlock*1000; }
+function secsPerBlock(h){ return segmentForHeight(h).secPerBlock; }
+function timeToHeight(t){ for(let i=SEGMENTS.length-1;i>=0;i--){ const s=SEGMENTS[i]; if(t>=s.startTime) return s.startH+(t-s.startTime)/1000/s.secPerBlock; } const s=SEGMENTS[0]; return s.startH+(t-s.startTime)/1000/s.secPerBlock; }
+function heightAfterDuration(h,durationMs){
+  let remaining=durationMs/1000, cur=h;
+  for(let i=0;i<SEGMENTS.length;i++){const s=SEGMENTS[i]; if(cur>s.endH) continue;
+    const hStart=Math.max(cur,s.startH), secsToEnd=(s.endH-hStart)*s.secPerBlock;
+    if(remaining<=secsToEnd) return hStart+remaining/s.secPerBlock; remaining-=secsToEnd; cur=s.endH;}
+  const last=SEGMENTS[SEGMENTS.length-1]; return Math.max(cur,last.endH)+remaining/last.secPerBlock;
 }
-function blockToTime(h) {
-  const s = segmentForHeight(h);
-  return s.startTime + (h - s.startH) * s.secPerBlock * 1000;
-}
-function secsPerBlock(h) { return segmentForHeight(h).secPerBlock; }
-
-function timeToHeight(t) {
-  for (let i = SEGMENTS.length - 1; i >= 0; i--) {
-    const s = SEGMENTS[i];
-    if (t >= s.startTime) return s.startH + (t - s.startTime) / 1000 / s.secPerBlock;
-  }
-  const s = SEGMENTS[0];
-  return s.startH + (t - s.startTime) / 1000 / s.secPerBlock;
-}
-
-/**
- * Walk forward from height h by durationMs of wall-clock time,
- * properly crossing segment boundaries. Returns the resulting height (fractional).
- */
-function heightAfterDuration(h, durationMs) {
-  let remaining = durationMs / 1000; // seconds
-  let cur = h;
-  for (let i = 0; i < SEGMENTS.length; i++) {
-    const s = SEGMENTS[i];
-    if (cur > s.endH) continue;
-    const hStart = Math.max(cur, s.startH);
-    const secsToEnd = (s.endH - hStart) * s.secPerBlock;
-    if (remaining <= secsToEnd) return hStart + remaining / s.secPerBlock;
-    remaining -= secsToEnd;
-    cur = s.endH;
-  }
-  // Past last segment — extrapolate with last segment's rate
-  const last = SEGMENTS[SEGMENTS.length - 1];
-  return Math.max(cur, last.endH) + remaining / last.secPerBlock;
-}
-
 const genTime = blockToTime(0);
 const writtenTime = blockToTime(WRITTEN_HEIGHT);
+function fmtDate(ms){ const d=new Date(ms); const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return mo[d.getUTCMonth()]+" "+d.getUTCDate()+", "+d.getUTCFullYear(); }
 
-function fmtDate(ms) {
-  const d = new Date(ms);
-  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return mo[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
-}
-
-/* ==================================================================
-   issuance_per_block() — from zcash consensus
-   ================================================================== */
-function issuance_per_block(blockheight) {
-  const MAX_BLOCK_SUBSIDY = 1250000000n;
-  const SLOW_START_INTERVAL = 20000;
-  const SLOW_START_SHIFT = 10000;
-  const SLOW_START_RATE = 62500n;
-  const BLOSSOM_ACT = 653600;
-  const BLOSSOM_RATIO = 2n;
-  const PRE_HALVING = 840000;
-  const POST_HALVING = 1680000n;
-  const h = BigInt(blockheight);
-  if (blockheight < SLOW_START_SHIFT) return SLOW_START_RATE * h;
-  if (blockheight < SLOW_START_INTERVAL) return SLOW_START_RATE * (h + 1n);
+/* ================================================================
+   issuance_per_block() — zcash consensus
+   ================================================================ */
+function issuance_per_block(blockheight){
+  const MAX_BLOCK_SUBSIDY=1250000000n, SLOW_START_INTERVAL=20000, SLOW_START_SHIFT=10000,
+    SLOW_START_RATE=62500n, BLOSSOM_ACT=653600, BLOSSOM_RATIO=2n,
+    PRE_HALVING=840000, POST_HALVING=1680000n;
+  const h=BigInt(blockheight);
+  if(blockheight<SLOW_START_SHIFT) return SLOW_START_RATE*h;
+  if(blockheight<SLOW_START_INTERVAL) return SLOW_START_RATE*(h+1n);
   let halvings;
-  if (blockheight >= BLOSSOM_ACT) {
-    const sc = BigInt(BLOSSOM_ACT - SLOW_START_SHIFT) * BLOSSOM_RATIO + (h - BigInt(BLOSSOM_ACT));
-    halvings = Number(sc / POST_HALVING);
-  } else {
-    halvings = Math.floor((blockheight - SLOW_START_SHIFT) / PRE_HALVING);
-  }
-  if (halvings >= 64) return 0n;
-  if (blockheight >= BLOSSOM_ACT) return (MAX_BLOCK_SUBSIDY / BLOSSOM_RATIO) >> BigInt(halvings);
-  return MAX_BLOCK_SUBSIDY >> BigInt(halvings);
+  if(blockheight>=BLOSSOM_ACT){ const sc=BigInt(BLOSSOM_ACT-SLOW_START_SHIFT)*BLOSSOM_RATIO+(h-BigInt(BLOSSOM_ACT)); halvings=Number(sc/POST_HALVING); }
+  else halvings=Math.floor((blockheight-SLOW_START_SHIFT)/PRE_HALVING);
+  if(halvings>=64) return 0n;
+  if(blockheight>=BLOSSOM_ACT) return(MAX_BLOCK_SUBSIDY/BLOSSOM_RATIO)>>BigInt(halvings);
+  return MAX_BLOCK_SUBSIDY>>BigInt(halvings);
 }
 
-/* ==================================================================
-   Data & computation
-   ================================================================== */
-const ZATOSHI = 100_000_000;
-const SAMPLE_EVERY = 1000;
-const data = [];
-let computedUpTo = -1;
-let cumulativeBig = 0n;
-let targetHeightWanted = 0;
-let computing = false;
-
-/* Efficient: jump between "change points" where issuance changes */
-function nextChangeHeight(h) {
-  if (h < 10000) return 10000;
-  if (h < 20000) return 20000;
-  if (h < 653600) {
-    const next = 10000 + Math.ceil((h - 10000 + 1) / 840000) * 840000;
-    return Math.min(next, 653600);
-  }
-  /* Post-Blossom: halvings at scaled intervals */
-  const sc = BigInt(653600 - 10000) * 2n + (BigInt(h) - 653600n);
-  const cur = Number(sc / 1680000n);
-  const nextSc = BigInt(cur + 1) * 1680000n;
-  const nextH = Number(nextSc - BigInt(653600 - 10000) * 2n + 653600n);
-  return nextH;
+/* ================================================================
+   Fast piecewise summation
+   ================================================================ */
+const G_MAX_SUB=1250000000n, G_SLOW_INT=20000, G_SLOW_SHIFT=10000,
+  G_SLOW_RATE=62500n, G_BLOSSOM_H=653600, G_RATIO=2n, G_POST_HALV=1680000, G_HALV_OFF=633600;
+function sumArith(a,b){ if(b<a) return 0n; const A=BigInt(a),B=BigInt(b),n=B-A+1n; return(A+B)*n/2n; }
+function halvIdxPost(h){ return Math.floor((h+G_HALV_OFF)/G_POST_HALV); }
+function nextHalvPost(h){ return(halvIdxPost(h)+1)*G_POST_HALV-G_HALV_OFF; }
+function sumIssuanceRangeClean(startInc,endExc){
+  if(endExc<=startInc) return 0n; let h=startInc,total=0n;
+  while(h<endExc){
+    if(h<G_SLOW_SHIFT){const e=Math.min(endExc,G_SLOW_SHIFT); total+=G_SLOW_RATE*sumArith(h,e-1); h=e; continue;}
+    if(h<G_SLOW_INT){const e=Math.min(endExc,G_SLOW_INT); total+=G_SLOW_RATE*sumArith(h+1,e); h=e; continue;}
+    if(h<G_BLOSSOM_H){const e=Math.min(endExc,G_BLOSSOM_H); total+=G_MAX_SUB*BigInt(e-h); h=e; continue;}
+    const k=halvIdxPost(h); if(k>=64) break;
+    const nxt=nextHalvPost(h), e=Math.min(endExc,nxt);
+    total+=(G_MAX_SUB/G_RATIO>>BigInt(k))*BigInt(e-h); h=e;
+  } return total;
 }
 
-function sumIssuanceRangeClean(hLo, hHi) {
-  if (hHi <= hLo) return 0n;
-  let total = 0n;
-  let h = hLo;
-  while (h < hHi) {
-    const iss = issuance_per_block(h);
-    const nc = nextChangeHeight(h);
-    const blocksTilChange = nc - h;
-    const blocksTilEnd = hHi - h;
-    const run = Math.min(blocksTilChange, blocksTilEnd);
-    total += iss * BigInt(run);
-    h += run;
+/* ================================================================
+   Default data & progressive computation
+   ================================================================ */
+const ZATOSHI=100_000_000, SAMPLE_EVERY=1000;
+const data=[]; let computedUpTo=-1, cumulativeBig=0n, targetHeightWanted=0, computing=false;
+
+function pushPoint(h,cumBig){
+  const iss=issuance_per_block(h), issBlock=Number(iss)/ZATOSHI, spb=secsPerBlock(h),
+    time=blockToTime(h), supply=Number(cumBig)/ZATOSHI, issDay=issBlock*(86400/spb);
+  let annualPct=NaN, annualPctIsExpected=false;
+  if(supply>0 && h>=20000){
+    const h1yr=Math.floor(heightAfterDuration(h,ONE_YEAR_MS));
+    const annIss=Number(sumIssuanceRangeClean(h,h1yr))/ZATOSHI;
+    annualPct=(annIss/supply)*100; annualPctIsExpected=(h1yr>WRITTEN_HEIGHT);
   }
-  return total;
+  data.push({h,time,supply,issBlock,issDay,annualPct,annualPctIsExpected});
+}
+function advanceTo(targetH){
+  let h=computedUpTo+1; while(h<=targetH){ cumulativeBig+=issuance_per_block(h);
+    if(h%SAMPLE_EVERY===0) pushPoint(h,cumulativeBig); h++; } computedUpTo=targetH;
+}
+async function computeAsync(targetH){
+  if(computing) return; computing=true; const BATCH=80_000;
+  while(computedUpTo<targetH){ advanceTo(Math.min(computedUpTo+BATCH,targetH)); requestDraw(); await new Promise(r=>setTimeout(r,0)); }
+  computing=false; requestDraw();
 }
 
-function pushPoint(h, cumBig) {
-  const issBlock = Number(issuance_per_block(h)) / ZATOSHI;
+/* ================================================================
+   ZIP 234 — smooth issuance
+   ================================================================ */
+const MAX_MONEY_ZEC = 21_000_000;
+// k = 1 - 2^(-1/POST_BLOSSOM_HALVING_INTERVAL)  so (1-k)^1680000 = 0.5
+const ZIP234_K = 1 - Math.pow(2, -1/1680000);
+
+let zip234ActivationHeight = 3_500_000;
+let zip234Data = [];            // { h, time, supply, issBlock, issDay, annualPct }
+let zip234RemainingAtAct = 0;   // remaining ZEC at activation (cached)
+let zip234CachedActH = -1;      // activation height used for cache
+let zip234MaxH = -1;            // highest height in zip234Data
+
+function computeZip234(maxH) {
+  if (zip234CachedActH !== zip234ActivationHeight) {
+    // Activation changed — recompute cached supply
+    const supZat = sumIssuanceRangeClean(0, zip234ActivationHeight);
+    zip234RemainingAtAct = MAX_MONEY_ZEC - Number(supZat) / ZATOSHI;
+    zip234CachedActH = zip234ActivationHeight;
+    zip234Data = []; zip234MaxH = -1;
+  }
+  if (maxH <= zip234MaxH) return;
+
+  zip234Data = [];
+  const actH = zip234ActivationHeight, R0 = zip234RemainingAtAct;
+
+  // Always include the activation height as first point
+  pushZ234(actH, R0, actH);
+
+  // Then at SAMPLE_EVERY intervals
+  let next = Math.ceil(actH / SAMPLE_EVERY) * SAMPLE_EVERY;
+  if (next === actH) next += SAMPLE_EVERY;
+  for (let h = next; h <= maxH; h += SAMPLE_EVERY) pushZ234(h, R0, actH);
+
+  zip234MaxH = maxH;
+}
+
+function pushZ234(h, R0, actH) {
+  const elapsed = h - actH;
+  const decayBefore = Math.pow(1 - ZIP234_K, elapsed);
+  const decayAfter  = Math.pow(1 - ZIP234_K, elapsed + 1);
+  const remainAfter = R0 * decayAfter;
+  const supply = MAX_MONEY_ZEC - remainAfter;
+  const issBlock = ZIP234_K * R0 * decayBefore;
   const spb = secsPerBlock(h);
-  const time = blockToTime(h);
-  const supply = Number(cumBig) / ZATOSHI;
   const issDay = issBlock * (86400 / spb);
-
-  /* Annual percentage issuance — use heightAfterDuration to properly
-     walk across time-segment boundaries */
-  let annualPct = NaN;
-  let annualPctIsExpected = false;
-  if (supply > 0 && h >= 20000) {
-    const h1yr = Math.floor(heightAfterDuration(h, ONE_YEAR_MS));
-    const annIss = Number(sumIssuanceRangeClean(h, h1yr)) / ZATOSHI;
-    annualPct = (annIss / supply) * 100;
-    annualPctIsExpected = (h1yr > WRITTEN_HEIGHT);
-  }
-
-  data.push({ h, time, supply, issBlock, issDay, annualPct, annualPctIsExpected });
+  const time = blockToTime(h);
+  const bpy = ONE_YEAR_MS / 1000 / spb;
+  const yearIss = remainAfter * (1 - Math.pow(1 - ZIP234_K, bpy));
+  const annualPct = supply > 0 ? (yearIss / supply) * 100 : NaN;
+  zip234Data.push({ h, time, supply, issBlock, issDay, annualPct });
 }
 
-function advanceTo(targetH) {
-  const startH = computedUpTo + 1;
-  if (startH > targetH) return;
-  let h = startH;
-  while (h <= targetH) {
-    const iss = issuance_per_block(h);
-    cumulativeBig += iss;
-    if (h % SAMPLE_EVERY === 0) pushPoint(h, cumulativeBig);
-    h++;
-  }
-  computedUpTo = targetH;
+function getZip234At(h) {
+  if (h < zip234ActivationHeight) return null;
+  const actH = zip234ActivationHeight, R0 = zip234RemainingAtAct;
+  const elapsed = h - actH;
+  const decayBefore = Math.pow(1 - ZIP234_K, elapsed);
+  const decayAfter  = Math.pow(1 - ZIP234_K, elapsed + 1);
+  const remainAfter = R0 * decayAfter;
+  const supply = MAX_MONEY_ZEC - remainAfter;
+  const issBlock = ZIP234_K * R0 * decayBefore;
+  const spb = secsPerBlock(h);
+  const issDay = issBlock * (86400 / spb);
+  const bpy = ONE_YEAR_MS / 1000 / spb;
+  const yearIss = remainAfter * (1 - Math.pow(1 - ZIP234_K, bpy));
+  const annualPct = supply > 0 ? (yearIss / supply) * 100 : NaN;
+  return { supply, issBlock, issDay, annualPct };
 }
 
-async function computeAsync(targetH) {
-  if (computing) return;
-  computing = true;
-  const BATCH = 80_000;
-  while (computedUpTo < targetH) {
-    const batchEnd = Math.min(computedUpTo + BATCH, targetH);
-    advanceTo(batchEnd);
-    requestDraw();
-    await new Promise(r => setTimeout(r, 0));
-  }
-  computing = false;
-  requestDraw();
+/* ================================================================
+   View state
+   ================================================================ */
+const MAX_TIME = Date.UTC(2100,0,1), MIN_SPAN = 30*86400_000;
+const view = { tMin: genTime, tMax: blockToTime(3_400_000) };
+function clampView(){
+  let span=view.tMax-view.tMin;
+  if(span<MIN_SPAN){const mid=(view.tMin+view.tMax)/2;view.tMin=mid-MIN_SPAN/2;view.tMax=mid+MIN_SPAN/2;span=MIN_SPAN;}
+  if(view.tMin<genTime-2*ONE_YEAR_MS){view.tMax+=(genTime-2*ONE_YEAR_MS-view.tMin);view.tMin=genTime-2*ONE_YEAR_MS;}
+  if(view.tMax>MAX_TIME){view.tMin-=(view.tMax-MAX_TIME);view.tMax=MAX_TIME;}
+  if(view.tMin<genTime-2*ONE_YEAR_MS) view.tMin=genTime-2*ONE_YEAR_MS;
+}
+function resetView(){ view.tMin=genTime; view.tMax=blockToTime(3_400_000); clampView(); requestDraw(); requestComputeForView(); }
+function requestComputeForView(){
+  const needed=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
+  if(needed>targetHeightWanted) targetHeightWanted=needed;
+  if(targetHeightWanted>computedUpTo) computeAsync(targetHeightWanted);
 }
 
-function requestComputeForView() {
-  const needed = Math.max(0, Math.ceil(timeToHeight(view.tMax + ONE_YEAR_MS)) + 10_000);
-  if (needed > targetHeightWanted) targetHeightWanted = needed;
-  if (targetHeightWanted > computedUpTo) computeAsync(targetHeightWanted);
+/* ================================================================
+   Right margin layout
+   ================================================================ */
+function computeRightMargin(isNarrow){
+  if(isNarrow){ if(show.issDay||show.annPct) return 52; return 16; }
+  const AXIS_W=62; let count=0; if(show.issDay) count++; if(show.annPct) count++;
+  return count===0?20:8+count*AXIS_W;
+}
+function rightAxisLayout(isNarrow){
+  const r={issDay:null,annPct:null};
+  if(isNarrow){ if(show.issDay) r.issDay={tickX:6,titleX:null}; else if(show.annPct) r.annPct={tickX:6,titleX:null}; return r; }
+  let off=6;
+  if(show.issDay){r.issDay={tickX:off,titleX:off+44};off+=62;}
+  if(show.annPct){r.annPct={tickX:off,titleX:off+44};off+=62;}
+  return r;
 }
 
-/* ==================================================================
-   View (pan/zoom state)
-   ================================================================== */
-const MAX_TIME = Date.UTC(2100, 0, 1);
-const MIN_SPAN = 30 * 86400_000;
-
-const view = {
-  tMin: genTime,
-  tMax: blockToTime(3_400_000),
-};
-
-function clampView() {
-  let span = view.tMax - view.tMin;
-  if (span < MIN_SPAN) { const mid = (view.tMin+view.tMax)/2; view.tMin=mid-MIN_SPAN/2; view.tMax=mid+MIN_SPAN/2; span=MIN_SPAN; }
-  if (view.tMin < genTime - 2*ONE_YEAR_MS) { view.tMax += (genTime - 2*ONE_YEAR_MS - view.tMin); view.tMin = genTime - 2*ONE_YEAR_MS; }
-  if (view.tMax > MAX_TIME) { view.tMin -= (view.tMax - MAX_TIME); view.tMax = MAX_TIME; }
-  if (view.tMin < genTime - 2*ONE_YEAR_MS) view.tMin = genTime - 2*ONE_YEAR_MS;
-}
-function resetView() {
-  view.tMin = genTime; view.tMax = blockToTime(3_400_000);
-  clampView(); requestDraw(); requestComputeForView();
-}
-
-/* ==================================================================
-   Right margin layout helper
-   ================================================================== */
-function computeRightMargin(isNarrow) {
-  /* Each visible right axis needs space for:
-       - tick labels (~46px)
-       - rotated title (~18px)
-       - gap (~6px)
-     We stack them: issDay first (closest to plot), then annPct.
-     On narrow screens we skip rotated titles and use smaller widths. */
-  if (isNarrow) {
-    // On narrow: just one column of ticks for whichever is visible
-    if (show.issDay || show.annPct) return 52;
-    return 16;
-  }
-  const AXIS_WIDTH = 62; // tick labels + rotated title + gap
-  let count = 0;
-  if (show.issDay) count++;
-  if (show.annPct) count++;
-  if (count === 0) return 20;
-  return 8 + count * AXIS_WIDTH; // 8px base gap from plot edge
-}
-
-/* Returns the x-offset from the right edge of the plot area for each axis's tick labels and title */
-function rightAxisLayout(isNarrow) {
-  /* Returns { issDay: {tickX, titleX} | null, annPct: {tickX, titleX} | null }
-     tickX = x offset from (MG.left + PW) for tick label left edge
-     titleX = x position for rotated title center */
-  const result = { issDay: null, annPct: null };
-  if (isNarrow) {
-    // On narrow, only show tick labels, no rotated titles
-    if (show.issDay) result.issDay = { tickX: 6, titleX: null };
-    else if (show.annPct) result.annPct = { tickX: 6, titleX: null };
-    // If both, issDay wins the tick column on narrow
-    if (show.issDay && show.annPct) {
-      // Can't fit both on narrow — only show issDay ticks
-      result.annPct = null;
-    }
-    return result;
-  }
-  // Wide layout: stack axes left to right
-  let offset = 6; // initial gap from plot edge
-  if (show.issDay) {
-    result.issDay = { tickX: offset, titleX: offset + 44 };
-    offset += 62;
-  }
-  if (show.annPct) {
-    result.annPct = { tickX: offset, titleX: offset + 44 };
-    offset += 62;
-  }
-  return result;
-}
-
-/* ==================================================================
+/* ================================================================
    Drawing
-   ================================================================== */
-let drawRAF = null;
-const layout = {};
-function requestDraw() { if (!drawRAF) drawRAF = requestAnimationFrame(() => { drawRAF = null; draw(); }); }
+   ================================================================ */
+let drawRAF=null; const layout={};
+function requestDraw(){ if(!drawRAF) drawRAF=requestAnimationFrame(()=>{ drawRAF=null; draw(); }); }
 
-/* Halving heights (post-Blossom) */
-function halvingHeights(maxH) {
-  const res = [];
-  let h = 1_046_400;
-  while (h <= maxH) { res.push(h); h += 1_680_000; }
-  return res;
-}
+function halvingHeights(maxH){ const r=[]; let h=1_046_400; while(h<=maxH){r.push(h);h+=1_680_000;} return r; }
 
-function draw() {
-  if (data.length < 2) return;
-  const canvas = document.getElementById("chart");
-  const dpr = window.devicePixelRatio || 1;
-  const isNarrow = window.innerWidth < 600;
-  const CSS_W = Math.min(960, window.innerWidth - 20);
-  const CSS_H = isNarrow ? Math.round(CSS_W * 0.62) : Math.round(CSS_W * 0.54);
-  canvas.width = CSS_W * dpr; canvas.height = CSS_H * dpr;
-  canvas.style.width = CSS_W + "px"; canvas.style.height = CSS_H + "px";
-  const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
+function draw(){
+  if(data.length<2) return;
 
-  const rightMar = computeRightMargin(isNarrow);
-  const MG = { top:28, right: rightMar, bottom:52, left: isNarrow ? 48 : 64 };
-  const PW = CSS_W - MG.left - MG.right;
-  const PH = CSS_H - MG.top - MG.bottom;
-  Object.assign(layout, { CSS_W, CSS_H, MG, PW, PH });
+  // Ensure ZIP 234 data covers the view
+  if(show.zip234){
+    const mh=Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000;
+    computeZip234(mh);
+  }
 
-  const axLayout = rightAxisLayout(isNarrow);
+  const canvas=document.getElementById("chart");
+  const dpr=window.devicePixelRatio||1;
+  const isNarrow=window.innerWidth<600;
+  const CSS_W=Math.min(960,window.innerWidth-20);
+  const CSS_H=isNarrow?Math.round(CSS_W*0.62):Math.round(CSS_W*0.54);
+  canvas.width=CSS_W*dpr; canvas.height=CSS_H*dpr;
+  canvas.style.width=CSS_W+"px"; canvas.style.height=CSS_H+"px";
+  const ctx=canvas.getContext("2d"); ctx.scale(dpr,dpr);
 
-  // Read CSS vars for current theme
-  const T = {
-    bg: cv("--bg"), fg: cv("--fg"), muted: cv("--muted"), panel: cv("--panel"),
-    supplyObs: cv("--supplyObs"), issObs: cv("--issObs"),
-    supplyExp: cv("--supplyExp"), issExp: cv("--issExp"),
-    annualObs: cv("--annualObs"), annualExp: cv("--annualExp"),
-    eventObs: cv("--eventObs"), eventHalv: cv("--eventHalv"),
-    written: cv("--written"), gridLine: cv("--gridLine"),
-    capLine: cv("--capLine"), frameBorder: cv("--frameBorder"),
-    supplyFillObs: getTheme()==="dark" ? "rgba(245,158,11,0.14)" : "rgba(217,119,6,0.10)",
-    supplyFillExp: getTheme()==="dark" ? "rgba(245,158,11,0.06)" : "rgba(217,119,6,0.05)",
+  const rightMar=computeRightMargin(isNarrow);
+  const MG={top:28,right:rightMar,bottom:52,left:isNarrow?48:64};
+  const PW=CSS_W-MG.left-MG.right, PH=CSS_H-MG.top-MG.bottom;
+  Object.assign(layout,{CSS_W,CSS_H,MG,PW,PH});
+  const axL=rightAxisLayout(isNarrow);
+
+  // Theme colors
+  const T={bg:cv("--bg"),fg:cv("--fg"),muted:cv("--muted"),panel:cv("--panel"),
+    supplyObs:cv("--supplyObs"),issObs:cv("--issObs"),supplyExp:cv("--supplyExp"),issExp:cv("--issExp"),
+    annualObs:cv("--annualObs"),annualExp:cv("--annualExp"),
+    eventObs:cv("--eventObs"),eventHalv:cv("--eventHalv"),written:cv("--written"),
+    gridLine:cv("--gridLine"),capLine:cv("--capLine"),frameBorder:cv("--frameBorder"),
+    zip234Supply:cv("--zip234Supply"),zip234Iss:cv("--zip234Iss"),zip234Ann:cv("--zip234Ann"),
+    zip234Act:cv("--zip234Act"),
+    supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
+    supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)"
   };
 
-  ctx.fillStyle = T.panel; ctx.fillRect(0, 0, CSS_W, CSS_H);
+  ctx.fillStyle=T.panel; ctx.fillRect(0,0,CSS_W,CSS_H);
 
-  // Axis ranges
-  const ySupMax = 22_000_000;
-  const yIssDayMax = 8_000;
-  const yAnnMax = 30;
+  // Axis ranges (fixed)
+  const ySupMax=22_000_000, yIssDayMax=8_000, yAnnMax=30;
+  const xP=t=>MG.left+((t-view.tMin)/(view.tMax-view.tMin))*PW;
+  const ySP=s=>MG.top+PH-(s/ySupMax)*PH;
+  const yIP=v=>MG.top+PH-(v/yIssDayMax)*PH;
+  const yAP=p=>MG.top+PH-(p/yAnnMax)*PH;
 
-  const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
-  const ySP = s => MG.top + PH - (s / ySupMax) * PH;
-  const yIP = v => MG.top + PH - (v / yIssDayMax) * PH;
-  const yAP = p => MG.top + PH - (p / yAnnMax) * PH;
+  // Visible default data
+  const D=data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax);
 
-  // Range label
-  document.getElementById("rangeLabel").textContent = "Range limit: through Jan 1, 2100 (UTC)";
-
-  // Filter visible data
-  const D = data.filter(d => d.time >= view.tMin && d.time <= view.tMax);
-  if (D.length < 1) { ctx.fillStyle = T.muted; ctx.font = "14px system-ui"; ctx.textAlign = "center"; ctx.fillText("No data in view — try Reset", CSS_W/2, CSS_H/2); return; }
-
-  // --- Grid ---
-  ctx.strokeStyle = T.gridLine; ctx.lineWidth = 1;
-  if (show.supply) {
-    for (let s = 0; s <= ySupMax; s += 3_000_000) {
-      ctx.beginPath(); ctx.moveTo(MG.left, ySP(s)); ctx.lineTo(MG.left+PW, ySP(s)); ctx.stroke();
-    }
+  // Grid
+  if(show.supply){
+    ctx.strokeStyle=T.gridLine; ctx.lineWidth=1;
+    for(let s=0;s<=ySupMax;s+=3_000_000){ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();}
   }
 
-  // --- 21M cap ---
-  if (show.supply) {
-    ctx.save(); ctx.setLineDash([6,4]); ctx.strokeStyle = T.capLine; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(MG.left, ySP(21_000_000)); ctx.lineTo(MG.left+PW, ySP(21_000_000)); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = T.capLine; ctx.font = "10px system-ui"; ctx.textAlign = "left";
-    ctx.fillText("21 M cap", MG.left+4, ySP(21_000_000)-4);
-    ctx.restore();
+  // 21M cap
+  if(show.supply){
+    ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(MG.left,ySP(21e6));ctx.lineTo(MG.left+PW,ySP(21e6));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(21e6)-4);ctx.restore();
   }
 
-  // --- Event verticals ---
-  ctx.save(); ctx.setLineDash([4,4]); ctx.lineWidth = 1;
+  // Event verticals
+  ctx.save(); ctx.setLineDash([4,4]); ctx.lineWidth=1;
   // Blossom
-  { const t = blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
-    if (t >= view.tMin && t <= view.tMax) {
-      ctx.strokeStyle = T.eventObs;
-      ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top+PH); ctx.stroke();
-    }
-  }
+  { const t=blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
+    if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventObs;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
   // Halvings
-  for (const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax)) + 100_000)) {
-    const t = blockToTime(hh);
-    if (t >= view.tMin && t <= view.tMax) {
-      ctx.strokeStyle = T.eventHalv;
-      ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top+PH); ctx.stroke();
-    }
-  }
-  // Written marker
-  { const t = writtenTime;
-    if (t >= view.tMin && t <= view.tMax) {
-      ctx.strokeStyle = T.written; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(xP(t), MG.top); ctx.lineTo(xP(t), MG.top+PH); ctx.stroke();
-    }
+  if(show.default){ for(const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax))+200_000)){
+    const t=blockToTime(hh); if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventHalv;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}}
+  // Written
+  { const t=writtenTime; if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.written;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
+  // ZIP 234 activation
+  if(show.zip234){
+    const t=blockToTime(zip234ActivationHeight);
+    if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.zip234Act;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
+      ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}
   }
   ctx.setLineDash([]); ctx.restore();
 
-  // --- Helper: draw a line split at a height into solid (observed) + dashed (expected) ---
-  function drawSplit(pts, splitH, yFn, obsColor, expColor, lw) {
-    // Observed portion (solid)
-    ctx.beginPath(); ctx.strokeStyle = obsColor; ctx.lineWidth = lw; ctx.setLineDash([]);
-    let started = false;
-    for (const p of pts) {
-      if (p.h > splitH) break;
-      const px = xP(p.time), py = yFn(p);
-      if (!isFinite(py)) continue;
-      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
-    }
+  // --- Clip to plot area ---
+  ctx.save(); ctx.beginPath(); ctx.rect(MG.left,MG.top,PW,PH); ctx.clip();
+
+  // Helper: draw split line (obs solid / exp dashed)
+  function drawSplit(pts,splitH,yFn,obsC,expC,lw){
+    ctx.beginPath();ctx.strokeStyle=obsC;ctx.lineWidth=lw;ctx.setLineDash([]);
+    let started=false;
+    for(const p of pts){if(p.h>splitH)break; const py=yFn(p); if(!isFinite(py))continue;
+      const px=xP(p.time); if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
     ctx.stroke();
-    // Expected portion (dashed)
-    ctx.beginPath(); ctx.strokeStyle = expColor; ctx.lineWidth = lw; ctx.setLineDash([6,4]);
-    started = false;
-    for (const p of pts) {
-      if (p.h < splitH) {
-        const py = yFn(p);
-        if (!isFinite(py)) continue;
-        const px = xP(p.time);
-        ctx.moveTo(px, py); started = true;
-        continue;
-      }
-      const px = xP(p.time), py = yFn(p);
-      if (!isFinite(py)) continue;
-      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
-    }
-    ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath();ctx.strokeStyle=expC;ctx.lineWidth=lw;ctx.setLineDash([6,4]);started=false;
+    for(const p of pts){if(p.h<splitH){const py=yFn(p);if(!isFinite(py))continue;ctx.moveTo(xP(p.time),py);started=true;continue;}
+      const py=yFn(p);if(!isFinite(py))continue;const px=xP(p.time);
+      if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+    ctx.stroke();ctx.setLineDash([]);
   }
 
-  // --- Helper: fill area under supply curve ---
-  function fillArea(pts, splitH, yFn, obsColor, expColor) {
-    // Observed fill
-    ctx.beginPath();
-    let started = false;
-    let lastX = MG.left, lastY = ySP(0);
-    for (const p of pts) {
-      if (p.h > splitH) break;
-      const px = xP(p.time), py = yFn(p);
-      if (!started) { ctx.moveTo(px, ySP(0)); ctx.lineTo(px, py); started = true; }
-      else ctx.lineTo(px, py);
-      lastX = px; lastY = py;
-    }
-    if (started) { ctx.lineTo(lastX, ySP(0)); ctx.closePath(); ctx.fillStyle = obsColor; ctx.fill(); }
-
-    // Expected fill
-    ctx.beginPath(); started = false;
-    for (const p of pts) {
-      if (p.h < splitH) { lastX = xP(p.time); lastY = yFn(p); continue; }
-      const px = xP(p.time), py = yFn(p);
-      if (!started) { ctx.moveTo(lastX, ySP(0)); ctx.lineTo(lastX, lastY); ctx.lineTo(px, py); started = true; }
-      else ctx.lineTo(px, py);
-      lastX = px; lastY = py;
-    }
-    if (started) { ctx.lineTo(lastX, ySP(0)); ctx.closePath(); ctx.fillStyle = expColor; ctx.fill(); }
+  // Helper: fill under supply curve
+  function fillArea(pts,splitH,yFn,obsC,expC){
+    function doFill(seg,color){if(seg.length<2)return;ctx.beginPath();
+      ctx.moveTo(xP(seg[0].time),ySP(0));for(const p of seg)ctx.lineTo(xP(p.time),yFn(p));
+      ctx.lineTo(xP(seg[seg.length-1].time),ySP(0));ctx.closePath();ctx.fillStyle=color;ctx.fill();}
+    doFill(pts.filter(p=>p.h<=splitH),obsC); doFill(pts.filter(p=>p.h>=splitH),expC);
   }
 
   const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT;
 
-  // --- Draw series (conditionally) ---
-  if (show.supply) {
-    fillArea(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyFillObs, T.supplyFillExp);
-    drawSplit(D, WRITTEN_HEIGHT, p => ySP(p.supply), T.supplyObs, T.supplyExp, 2);
-  }
-  if (show.issDay) {
-    drawSplit(D, WRITTEN_HEIGHT, p => yIP(p.issDay), T.issObs, T.issExp, 2);
-  }
-  if (show.annPct) {
-    drawSplit(D, ANNUAL_PCT_SPLIT_HEIGHT, p => {
-      const v = p.annualPct;
-      if (!isFinite(v) || v > 200) return NaN;
-      return yAP(v);
-    }, T.annualObs, T.annualExp, 1.8);
+  // Default model curves
+  if(show.default && D.length>=2){
+    if(show.supply){ fillArea(D,WRITTEN_HEIGHT,p=>ySP(p.supply),T.supplyFillObs,T.supplyFillExp);
+      drawSplit(D,WRITTEN_HEIGHT,p=>ySP(p.supply),T.supplyObs,T.supplyExp,2); }
+    if(show.issDay) drawSplit(D,WRITTEN_HEIGHT,p=>yIP(p.issDay),T.issObs,T.issExp,2);
+    if(show.annPct) drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=p.annualPct;if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
   }
 
-  // --- Event labels ---
-  ctx.font = "9px system-ui";
-  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function eventLabel(h, label, color) {
-    const t = blockToTime(h);
-    if (t < view.tMin || t > view.tMax) return;
-    const d = new Date(t);
-    ctx.fillStyle = color;
-    ctx.save(); ctx.translate(xP(t)-2, MG.top+PH-4); ctx.rotate(-Math.PI/2); ctx.textAlign = "left";
-    ctx.fillText(label + " — " + mo[d.getUTCMonth()] + " " + d.getUTCFullYear(), 0, 0);
-    ctx.restore();
-  }
-  eventLabel(BLOSSOM_ACTIVATION_HEIGHT, "Blossom", T.eventObs);
-  for (const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax)) + 100_000)) {
-    const idx = Math.round((hh - 1_046_400) / 1_680_000) + 1;
-    eventLabel(hh, "Halving " + idx, T.eventHalv);
-  }
-  // Written label
-  { const t = writtenTime;
-    if (t >= view.tMin && t <= view.tMax) {
-      ctx.fillStyle = T.written; ctx.save();
-      ctx.translate(xP(t)-2, MG.top+PH-4); ctx.rotate(-Math.PI/2); ctx.textAlign = "left";
-      ctx.fillText("Written at", 0, 0); ctx.restore();
+  // ZIP 234 curves
+  if(show.zip234 && zip234Data.length>=2){
+    const Z=zip234Data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax);
+    function drawZ234Line(yFn,color,lw){
+      if(Z.length<2)return; ctx.beginPath();ctx.setLineDash([6,4]);ctx.strokeStyle=color;ctx.lineWidth=lw;
+      let started=false; for(const p of Z){const py=yFn(p);if(!isFinite(py))continue;
+        const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+      ctx.stroke();ctx.setLineDash([]);
     }
+    if(show.supply) drawZ234Line(p=>ySP(p.supply),T.zip234Supply,2);
+    if(show.issDay) drawZ234Line(p=>yIP(p.issDay),T.zip234Iss,2);
+    if(show.annPct) drawZ234Line(p=>{const v=p.annualPct;if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.zip234Ann,1.8);
   }
 
-  // --- Left axis (Supply) ---
-  if (show.supply) {
-    ctx.fillStyle = T.supplyObs; ctx.font = "11px system-ui"; ctx.textAlign = "right";
-    for (let s = 0; s <= ySupMax; s += 3_000_000)
-      ctx.fillText((s/1e6).toFixed(0) + " M", MG.left-6, ySP(s)+4);
-    if (!isNarrow) {
-      ctx.save(); ctx.translate(14, MG.top+PH/2); ctx.rotate(-Math.PI/2);
-      ctx.fillStyle = T.supplyObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
-      ctx.fillText("Cumulative Supply (ZEC)", 0, 0); ctx.restore();
-    }
-  }
+  ctx.restore(); // end clip
 
-  // --- Right axis 1 (Issuance/Day) ---
-  if (show.issDay && axLayout.issDay) {
-    const ax = axLayout.issDay;
-    const tickBaseX = MG.left + PW + ax.tickX;
-    ctx.fillStyle = T.issObs; ctx.font = "11px system-ui"; ctx.textAlign = "left";
-    for (let v = 0; v <= yIssDayMax; v += 2_000) {
-      const label = isNarrow ? (v >= 1000 ? (v/1000)+"k" : String(v)) : v.toLocaleString();
-      ctx.fillText(label, tickBaseX, yIP(v)+4);
-    }
-    if (!isNarrow && ax.titleX != null) {
-      ctx.save(); ctx.translate(MG.left + PW + ax.titleX, MG.top+PH/2);
-      ctx.rotate(Math.PI/2); ctx.fillStyle = T.issObs; ctx.font = "12px system-ui"; ctx.textAlign = "center";
-      ctx.fillText("Issuance per Day (ZEC)", 0, 0); ctx.restore();
-    }
+  // Event labels
+  ctx.font="9px system-ui";
+  const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function eventLabel(h,label,color){
+    const t=blockToTime(h); if(t<view.tMin||t>view.tMax)return;
+    ctx.fillStyle=color;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
+    ctx.textAlign="left";ctx.fillText(label+" — "+mo[new Date(t).getUTCMonth()]+" "+new Date(t).getUTCFullYear(),0,0);ctx.restore();
   }
+  eventLabel(BLOSSOM_ACTIVATION_HEIGHT,"Blossom",T.eventObs);
+  if(show.default){ for(const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax))+200_000)){
+    const idx=Math.round((hh-1_046_400)/1_680_000)+1; eventLabel(hh,"Halving "+idx,T.eventHalv);}}
+  { const t=writtenTime; if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Written at",0,0);ctx.restore();}}
+  if(show.zip234){ const t=blockToTime(zip234ActivationHeight); if(t>=view.tMin&&t<=view.tMax){
+    ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
+    ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
 
-  // --- Right axis 2 (Annual %) ---
-  if (show.annPct && axLayout.annPct) {
-    const ax = axLayout.annPct;
-    const tickBaseX = MG.left + PW + ax.tickX;
-    ctx.fillStyle = T.annualObs; ctx.font = "10px system-ui"; ctx.textAlign = "left";
-    for (let p = 0; p <= yAnnMax; p += 5)
-      ctx.fillText(p + "%", tickBaseX, yAP(p)+3);
-    if (!isNarrow && ax.titleX != null) {
-      ctx.save(); ctx.translate(MG.left + PW + ax.titleX, MG.top+PH/2);
-      ctx.rotate(Math.PI/2); ctx.fillStyle = T.annualObs; ctx.font = "11px system-ui"; ctx.textAlign = "center";
-      ctx.fillText("Annualized Issuance %", 0, 0); ctx.restore();
-    }
+  // Left axis (Supply)
+  if(show.supply){
+    ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="right";
+    for(let s=0;s<=ySupMax;s+=3_000_000)ctx.fillText((s/1e6).toFixed(0)+" M",MG.left-6,ySP(s)+4);
+    if(!isNarrow){ctx.save();ctx.translate(14,MG.top+PH/2);ctx.rotate(-Math.PI/2);
+      ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ZEC)",0,0);ctx.restore();}
   }
+  // Right axis 1 (Issuance/Day)
+  if(show.issDay&&axL.issDay){const ax=axL.issDay, bx=MG.left+PW+ax.tickX;
+    ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="left";
+    for(let v=0;v<=yIssDayMax;v+=2_000){const lb=isNarrow?(v>=1000?(v/1000)+"k":String(v)):v.toLocaleString();ctx.fillText(lb,bx,yIP(v)+4);}
+    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
+      ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ZEC)",0,0);ctx.restore();}}
+  // Right axis 2 (Annual %)
+  if(show.annPct&&axL.annPct){const ax=axL.annPct, bx=MG.left+PW+ax.tickX;
+    ctx.fillStyle=T.annualObs;ctx.font="10px system-ui";ctx.textAlign="left";
+    for(let p=0;p<=yAnnMax;p+=5)ctx.fillText(p+"%",bx,yAP(p)+3);
+    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
+      ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Issuance %",0,0);ctx.restore();}}
 
-  // --- X axis ---
-  ctx.fillStyle = T.muted; ctx.font = "11px system-ui"; ctx.textAlign = "center";
-  const spanYears = (view.tMax - view.tMin) / ONE_YEAR_MS;
-  const yearStep = spanYears > 40 ? 10 : spanYears > 15 ? 5 : spanYears > 6 ? 2 : 1;
-  for (let yr = 2016; yr <= 2100; yr += yearStep) {
-    const t = Date.UTC(yr, 0, 1);
-    if (t < view.tMin || t > view.tMax) continue;
-    ctx.fillText(yr, xP(t), MG.top+PH+20);
-    ctx.strokeStyle = T.gridLine; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(xP(t), MG.top+PH); ctx.lineTo(xP(t), MG.top+PH+4); ctx.stroke();
-  }
-  ctx.font = "12px system-ui"; ctx.fillText("Date (UTC)", MG.left+PW/2, MG.top+PH+42);
+  // X axis
+  ctx.fillStyle=T.muted;ctx.font="11px system-ui";ctx.textAlign="center";
+  const spanYears=(view.tMax-view.tMin)/ONE_YEAR_MS;
+  const yearStep=spanYears>40?10:spanYears>15?5:spanYears>6?2:1;
+  for(let yr=2016;yr<=2100;yr+=yearStep){const t=Date.UTC(yr,0,1);if(t<view.tMin||t>view.tMax)continue;
+    ctx.fillText(yr,xP(t),MG.top+PH+20);ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(xP(t),MG.top+PH);ctx.lineTo(xP(t),MG.top+PH+4);ctx.stroke();}
+  ctx.font="12px system-ui";ctx.fillText("Date (UTC)",MG.left+PW/2,MG.top+PH+42);
 
-  // --- Frame ---
-  ctx.strokeStyle = T.frameBorder; ctx.lineWidth = 1;
-  ctx.strokeRect(MG.left, MG.top, PW, PH);
+  // Frame
+  ctx.strokeStyle=T.frameBorder;ctx.lineWidth=1;ctx.strokeRect(MG.left,MG.top,PW,PH);
 }
 
-/* ==================================================================
-   Interaction: pan/zoom
-   ================================================================== */
-const canvas = document.getElementById("chart");
-const tooltip = document.getElementById("tooltip");
+/* ================================================================
+   Interaction: pan / zoom
+   ================================================================ */
+const canvas=document.getElementById("chart"), tooltip=document.getElementById("tooltip");
+let dragging=false, dragStartX=0, dragStartTMin=0, dragStartTMax=0;
+canvas.addEventListener("mousedown",e=>{dragging=true;dragStartX=e.clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;canvas.style.cursor="grabbing";});
+window.addEventListener("mousemove",e=>{if(!dragging)return;const rect=canvas.getBoundingClientRect(),dx=e.clientX-dragStartX,
+  pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;clampView();requestDraw();requestComputeForView();});
+window.addEventListener("mouseup",()=>{dragging=false;canvas.style.cursor="crosshair";});
+canvas.addEventListener("wheel",e=>{e.preventDefault();const rect=canvas.getBoundingClientRect(),frac=(e.clientX-rect.left)/rect.width;
+  if(e.ctrlKey||e.metaKey||Math.abs(e.deltaY)>50&&Math.abs(e.deltaX)<5){
+    const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
+    view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
+  }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
+  clampView();requestDraw();requestComputeForView();},{passive:false});
+canvas.addEventListener("dblclick",()=>resetView());
 
-let dragging = false, dragStartX = 0, dragStartTMin = 0, dragStartTMax = 0;
+// Touch
+let lastTouchDist=0;
+canvas.addEventListener("touchstart",e=>{if(e.touches.length===1){dragging=true;dragStartX=e.touches[0].clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;}
+  else if(e.touches.length===2){dragging=false;lastTouchDist=Math.abs(e.touches[0].clientX-e.touches[1].clientX);}},{passive:true});
+canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging){const dx=e.touches[0].clientX-dragStartX,rect=canvas.getBoundingClientRect(),
+  pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;clampView();requestDraw();requestComputeForView();}
+  else if(e.touches.length===2){const dist=Math.abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    if(lastTouchDist>0){const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),frac=(mid-rect.left)/rect.width,
+      span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
+      clampView();requestDraw();requestComputeForView();}lastTouchDist=dist;}},{passive:true});
+canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
+canvas.style.cursor="crosshair";
 
-canvas.addEventListener("mousedown", e => {
-  dragging = true; dragStartX = e.clientX;
-  dragStartTMin = view.tMin; dragStartTMax = view.tMax;
-  canvas.style.cursor = "grabbing";
-});
-window.addEventListener("mousemove", e => {
-  if (!dragging) return;
-  const rect = canvas.getBoundingClientRect();
-  const dx = e.clientX - dragStartX;
-  const pxPerMs = (dragStartTMax - dragStartTMin) / rect.width;
-  view.tMin = dragStartTMin - dx * pxPerMs;
-  view.tMax = dragStartTMax - dx * pxPerMs;
-  clampView(); requestDraw(); requestComputeForView();
-});
-window.addEventListener("mouseup", () => {
-  dragging = false; canvas.style.cursor = "crosshair";
-});
-
-canvas.addEventListener("wheel", e => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const frac = (e.clientX - rect.left) / rect.width;
-
-  if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 50 && Math.abs(e.deltaX) < 5) {
-    // Zoom
-    const zf = Math.pow(1.002, e.deltaY);
-    const span = view.tMax - view.tMin;
-    const pivot = view.tMin + frac * span;
-    view.tMin = pivot - (pivot - view.tMin) * zf;
-    view.tMax = pivot + (view.tMax - pivot) * zf;
-  } else {
-    // Pan
-    const span = view.tMax - view.tMin;
-    const shift = (e.deltaX || e.deltaY) * span * 0.001;
-    view.tMin += shift; view.tMax += shift;
-  }
-  clampView(); requestDraw(); requestComputeForView();
-}, { passive: false });
-
-canvas.addEventListener("dblclick", () => resetView());
-
-// Touch support
-let lastTouchDist = 0, lastTouchMid = 0;
-canvas.addEventListener("touchstart", e => {
-  if (e.touches.length === 1) {
-    dragging = true; dragStartX = e.touches[0].clientX;
-    dragStartTMin = view.tMin; dragStartTMax = view.tMax;
-  } else if (e.touches.length === 2) {
-    dragging = false;
-    lastTouchDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
-    lastTouchMid = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-  }
-}, { passive: true });
-canvas.addEventListener("touchmove", e => {
-  if (e.touches.length === 1 && dragging) {
-    const dx = e.touches[0].clientX - dragStartX;
-    const rect = canvas.getBoundingClientRect();
-    const pxPerMs = (dragStartTMax - dragStartTMin) / rect.width;
-    view.tMin = dragStartTMin - dx * pxPerMs;
-    view.tMax = dragStartTMax - dx * pxPerMs;
-    clampView(); requestDraw(); requestComputeForView();
-  } else if (e.touches.length === 2) {
-    const dist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
-    const mid = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    if (lastTouchDist > 0) {
-      const zf = lastTouchDist / dist;
-      const rect = canvas.getBoundingClientRect();
-      const frac = (mid - rect.left) / rect.width;
-      const span = view.tMax - view.tMin;
-      const pivot = view.tMin + frac * span;
-      view.tMin = pivot - (pivot - view.tMin) * zf;
-      view.tMax = pivot + (view.tMax - pivot) * zf;
-      clampView(); requestDraw(); requestComputeForView();
-    }
-    lastTouchDist = dist; lastTouchMid = mid;
-  }
-}, { passive: true });
-canvas.addEventListener("touchend", () => { dragging = false; lastTouchDist = 0; });
-
-canvas.style.cursor = "crosshair";
-
-/* ==================================================================
+/* ================================================================
    Tooltip
-   ================================================================== */
-canvas.addEventListener("mousemove", function(e) {
-  if (dragging || data.length < 2) { tooltip.style.display = "none"; return; }
-  const rect = canvas.getBoundingClientRect();
-  const cssW = parseInt(canvas.style.width);
-  const cssH = parseInt(canvas.style.height);
-  const {MG, PW, PH} = layout;
-  if (!PW) { tooltip.style.display = "none"; return; }
+   ================================================================ */
+canvas.addEventListener("mousemove",function(e){
+  if(dragging||data.length<2){tooltip.style.display="none";return;}
+  const rect=canvas.getBoundingClientRect();
+  const cssW=parseInt(canvas.style.width), cssH=parseInt(canvas.style.height);
+  const{MG,PW,PH}=layout; if(!PW){tooltip.style.display="none";return;}
+  const mx=(e.clientX-rect.left)*(cssW/rect.width), my=(e.clientY-rect.top)*(cssH/rect.height);
+  if(mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH){tooltip.style.display="none";return;}
 
-  const mx = (e.clientX - rect.left) * (cssW / rect.width);
-  const my = (e.clientY - rect.top) * (cssH / rect.height);
-  if (mx < MG.left || mx > MG.left+PW || my < MG.top || my > MG.top+PH) {
-    tooltip.style.display = "none"; return;
-  }
+  const mouseTime=view.tMin+((mx-MG.left)/PW)*(view.tMax-view.tMin);
+  let lo=0,hi=data.length-1;
+  while(lo<hi){const mid=(lo+hi)>>1;data[mid].time<mouseTime?lo=mid+1:hi=mid;}
+  if(lo>0&&Math.abs(data[lo-1].time-mouseTime)<Math.abs(data[lo].time-mouseTime))lo--;
+  const d=data[lo];
 
-  const mouseTime = view.tMin + ((mx - MG.left) / PW) * (view.tMax - view.tMin);
-  let lo = 0, hi = data.length - 1;
-  while (lo < hi) { const mid = (lo+hi)>>1; data[mid].time < mouseTime ? lo=mid+1 : hi=mid; }
-  if (lo > 0 && Math.abs(data[lo-1].time-mouseTime) < Math.abs(data[lo].time-mouseTime)) lo--;
-  const d = data[lo];
+  const isExp=d.h>WRITTEN_HEIGHT, status=isExp?"Expected":"Observed", sc=isExp?"tt-exp":"tt-obs";
+  const pct=(d.supply/21e6*100);
+  const annStatus=d.annualPctIsExpected?"expected":"observed";
+  const annVal=isFinite(d.annualPct)?d.annualPct.toFixed(2)+"%":"—";
+  const annColor=d.annualPctIsExpected?"var(--annualExp)":"var(--annualObs)";
 
-  const isExp = d.h > WRITTEN_HEIGHT;
-  const status = isExp ? "Expected" : "Observed";
-  const sc = isExp ? "tt-exp" : "tt-obs";
-  const pct = (d.supply / 21e6 * 100);
-
-  const annStatus = d.annualPctIsExpected ? "expected" : "observed";
-  const annVal = isFinite(d.annualPct) ? d.annualPct.toFixed(2)+"%" : "—";
-  const annColor = d.annualPctIsExpected ? "var(--annualExp)" : "var(--annualObs)";
-
-  let html = `<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>` +
+  let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
     `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-  if (show.supply) {
-    html += `<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ` +
-      `${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC ` +
-      `<span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
-  }
-  if (show.issDay) {
-    html += `<div><span style="color:var(--issObs)">Issuance:</span> ` +
-      `${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div>` +
-      `<div class="tt-muted">Per block: ${d.issBlock.toFixed(8)} ZEC</div>`;
-  }
-  if (show.annPct) {
-    html += `<div><span style="color:${annColor}">Annual issuance:</span> ${annVal} ` +
-      `<span class="tt-muted">(${annStatus})</span></div>`;
+  if(show.default){
+    if(show.supply) html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC <span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
+    if(show.issDay) html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div><div class="tt-muted">Per block: ${d.issBlock.toFixed(8)} ZEC</div>`;
+    if(show.annPct) html+=`<div><span style="color:${annColor}">Annual:</span> ${annVal} <span class="tt-muted">(${annStatus})</span></div>`;
   }
 
-  tooltip.innerHTML = html;
-  tooltip.style.display = "block";
-  const tipW = Math.min(380, window.innerWidth - 20);
-  tooltip.style.left = Math.min(e.clientX+14, window.innerWidth - tipW - 10) + "px";
-  tooltip.style.top = Math.max(10, e.clientY - 130) + "px";
+  // ZIP 234 section
+  if(show.zip234 && d.h>=zip234ActivationHeight){
+    const z=getZip234At(d.h);
+    if(z){
+      html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
+      if(show.supply){const zp=(z.supply/21e6*100); html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${z.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC <span class="tt-muted">(${zp.toFixed(2)}%)</span></div>`;}
+      if(show.issDay) html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${z.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div><div class="tt-muted">Per block: ${z.issBlock.toFixed(8)} ZEC</div>`;
+      if(show.annPct){const av=isFinite(z.annualPct)?z.annualPct.toFixed(2)+"%":"—"; html+=`<div><span style="color:var(--zip234Ann)">Annual:</span> ${av}</div>`;}
+    }
+  } else if(show.zip234 && d.h<zip234ActivationHeight){
+    html+=`<div style="margin-top:4px" class="tt-muted"><i>ZIP 234 activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
+  }
+
+  tooltip.innerHTML=html; tooltip.style.display="block";
+  const tipW=Math.min(400,window.innerWidth-20);
+  tooltip.style.left=Math.min(e.clientX+14,window.innerWidth-tipW-10)+"px";
+  tooltip.style.top=Math.max(10,e.clientY-130)+"px";
 });
-canvas.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+canvas.addEventListener("mouseleave",()=>{tooltip.style.display="none";});
 
-/* ==================================================================
+/* ================================================================
    Buttons
-   ================================================================== */
-document.getElementById("btnReset").addEventListener("click", () => resetView());
+   ================================================================ */
+document.getElementById("btnReset").addEventListener("click",()=>resetView());
+document.getElementById("btnObserved").addEventListener("click",()=>{
+  view.tMin=genTime;view.tMax=writtenTime;view.tMax+=(view.tMax-view.tMin)*0.02;
+  clampView();requestDraw();requestComputeForView();});
+document.getElementById("btnWritten").addEventListener("click",()=>{
+  const span=view.tMax-view.tMin;view.tMin=writtenTime-span*0.50;view.tMax=writtenTime+span*0.50;
+  clampView();requestDraw();requestComputeForView();});
+document.getElementById("btnFuture").addEventListener("click",()=>{
+  const span=20*ONE_YEAR_MS;view.tMin=writtenTime-span*0.15;view.tMax=writtenTime+span*0.85;
+  clampView();requestDraw();requestComputeForView();});
+document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
 
-document.getElementById("btnObserved").addEventListener("click", () => {
-  view.tMin = genTime;
-  view.tMax = writtenTime;
-  const span = view.tMax - view.tMin;
-  view.tMax += span * 0.02;
-  clampView(); requestDraw(); requestComputeForView();
+// ZIP 234 activation height input
+document.getElementById("zip234Height").addEventListener("change",e=>{
+  const v=parseInt(e.target.value);
+  if(!isNaN(v)&&v>=0&&v<=100_000_000){
+    zip234ActivationHeight=v; zip234CachedActH=-1;
+    requestDraw(); requestComputeForView();
+  }
 });
 
-document.getElementById("btnWritten").addEventListener("click", () => {
-  const span = view.tMax - view.tMin;
-  view.tMin = writtenTime - span * 0.50;
-  view.tMax = writtenTime + span * 0.50;
-  clampView(); requestDraw(); requestComputeForView();
-});
-
-document.getElementById("btnFuture").addEventListener("click", () => {
-  const span = 20 * ONE_YEAR_MS;
-  view.tMin = writtenTime - span * 0.15;
-  view.tMax = writtenTime + span * 0.85;
-  clampView(); requestDraw(); requestComputeForView();
-});
-
-document.getElementById("btnTheme").addEventListener("click", () => toggleTheme());
-
-/* Legend toggles */
-document.querySelectorAll('.ltoggle').forEach(el => {
-  el.addEventListener('click', () => {
-    const key = el.dataset.series;
-    show[key] = !show[key];
-    el.classList.toggle('active', show[key]);
-    requestDraw();
+// Legend toggles
+document.querySelectorAll('.ltoggle').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const key=el.dataset.series; show[key]=!show[key];
+    el.classList.toggle('active',show[key]); requestDraw();
+    if(key==='zip234') requestComputeForView();
   });
 });
 
-/* ==================================================================
+/* ================================================================
    Boot
-   ================================================================== */
-initTheme();
-clampView();
-targetHeightWanted = Math.max(0, Math.ceil(timeToHeight(view.tMax + ONE_YEAR_MS)) + 10_000);
-requestDraw();
-requestComputeForView();
+   ================================================================ */
+initTheme(); clampView();
+targetHeightWanted=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
+requestDraw(); requestComputeForView();
 </script>
 </body>
 </html>
