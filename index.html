@@ -14,6 +14,7 @@
     --written:rgba(167,139,250,0.65);
     --zip234Supply:#ec4899; --zip234Iss:#a78bfa; --zip234Ann:#fb7185;
     --zip234Act:rgba(236,72,153,0.50);
+    --burnEvent:rgba(255,80,80,0.70);
     --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
     --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
     --btnHover:rgba(148,163,184,0.4);
@@ -32,6 +33,7 @@
     --written:rgba(124,58,237,0.55);
     --zip234Supply:#db2777; --zip234Iss:#7c3aed; --zip234Ann:#e11d48;
     --zip234Act:rgba(219,39,119,0.40);
+    --burnEvent:rgba(220,38,38,0.60);
     --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
     --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
     --btnHover:rgba(148,163,184,0.55);
@@ -153,6 +155,10 @@ const TIME_ANCHORS=[
 
 const BLOSSOM_ACTIVATION_HEIGHT=653_600;
 const WRITTEN_HEIGHT=3_234_946;
+const BURN_EVENTS=[
+  {h:5_000_000, zec:2_000_000, label:"Burn 2M ⓩ"}
+];
+function totalBurnedAtHeight(h){let total=0;for(const b of BURN_EVENTS)if(h>=b.h)total+=b.zec;return total;}
 const ONE_YEAR_MS=365.25*86400*1000;
 
 const SEGMENTS=[];
@@ -231,7 +237,7 @@ const data=[];let computedUpTo=-1,cumulativeBig=0n,targetHeightWanted=0,computin
 
 function pushPoint(h,cumBig){
   const iss=issuance_per_block(h),issBlock=Number(iss)/ZATOSHI,spb=secsPerBlock(h),
-    time=blockToTime(h),supply=Number(cumBig)/ZATOSHI,issDay=issBlock*(86400/spb);
+    time=blockToTime(h),supply=Number(cumBig)/ZATOSHI-totalBurnedAtHeight(h),issDay=issBlock*(86400/spb);
   let annualPct=NaN,annualPctIsExpected=false;
   if(supply>0&&h>=20000){
     const h1yr=Math.floor(heightAfterDuration(h,ONE_YEAR_MS));
@@ -266,7 +272,7 @@ let zip234MaxH=-1;
 function ensureZip234Cache(){
   if(zip234CachedActH!==zip234ActivationHeight){
     const supZat=sumIssuanceRangeClean(0,zip234ActivationHeight);
-    zip234RemainingAtAct=MAX_MONEY_ZEC-Number(supZat)/ZATOSHI;
+    zip234RemainingAtAct = MAX_MONEY_ZEC - (Number(supZat)/ZATOSHI - totalBurnedAtHeight(zip234ActivationHeight));
     zip234CachedActH=zip234ActivationHeight;
     zip234Data=[];zip234MaxH=-1;
   }
@@ -284,38 +290,47 @@ function computeZip234(maxH){
   zip234MaxH=maxH;
 }
 
-function pushZ234(h,R0,actH){
-  const elapsed=h-actH;
-  const decayBefore=Math.pow(1-ZIP234_K,elapsed);
-  const decayAfter=Math.pow(1-ZIP234_K,elapsed+1);
-  const remainAfter=R0*decayAfter;
-  const supply=MAX_MONEY_ZEC-remainAfter;
-  const issBlock=ZIP234_K*R0*decayBefore;
-  const spb=secsPerBlock(h);
-  const issDay=issBlock*(86400/spb);
-  const time=blockToTime(h);
-  const bpy=ONE_YEAR_MS/1000/spb;
-  const yearIss=remainAfter*(1-Math.pow(1-ZIP234_K,bpy));
-  const annualPct=supply>0 ? (yearIss/supply)*100 : NaN;
-  zip234Data.push({ h, time, supply, issBlock, issDay, annualPct });
-}
-
 function getZip234At(h){
   if(h<zip234ActivationHeight)return null;
   ensureZip234Cache();
-  const actH=zip234ActivationHeight,R0=zip234RemainingAtAct;
-  const elapsed=h-actH;
+  const actH=zip234ActivationHeight;
+  // Walk through burn events that fall between activation and h
+  // Between burns, closed-form exponential is valid
+  let segStart=actH;
+  let R=zip234RemainingAtAct; // remaining at start of current segment
+  // Add back burns that happened before activation (shouldn't happen, but safe)
+  // Process burns in order
+  const relevantBurns=BURN_EVENTS.filter(b=>b.h>=actH&&b.h<=h).sort((a,b)=>a.h-b.h);
+  for(const b of relevantBurns){
+    // Decay from segStart to burn height
+    const elapsed=b.h-segStart;
+    R=R*Math.pow(1-ZIP234_K,elapsed);
+    // Burn increases remaining (supply decreases, so 21M-supply increases)
+    R+=b.zec;
+    segStart=b.h;
+  }
+  // Decay from last segment start to h
+  const elapsed=h-segStart;
   const decayBefore=Math.pow(1-ZIP234_K,elapsed);
   const decayAfter=Math.pow(1-ZIP234_K,elapsed+1);
-  const remainAfter=R0*decayAfter;
+  const remainBefore=R*decayBefore;
+  const remainAfter=R*decayAfter;
   const supply=MAX_MONEY_ZEC-remainAfter;
-  const issBlock=ZIP234_K*R0*decayBefore;
+  const issBlock=ZIP234_K*remainBefore;
   const spb=secsPerBlock(h);
   const issDay=issBlock*(86400/spb);
   const bpy=ONE_YEAR_MS/1000/spb;
+  // For annual %, we need to account for any burns in the coming year too
+  // Approximate: just use current remaining for simplicity
   const yearIss=remainAfter*(1-Math.pow(1-ZIP234_K,bpy));
   const annualPct=supply>0 ? (yearIss/supply)*100 : NaN;
   return { supply, issBlock, issDay, annualPct };
+}
+
+function pushZ234(h,R0,actH){
+  const z=getZip234At(h);
+  if(!z)return;
+  zip234Data.push({ h, time:blockToTime(h), supply:z.supply, issBlock:z.issBlock, issDay:z.issDay, annualPct:z.annualPct });
 }
 
 /* ================================================================
@@ -422,6 +437,7 @@ function draw(){
     gridLine:cv("--gridLine"),capLine:cv("--capLine"),frameBorder:cv("--frameBorder"),
     zip234Supply:cv("--zip234Supply"),zip234Iss:cv("--zip234Iss"),zip234Ann:cv("--zip234Ann"),
     zip234Act:cv("--zip234Act"),
+    burnEvent:cv("--burnEvent"),
     supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
     supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)",
     zip234FillObs:getTheme()==="dark"?"rgba(236,72,153,0.12)":"rgba(219,39,119,0.08)",
@@ -467,6 +483,9 @@ function draw(){
 
   // Written ("Sim written")
   {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.written;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
+
+  // Burn events
+  for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.burnEvent;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
 
   // ZIP 234 activation
   if(show.zip234){
@@ -553,6 +572,9 @@ function draw(){
   // "Sim written" label
   {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Sim written",0,0);ctx.restore();}}
 
+  // Burn event labels
+  for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=cv("--burnEvent");ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(b.label,0,0);ctx.restore();}}
+
   // ZIP 234 activation label
   if(show.zip234){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
     ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
@@ -563,7 +585,7 @@ function draw(){
     ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="right";
     for(let v=0;v<=yIssDayMax;v+=2_000){const lb=isNarrow?(v>=1000?(v/1000)+"k":String(v)):v.toLocaleString();ctx.fillText(lb,bx,yIP(v)+4);}
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ZEC)",0,0);ctx.restore();}}
+      ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ⓩ)",0,0);ctx.restore();}}
 
   // Left axis 2 (Annual %)
   if(show.annPct&&axL.annPct){const ax=axL.annPct,bx=MG.left-ax.tickX;
@@ -577,7 +599,7 @@ function draw(){
     ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="left";
     for(let s=0;s<=ySupMax;s+=3_000_000)ctx.fillText((s/1e6).toFixed(0)+" M",bx,ySP(s)+4);
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
-      ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ZEC)",0,0);ctx.restore();}}
+      ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ⓩ)",0,0);ctx.restore();}}
 
   // X axis
   ctx.fillStyle=T.muted;ctx.font="10px system-ui";ctx.textAlign="center";
@@ -750,7 +772,8 @@ function handleChartHover(e){
   const{MG,PW,PH}=layout;if(!PW){tooltip.style.display="none";return;}
   const mx=(e.clientX-rect.left)*(cssW/rect.width),my=(e.clientY-rect.top)*(cssH/rect.height);
 
-  // Written tooltip
+  // Written tooltip + Burn event tooltips
+  let specialTipShown=false;
   const wt=writtenTime;
   if(wt>=view.tMin&&wt<=view.tMax){
     const wx=MG.left+((wt-view.tMin)/(view.tMax-view.tMin))*PW;
@@ -761,8 +784,29 @@ function handleChartHover(e){
       const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
       writtenTipEl.style.left=tipScreenX+"px";
       writtenTipEl.style.top=tipScreenY+"px";
-    }else{writtenTipEl.style.display="none";}
-  }else{writtenTipEl.style.display="none";}
+      specialTipShown=true;
+    }
+  }
+  if(!specialTipShown){
+    for(const b of BURN_EVENTS){
+      const bt=blockToTime(b.h);
+      if(bt>=view.tMin&&bt<=view.tMax){
+        const bx=MG.left+((bt-view.tMin)/(view.tMax-view.tMin))*PW;
+        if(Math.abs(mx-bx)<12&&my>=MG.top&&my<=MG.top+PH){
+          writtenTipEl.innerHTML=`<b style="color:var(--burnEvent)">${b.label}</b><br>Block ${b.h.toLocaleString()}<br>${fmtDate(bt)} (UTC)<br>${b.zec.toLocaleString()} ⓩ burned`;
+          writtenTipEl.style.display="block";
+          const tipScreenX=rect.left+(bx/cssW)*rect.width;
+          const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
+          writtenTipEl.style.left=tipScreenX+"px";
+          writtenTipEl.style.top=tipScreenY+"px";
+          specialTipShown=true;
+          break;
+        }
+      }
+    }
+  }
+  if(!specialTipShown)writtenTipEl.style.display="none";
+
   if(mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH){tooltip.style.display="none";return;}
   const mouseTime=view.tMin+((mx-MG.left)/PW)*(view.tMax-view.tMin);
 
@@ -784,8 +828,8 @@ function handleChartHover(e){
   const showDefHere=d.h<=defaultCutoffH2;
 
   if(showDefHere){
-    if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC <span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
-    if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div><div class="tt-muted">Per block: ${d.issBlock.toFixed(8)} ZEC</div>`;
+    if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
+    if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${d.issBlock.toFixed(8)} ⓩ</div>`;
     if(show.annPct)html+=`<div><span style="color:${annColor}">Annual:</span> ${annVal} <span class="tt-muted">(${annStatus})</span></div>`;
   }
 
@@ -793,8 +837,8 @@ function handleChartHover(e){
     const z=getZip234At(d.h);
     if(z){
       html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
-      if(show.supply){const zp=(z.supply/21e6*100);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${z.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC <span class="tt-muted">(${zp.toFixed(2)}%)</span></div>`;}
-      if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${z.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ZEC/day</div><div class="tt-muted">Per block: ${z.issBlock.toFixed(8)} ZEC</div>`;
+      if(show.supply){const zp=(z.supply/21e6*100);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${z.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${zp.toFixed(2)}%)</span></div>`;}
+      if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${z.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${z.issBlock.toFixed(8)} ⓩ</div>`;
       if(show.annPct){const av=isFinite(z.annualPct)?z.annualPct.toFixed(2)+"%":"—";html+=`<div><span style="color:var(--zip234Ann)">Annual:</span> ${av}</div>`;}
     }
   }else if(show.zip234&&d.h<zip234ActivationHeight){
