@@ -63,9 +63,9 @@
     .ltoggle:not(.active) .sw{background:var(--muted)!important}
     .ltoggle:hover{opacity:.85}
 
-    /* Draggable activation handle */
+    /* Draggable activation handle — now ABOVE the chart */
     #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
-      transform:translateX(-50%);pointer-events:auto}
+      transform:translateX(-50%);pointer-events:auto;top:0}
     #actHandle .act-pill{background:var(--handleBg);color:#fff;font:600 .68rem/1 system-ui;
       padding:5px 8px;border-radius:6px;border:1.5px solid var(--handleBorder);
       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px;
@@ -96,45 +96,49 @@
   </style>
 </head>
 <body>
-<h1>Zcash Supply &amp; Issuance</h1>
-<p class="sub">
-  Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
-  <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
-</p>
-<div class="controls">
-  <button id="btnReset">Reset view</button>
-  <button id="btnObserved">Observed</button>
-  <button id="btnWritten">Center on written</button>
-  <button id="btnFuture">More future</button>
-  <button id="btnTheme">☀/🌙</button>
-</div>
-<div class="chart-wrap" id="chartWrap">
-  <canvas id="chart"></canvas>
-  <div id="actHandle">
-    <div class="act-pill">
-      <div class="act-row">ZIP 234 ▸ <input id="actBlockInput" type="text" value="3,566,400"><input id="actDateInput" type="text" class="act-date" value=""></div>
-    </div>
-    <div class="act-stem"></div>
+  <h1>Zcash Supply &amp; Issuance</h1>
+  <p class="sub">
+    Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
+    <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
+  </p>
+
+  <div class="controls">
+    <button id="btnReset">Reset view</button>
+    <button id="btnObserved">Observed</button>
+    <button id="btnWritten">Center on written</button>
+    <button id="btnFuture">More future</button>
+    <button id="btnTheme">☀/🌙</button>
   </div>
-  <div id="writtenTip">This is when this simulation was written.<br>Data before this line is <b>observed</b>; after is <b>expected</b>.</div>
-</div>
-<div class="legend" id="legend">
-  <span class="ltoggle active" data-series="default"><span class="sw" style="background:var(--supplyObs)"></span>Default</span>
-  <span class="ltoggle active" data-series="zip234"><span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
-  <span style="color:var(--muted)">│</span>
-  <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
-  <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
-  <span class="ltoggle" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
-  <span><span class="dash"></span> Dashed = <b>Expected</b></span>
-  <span><span class="sw" style="background:rgba(167,139,250,0.85)"></span>"Written" marker</span>
-</div>
-<div id="tooltip"></div>
+
+  <div class="chart-wrap" id="chartWrap">
+    <canvas id="chart"></canvas>
+    <div id="actHandle">
+      <div class="act-pill">
+        <div class="act-row">ZIP 234 at <input id="actBlockInput" type="text" value="3566400"></div>
+        <div class="act-row"><input id="actDateInput" type="text" class="act-date" value=""></div>
+      </div>
+      <div class="act-stem"></div>
+    </div>
+    <div id="writtenTip"></div>
+  </div>
+
+  <div class="legend" id="legend">
+    <span class="ltoggle active" data-series="default"><span class="sw" style="background:var(--supplyObs)"></span>Default</span>
+    <span class="ltoggle" data-series="zip234"><span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
+    <span style="color:var(--muted)">│</span>
+    <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
+    <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
+    <span class="ltoggle" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
+    <span><span class="dash"></span> Dashed = <b>Expected</b></span>
+  </div>
+
+  <div id="tooltip"></div>
 
 <script>
 /* ================================================================
-   Toggle state — annPct starts OFF
+   Toggle state
    ================================================================ */
-const show = { supply:true, issDay:true, annPct:false, default:true, zip234:true };
+const show={supply:true,issDay:true,annPct:false,default:true,zip234:false};
 
 /* ================================================================
    Theme
@@ -151,11 +155,12 @@ function cv(name){return getComputedStyle(document.documentElement).getPropertyV
    Time anchors
    ================================================================ */
 const TIME_ANCHORS=[
-  {h:0,time:Date.UTC(2016,9,28,7,56)},
-  {h:653_600,time:Date.UTC(2019,11,11,21,50)},
-  {h:1_046_400,time:Date.UTC(2020,10,18,12,34)},
-  {h:2_726_400,time:Date.UTC(2024,10,23,1,51)},
+  {h:0,time:Date.UTC(2016,9,28,7,56),label:"Genesis"},
+  {h:653_600,time:Date.UTC(2019,11,11,21,50),label:"Blossom"},
+  {h:1_046_400,time:Date.UTC(2020,10,18,12,34),label:"Halving 1"},
+  {h:2_726_400,time:Date.UTC(2024,10,23,1,51),label:"Halving 2"},
 ];
+
 const BLOSSOM_ACTIVATION_HEIGHT=653_600;
 const WRITTEN_HEIGHT=3_234_946;
 const ONE_YEAR_MS=365.25*86400*1000;
@@ -163,7 +168,8 @@ const ONE_YEAR_MS=365.25*86400*1000;
 const SEGMENTS=[];
 for(let i=0;i<TIME_ANCHORS.length-1;i++){
   const a=TIME_ANCHORS[i],b=TIME_ANCHORS[i+1];
-  SEGMENTS.push({startH:a.h,endH:b.h,startTime:a.time,secPerBlock:(b.time-a.time)/1000/(b.h-a.h)});
+  SEGMENTS.push({startH:a.h,endH:b.h,startTime:a.time,
+    secPerBlock:(b.time-a.time)/1000/(b.h-a.h)});
 }
 
 function segmentForHeight(h){for(let i=0;i<SEGMENTS.length;i++)if(h<=SEGMENTS[i].endH)return SEGMENTS[i];return SEGMENTS[SEGMENTS.length-1];}
@@ -180,9 +186,7 @@ function heightAfterDuration(h,durationMs){
 
 const genTime=blockToTime(0);
 const writtenTime=blockToTime(WRITTEN_HEIGHT);
-const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function fmtDate(ms){const d=new Date(ms);return mo[d.getUTCMonth()]+" "+d.getUTCDate()+", "+d.getUTCFullYear();}
-function fmtDateShort(ms){const d=new Date(ms);return mo[d.getUTCMonth()]+" "+d.getUTCFullYear();}
+function fmtDate(ms){const d=new Date(ms);const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return mo[d.getUTCMonth()]+" "+d.getUTCDate()+", "+d.getUTCFullYear();}
 
 /* ================================================================
    issuance_per_block() — zcash consensus
@@ -207,6 +211,7 @@ function issuance_per_block(blockheight){
    ================================================================ */
 const G_MAX_SUB=1250000000n,G_SLOW_INT=20000,G_SLOW_SHIFT=10000,
   G_SLOW_RATE=62500n,G_BLOSSOM_H=653600,G_RATIO=2n,G_POST_HALV=1680000,G_HALV_OFF=633600;
+
 function sumArith(a,b){if(b<a)return 0n;const A=BigInt(a),B=BigInt(b),n=B-A+1n;return(A+B)*n/2n;}
 function halvIdxPost(h){return Math.floor((h+G_HALV_OFF)/G_POST_HALV);}
 function nextHalvPost(h){return(halvIdxPost(h)+1)*G_POST_HALV-G_HALV_OFF;}
@@ -242,7 +247,7 @@ function pushPoint(h,cumBig){
 
 function advanceTo(targetH){
   let h=computedUpTo+1;while(h<=targetH){cumulativeBig+=issuance_per_block(h);
-    if(h%SAMPLE_EVERY===0)pushPoint(h,cumulativeBig);h++;}computedUpTo=targetH;
+  if(h%SAMPLE_EVERY===0)pushPoint(h,cumulativeBig);h++;}computedUpTo=targetH;
 }
 
 async function computeAsync(targetH){
@@ -256,8 +261,6 @@ async function computeAsync(targetH){
    ================================================================ */
 const MAX_MONEY_ZEC=21_000_000;
 const ZIP234_K=1-Math.pow(2,-1/1680000);
-
-// Halving 2 = 2,726,400; Halving 3 = 4,406,400; midpoint = 3,566,400
 let zip234ActivationHeight=3_566_400;
 let zip234Data=[];
 let zip234RemainingAtAct=0;
@@ -293,8 +296,8 @@ function pushZ234(h,R0,actH){
   const time=blockToTime(h);
   const bpy=ONE_YEAR_MS/1000/spb;
   const yearIss=remainAfter*(1-Math.pow(1-ZIP234_K,bpy));
-  const annualPct=supply>0?(yearIss/supply)*100:NaN;
-  zip234Data.push({h,time,supply,issBlock,issDay,annualPct});
+  const annualPct=supply>0 ? (yearIss/supply)*100 : NaN;
+  zip234Data.push({ h, time, supply, issBlock, issDay, annualPct });
 }
 
 function getZip234At(h){
@@ -310,15 +313,16 @@ function getZip234At(h){
   const issDay=issBlock*(86400/spb);
   const bpy=ONE_YEAR_MS/1000/spb;
   const yearIss=remainAfter*(1-Math.pow(1-ZIP234_K,bpy));
-  const annualPct=supply>0?(yearIss/supply)*100:NaN;
-  return{supply,issBlock,issDay,annualPct};
+  const annualPct=supply>0 ? (yearIss/supply)*100 : NaN;
+  return { supply, issBlock, issDay, annualPct };
 }
 
 /* ================================================================
    View state
    ================================================================ */
 const MAX_TIME=Date.UTC(2100,0,1),MIN_SPAN=30*86400_000;
-const view={tMin:genTime,tMax:blockToTime(3_400_000)};
+const view={tMin: genTime,tMax: blockToTime(3_400_000)};
+
 function clampView(){
   let span=view.tMax-view.tMin;
   if(span<MIN_SPAN){const mid=(view.tMin+view.tMax)/2;view.tMin=mid-MIN_SPAN/2;view.tMax=mid+MIN_SPAN/2;span=MIN_SPAN;}
@@ -326,7 +330,17 @@ function clampView(){
   if(view.tMax>MAX_TIME){view.tMin-=(view.tMax-MAX_TIME);view.tMax=MAX_TIME;}
   if(view.tMin<genTime-2*ONE_YEAR_MS)view.tMin=genTime-2*ONE_YEAR_MS;
 }
+
 function resetView(){view.tMin=genTime;view.tMax=blockToTime(3_400_000);clampView();requestDraw();requestComputeForView();}
+
+function zoomToActivation(h){
+  // View from genesis to 2× the activation height
+  view.tMin=genTime;
+  const endH=Math.max(h*2, h+100_000); // ensure some future even if h is small
+  view.tMax=blockToTime(endH);
+  clampView();requestDraw();requestComputeForView();
+}
+
 function requestComputeForView(){
   const needed=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
   if(needed>targetHeightWanted)targetHeightWanted=needed;
@@ -334,13 +348,14 @@ function requestComputeForView(){
 }
 
 /* ================================================================
-   Layout helpers
+   Right margin layout
    ================================================================ */
 function computeRightMargin(isNarrow){
   if(isNarrow){if(show.issDay||show.annPct)return 52;return 16;}
   const AXIS_W=62;let count=0;if(show.issDay)count++;if(show.annPct)count++;
   return count===0?20:8+count*AXIS_W;
 }
+
 function rightAxisLayout(isNarrow){
   const r={issDay:null,annPct:null};
   if(isNarrow){if(show.issDay)r.issDay={tickX:6,titleX:null};else if(show.annPct)r.annPct={tickX:6,titleX:null};return r;}
@@ -359,10 +374,12 @@ function halvingHeights(maxH){const r=[];let h=1_046_400;while(h<=maxH){r.push(h
 
 function draw(){
   if(data.length<2)return;
+
   if(show.zip234){
     const mh=Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000;
     computeZip234(mh);
   }
+
   const canvas=document.getElementById("chart");
   const dpr=window.devicePixelRatio||1;
   const isNarrow=window.innerWidth<600;
@@ -376,6 +393,7 @@ function draw(){
   const MG={top:28,right:rightMar,bottom:52,left:isNarrow?48:64};
   const PW=CSS_W-MG.left-MG.right,PH=CSS_H-MG.top-MG.bottom;
   Object.assign(layout,{CSS_W,CSS_H,MG,PW,PH});
+
   const axL=rightAxisLayout(isNarrow);
 
   const T={bg:cv("--bg"),fg:cv("--fg"),muted:cv("--muted"),panel:cv("--panel"),
@@ -388,6 +406,7 @@ function draw(){
     supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
     supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)"
   };
+
   ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
 
   const ySupMax=22_000_000,yIssDayMax=8_000,yAnnMax=30;
@@ -395,10 +414,6 @@ function draw(){
   const ySP=s=>MG.top+PH-(s/ySupMax)*PH;
   const yIP=v=>MG.top+PH-(v/yIssDayMax)*PH;
   const yAP=p=>MG.top+PH-(p/yAnnMax)*PH;
-
-  // Determine cutoff: if default is off but zip234 is on, show default only up to activation
-  const defaultShowAll=show.default;
-  const defaultCutoffH=(!show.default&&show.zip234)?zip234ActivationHeight:Infinity;
 
   const D=data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax);
 
@@ -417,17 +432,15 @@ function draw(){
 
   // Event verticals
   ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1;
+  // Blossom
   {const t=blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
     if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventObs;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
-
-  // Halvings — only show if default is fully on
+  // Halvings
   if(show.default){for(const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax))+200_000)){
     const t=blockToTime(hh);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventHalv;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}}
-
-  // Written marker
+  // Written
   {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.written;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
-
-  // ZIP 234 activation line
+  // ZIP 234 activation
   if(show.zip234){
     const t=blockToTime(zip234ActivationHeight);
     if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.zip234Act;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
@@ -438,52 +451,42 @@ function draw(){
   // Clip to plot area
   ctx.save();ctx.beginPath();ctx.rect(MG.left,MG.top,PW,PH);ctx.clip();
 
-  function drawSplit(pts,splitH,yFn,obsC,expC,lw,maxH){
-    if(typeof maxH==='undefined')maxH=Infinity;
+  // Helper: draw split line
+  function drawSplit(pts,splitH,yFn,obsC,expC,lw){
     ctx.beginPath();ctx.strokeStyle=obsC;ctx.lineWidth=lw;ctx.setLineDash([]);
     let started=false;
-    for(const p of pts){if(p.h>splitH||p.h>maxH)break;const py=yFn(p);if(!isFinite(py))continue;
+    for(const p of pts){if(p.h>splitH)break;const py=yFn(p);if(!isFinite(py))continue;
       const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
     ctx.stroke();
-    if(maxH<Infinity&&maxH>splitH){
-      // draw expected portion up to maxH
-      ctx.beginPath();ctx.strokeStyle=expC;ctx.lineWidth=lw;ctx.setLineDash([6,4]);started=false;
-      for(const p of pts){
-        if(p.h<splitH){const py=yFn(p);if(!isFinite(py))continue;ctx.moveTo(xP(p.time),py);started=true;continue;}
-        if(p.h>maxH)break;
-        const py=yFn(p);if(!isFinite(py))continue;const px=xP(p.time);
-        if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
-      ctx.stroke();ctx.setLineDash([]);
-    } else if(maxH>=Infinity){
-      ctx.beginPath();ctx.strokeStyle=expC;ctx.lineWidth=lw;ctx.setLineDash([6,4]);started=false;
-      for(const p of pts){if(p.h<splitH){const py=yFn(p);if(!isFinite(py))continue;ctx.moveTo(xP(p.time),py);started=true;continue;}
-        const py=yFn(p);if(!isFinite(py))continue;const px=xP(p.time);
-        if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
-      ctx.stroke();ctx.setLineDash([]);
-    }
+    ctx.beginPath();ctx.strokeStyle=expC;ctx.lineWidth=lw;ctx.setLineDash([6,4]);started=false;
+    for(const p of pts){if(p.h<splitH){const py=yFn(p);if(!isFinite(py))continue;ctx.moveTo(xP(p.time),py);started=true;continue;}
+      const py=yFn(p);if(!isFinite(py))continue;const px=xP(p.time);
+      if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+    ctx.stroke();ctx.setLineDash([]);
   }
 
-  function fillArea(pts,splitH,yFn,obsC,expC,maxH){
-    if(typeof maxH==='undefined')maxH=Infinity;
+  // Helper: fill under supply curve
+  function fillArea(pts,splitH,yFn,obsC,expC){
     function doFill(seg,color){if(seg.length<2)return;ctx.beginPath();
       ctx.moveTo(xP(seg[0].time),ySP(0));for(const p of seg)ctx.lineTo(xP(p.time),yFn(p));
       ctx.lineTo(xP(seg[seg.length-1].time),ySP(0));ctx.closePath();ctx.fillStyle=color;ctx.fill();}
-    doFill(pts.filter(p=>p.h<=splitH&&p.h<=maxH),obsC);
-    doFill(pts.filter(p=>p.h>=splitH&&p.h<=maxH),expC);
+    doFill(pts.filter(p=>p.h<=splitH),obsC);doFill(pts.filter(p=>p.h>=splitH),expC);
   }
 
   const ANNUAL_PCT_SPLIT_HEIGHT=WRITTEN_HEIGHT;
 
-  // Default model: always show up to min(defaultCutoffH, end)
-  // If default toggled on: show all. If toggled off but zip234 on: show up to activation
-  const showDefaultCurves = show.default || show.zip234;
-  if(showDefaultCurves && D.length>=2){
-    if(show.supply){
-      fillArea(D,WRITTEN_HEIGHT,p=>ySP(p.supply),T.supplyFillObs,T.supplyFillExp,defaultCutoffH);
-      drawSplit(D,WRITTEN_HEIGHT,p=>ySP(p.supply),T.supplyObs,T.supplyExp,2,defaultCutoffH);
+  // Determine default cutoff
+  const defaultCutoffH=(!show.default&&show.zip234)?zip234ActivationHeight:Infinity;
+
+  // Default model curves
+  if((show.default||show.zip234)&&D.length>=2){
+    const DD=defaultCutoffH<Infinity?D.filter(d=>d.h<=defaultCutoffH):D;
+    if(DD.length>=2){
+      if(show.supply){fillArea(DD,WRITTEN_HEIGHT,p=>ySP(p.supply),T.supplyFillObs,T.supplyFillExp);
+        drawSplit(DD,WRITTEN_HEIGHT,p=>ySP(p.supply),T.supplyObs,T.supplyExp,2);}
+      if(show.issDay)drawSplit(DD,WRITTEN_HEIGHT,p=>yIP(p.issDay),T.issObs,T.issExp,2);
+      if(show.annPct)drawSplit(DD,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=p.annualPct;if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
     }
-    if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(p.issDay),T.issObs,T.issExp,2,defaultCutoffH);
-    if(show.annPct)drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=p.annualPct;if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8,defaultCutoffH);
   }
 
   // ZIP 234 curves
@@ -504,6 +507,7 @@ function draw(){
 
   // Event labels
   ctx.font="9px system-ui";
+  const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   function eventLabel(h,label,color){
     const t=blockToTime(h);if(t<view.tMin||t>view.tMax)return;
     ctx.fillStyle=color;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
@@ -512,13 +516,7 @@ function draw(){
   eventLabel(BLOSSOM_ACTIVATION_HEIGHT,"Blossom",T.eventObs);
   if(show.default){for(const hh of halvingHeights(Math.ceil(timeToHeight(view.tMax))+200_000)){
     const idx=Math.round((hh-1_046_400)/1_680_000)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
-
-  // Written label
-  {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){
-    ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
-    ctx.textAlign="left";ctx.fillText("Written at",0,0);ctx.restore();}}
-
-  // ZIP 234 activation label
+  {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Written at",0,0);ctx.restore();}}
   if(show.zip234){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
     ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
     ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
@@ -557,219 +555,194 @@ function draw(){
   // Frame
   ctx.strokeStyle=T.frameBorder;ctx.lineWidth=1;ctx.strokeRect(MG.left,MG.top,PW,PH);
 
-  // Position the activation handle
-  positionActHandle();
-  // Position written tooltip zone
-  positionWrittenZone();
+  // --- Position activation handle ---
+  updateActHandle();
+  // --- Position written tooltip ---
+  updateWrittenTip();
 }
 
 /* ================================================================
-   Activation handle positioning & dragging
+   Activation handle positioning & interaction
    ================================================================ */
 const actHandle=document.getElementById("actHandle");
 const actBlockInput=document.getElementById("actBlockInput");
 const actDateInput=document.getElementById("actDateInput");
 
-function positionActHandle(){
+function updateActHandle(){
   if(!show.zip234){actHandle.style.display="none";return;}
-  const{MG,PW,CSS_W}=layout;
+  const {CSS_W,CSS_H,MG,PW,PH}=layout;
   if(!PW){actHandle.style.display="none";return;}
   const t=blockToTime(zip234ActivationHeight);
   if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return;}
-  const xFrac=(t-view.tMin)/(view.tMax-view.tMin);
-  const xPx=MG.left+xFrac*PW;
+  const frac=(t-view.tMin)/(view.tMax-view.tMin);
+  const canvasEl=document.getElementById("chart");
+  const rect=canvasEl.getBoundingClientRect();
+  const cssW=parseInt(canvasEl.style.width);
+  // Position above the plot area (top:0 on the wrapper, with stem hanging down)
+  const xPx=MG.left+frac*PW;
   actHandle.style.display="block";
   actHandle.style.left=xPx+"px";
-  actHandle.style.top=(MG.top-2)+"px";
-  // Update inputs
+  // Update displayed values
   actBlockInput.value=zip234ActivationHeight.toLocaleString();
-  actDateInput.value=fmtDateShort(t);
+  actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
 }
 
-function setActivationHeight(h){
-  h=Math.max(WRITTEN_HEIGHT+1,Math.round(h));
-  h=Math.max(0,Math.min(100_000_000,h));
-  zip234ActivationHeight=h;
-  zip234CachedActH=-1;
-  requestDraw();requestComputeForView();
-}
-
-// Drag state
-let actDragging=false;
+// Drag support
+let actDragging=false,actDragStartX=0;
 actHandle.addEventListener("mousedown",e=>{
-  if(e.target===actBlockInput||e.target===actDateInput)return;
+  if(e.target.tagName==="INPUT")return;
+  actDragging=true;actDragStartX=e.clientX;
   e.preventDefault();e.stopPropagation();
-  actDragging=true;
-  document.body.style.cursor="ew-resize";
 });
 window.addEventListener("mousemove",e=>{
   if(!actDragging)return;
-  const rect=document.getElementById("chart").getBoundingClientRect();
-  const{MG,PW}=layout;
-  const cssX=e.clientX-rect.left;
-  const frac=Math.max(0,Math.min(1,(cssX-MG.left)/PW));
+  const canvasEl=document.getElementById("chart");
+  const rect=canvasEl.getBoundingClientRect();
+  const {MG,PW}=layout;
+  const cssW=parseInt(canvasEl.style.width);
+  const mx=(e.clientX-rect.left)*(cssW/rect.width);
+  const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
-  const h=Math.round(timeToHeight(t));
-  setActivationHeight(h);
+  let h=Math.round(timeToHeight(t));
+  if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
+  if(h!==zip234ActivationHeight){
+    zip234ActivationHeight=h;
+    zip234CachedActH=-1;
+    requestDraw();
+  }
 });
-window.addEventListener("mouseup",()=>{
-  if(actDragging){actDragging=false;document.body.style.cursor="";}
-});
+window.addEventListener("mouseup",()=>{actDragging=false;});
 
 // Touch drag
 actHandle.addEventListener("touchstart",e=>{
-  if(e.target===actBlockInput||e.target===actDateInput)return;
-  e.stopPropagation();actDragging=true;
+  if(e.target.tagName==="INPUT")return;
+  actDragging=true;e.stopPropagation();
 },{passive:true});
 window.addEventListener("touchmove",e=>{
   if(!actDragging)return;
   const touch=e.touches[0];
-  const rect=document.getElementById("chart").getBoundingClientRect();
-  const{MG,PW}=layout;
-  const cssX=touch.clientX-rect.left;
-  const frac=Math.max(0,Math.min(1,(cssX-MG.left)/PW));
+  const canvasEl=document.getElementById("chart");
+  const rect=canvasEl.getBoundingClientRect();
+  const {MG,PW}=layout;
+  const cssW=parseInt(canvasEl.style.width);
+  const mx=(touch.clientX-rect.left)*(cssW/rect.width);
+  const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
-  const h=Math.round(timeToHeight(t));
-  setActivationHeight(h);
+  let h=Math.round(timeToHeight(t));
+  if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
+  if(h!==zip234ActivationHeight){
+    zip234ActivationHeight=h;
+    zip234CachedActH=-1;
+    requestDraw();
+  }
 },{passive:true});
 window.addEventListener("touchend",()=>{actDragging=false;});
 
-// Input: block height
-actBlockInput.addEventListener("click",e=>e.stopPropagation());
-actBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
+// Block input: type a number, press Enter → zoom to show [genesis, 2× that block]
 actBlockInput.addEventListener("keydown",e=>{
   if(e.key==="Enter"){
-    const v=parseInt(actBlockInput.value.replace(/,/g,""));
-    if(!isNaN(v)){
-      setActivationHeight(v);
-      ensureVisible(blockToTime(zip234ActivationHeight));
+    const raw=actBlockInput.value.replace(/,/g,"").trim();
+    const v=parseInt(raw);
+    if(!isNaN(v)&&v>=0&&v<=100_000_000){
+      zip234ActivationHeight=Math.max(v,WRITTEN_HEIGHT);
+      zip234CachedActH=-1;
+      zoomToActivation(zip234ActivationHeight);
     }
     actBlockInput.blur();
   }
+  e.stopPropagation();
 });
+actBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
+actBlockInput.addEventListener("click",e=>e.stopPropagation());
 
-// Input: date
-actDateInput.addEventListener("click",e=>e.stopPropagation());
-actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
+// Date input: type a date, press Enter → convert to block height, zoom
 actDateInput.addEventListener("keydown",e=>{
   if(e.key==="Enter"){
-    const parsed=Date.parse(actDateInput.value);
+    const raw=actDateInput.value.trim();
+    const parsed=Date.parse(raw);
     if(!isNaN(parsed)){
-      const h=Math.round(timeToHeight(parsed));
-      setActivationHeight(h);
-      ensureVisible(blockToTime(zip234ActivationHeight));
+      let h=Math.round(timeToHeight(parsed));
+      if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
+      if(h>100_000_000)h=100_000_000;
+      zip234ActivationHeight=h;
+      zip234CachedActH=-1;
+      zoomToActivation(zip234ActivationHeight);
     }
     actDateInput.blur();
   }
+  e.stopPropagation();
 });
-
-function ensureVisible(t){
-  if(t>=view.tMin&&t<=view.tMax)return;
-  const span=view.tMax-view.tMin;
-  view.tMin=t-span*0.4;
-  view.tMax=t+span*0.6;
-  // If still not visible, zoom out
-  if(t<view.tMin||t>view.tMax){
-    view.tMin=Math.min(genTime,t-ONE_YEAR_MS);
-    view.tMax=t+5*ONE_YEAR_MS;
-  }
-  clampView();requestDraw();requestComputeForView();
-}
+actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
+actDateInput.addEventListener("click",e=>e.stopPropagation());
 
 /* ================================================================
-   Written marker hover tooltip
+   Written tooltip (on hover near the written line)
    ================================================================ */
 const writtenTip=document.getElementById("writtenTip");
-let writtenZone={x:0,visible:false};
 
-function positionWrittenZone(){
-  const{MG,PW}=layout;
-  if(!PW)return;
-  const t=writtenTime;
-  if(t<view.tMin||t>view.tMax){writtenZone.visible=false;return;}
-  const xFrac=(t-view.tMin)/(view.tMax-view.tMin);
-  writtenZone.x=MG.left+xFrac*PW;
-  writtenZone.visible=true;
+function updateWrittenTip(){
+  // positioned by mousemove on canvas
 }
 
 /* ================================================================
-   Interaction: pan/zoom
+   Interaction: pan / zoom
    ================================================================ */
-const canvas=document.getElementById("chart");
-const tooltip=document.getElementById("tooltip");
-
+const canvas=document.getElementById("chart"),tooltip=document.getElementById("tooltip");
 let dragging=false,dragStartX=0,dragStartTMin=0,dragStartTMax=0;
 
-canvas.addEventListener("mousedown",e=>{
-  if(actDragging)return;
-  dragging=true;dragStartX=e.clientX;
-  dragStartTMin=view.tMin;dragStartTMax=view.tMax;
-  canvas.style.cursor="grabbing";
-});
-window.addEventListener("mousemove",e=>{
-  if(actDragging)return;
-  if(!dragging)return;
-  const rect=canvas.getBoundingClientRect(),dx=e.clientX-dragStartX,
-    pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;
-  view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;
-  clampView();requestDraw();requestComputeForView();
-});
-window.addEventListener("mouseup",()=>{
-  if(!actDragging){dragging=false;canvas.style.cursor="crosshair";}
-});
+canvas.addEventListener("mousedown",e=>{if(actDragging)return;dragging=true;dragStartX=e.clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;canvas.style.cursor="grabbing";});
+window.addEventListener("mousemove",e=>{if(!dragging||actDragging)return;const rect=canvas.getBoundingClientRect(),dx=e.clientX-dragStartX,
+  pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;clampView();requestDraw();requestComputeForView();});
+window.addEventListener("mouseup",()=>{dragging=false;canvas.style.cursor="crosshair";});
 
-canvas.addEventListener("wheel",e=>{
-  e.preventDefault();const rect=canvas.getBoundingClientRect(),frac=(e.clientX-rect.left)/rect.width;
+canvas.addEventListener("wheel",e=>{e.preventDefault();const rect=canvas.getBoundingClientRect(),frac=(e.clientX-rect.left)/rect.width;
   if(e.ctrlKey||e.metaKey||Math.abs(e.deltaY)>50&&Math.abs(e.deltaX)<5){
     const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
     view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
   }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
-  clampView();requestDraw();requestComputeForView();
-},{passive:false});
+  clampView();requestDraw();requestComputeForView();},{passive:false});
 
 canvas.addEventListener("dblclick",()=>resetView());
 
 // Touch
 let lastTouchDist=0;
-canvas.addEventListener("touchstart",e=>{
-  if(actDragging)return;
-  if(e.touches.length===1){dragging=true;dragStartX=e.touches[0].clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;}
-  else if(e.touches.length===2){dragging=false;lastTouchDist=Math.abs(e.touches[0].clientX-e.touches[1].clientX);}
-},{passive:true});
-canvas.addEventListener("touchmove",e=>{
-  if(actDragging)return;
-  if(e.touches.length===1&&dragging){const dx=e.touches[0].clientX-dragStartX,rect=canvas.getBoundingClientRect(),
-    pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;clampView();requestDraw();requestComputeForView();}
+canvas.addEventListener("touchstart",e=>{if(e.touches.length===1){dragging=true;dragStartX=e.touches[0].clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;}
+  else if(e.touches.length===2){dragging=false;lastTouchDist=Math.abs(e.touches[0].clientX-e.touches[1].clientX);}},{passive:true});
+canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging&&!actDragging){const dx=e.touches[0].clientX-dragStartX,rect=canvas.getBoundingClientRect(),
+  pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;clampView();requestDraw();requestComputeForView();}
   else if(e.touches.length===2){const dist=Math.abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
     if(lastTouchDist>0){const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),frac=(mid-rect.left)/rect.width,
       span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
-      clampView();requestDraw();requestComputeForView();}lastTouchDist=dist;}
-},{passive:true});
-canvas.addEventListener("touchend",()=>{if(!actDragging){dragging=false;lastTouchDist=0;}});
+      clampView();requestDraw();requestComputeForView();}lastTouchDist=dist;}},{passive:true});
+canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
 canvas.style.cursor="crosshair";
 
 /* ================================================================
-   Tooltip + Written marker hover
+   Tooltip
    ================================================================ */
 canvas.addEventListener("mousemove",function(e){
   if(dragging||actDragging||data.length<2){tooltip.style.display="none";writtenTip.style.display="none";return;}
   const rect=canvas.getBoundingClientRect();
   const cssW=parseInt(canvas.style.width),cssH=parseInt(canvas.style.height);
-  const{MG,PW,PH}=layout;if(!PW){tooltip.style.display="none";return;}
+  const {MG,PW,PH}=layout;if(!PW){tooltip.style.display="none";return;}
   const mx=(e.clientX-rect.left)*(cssW/rect.width),my=(e.clientY-rect.top)*(cssH/rect.height);
 
-  // Written marker hover detection
-  if(writtenZone.visible&&Math.abs(mx-writtenZone.x)<12&&my>=MG.top&&my<=MG.top+PH){
-    writtenTip.style.display="block";
-    writtenTip.style.left=writtenZone.x+"px";
-    writtenTip.style.top=(MG.top+PH+6)+"px";
-  } else {
-    writtenTip.style.display="none";
-  }
+  // Written tooltip
+  const wt=writtenTime;
+  if(wt>=view.tMin&&wt<=view.tMax){
+    const wx=MG.left+((wt-view.tMin)/(view.tMax-view.tMin))*PW;
+    if(Math.abs(mx-wx)<12&&my>=MG.top&&my<=MG.top+PH){
+      writtenTip.innerHTML='This is when this simulation was written.<br>Data before this line is <b>observed</b>; after is <b>expected</b>.';
+      writtenTip.style.display="block";
+      const tipLeft=wx;
+      writtenTip.style.left=tipLeft+"px";
+      writtenTip.style.top=(MG.top+PH+6)+"px";
+    }else{writtenTip.style.display="none";}
+  }else{writtenTip.style.display="none";}
 
   if(mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH){tooltip.style.display="none";return;}
-
   const mouseTime=view.tMin+((mx-MG.left)/PW)*(view.tMax-view.tMin);
+
   let lo=0,hi=data.length-1;
   while(lo<hi){const mid=(lo+hi)>>1;data[mid].time<mouseTime?lo=mid+1:hi=mid;}
   if(lo>0&&Math.abs(data[lo-1].time-mouseTime)<Math.abs(data[lo].time-mouseTime))lo--;
@@ -784,9 +757,8 @@ canvas.addEventListener("mousemove",function(e){
   let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
     `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-  // Show default data in tooltip if it's visible at this height
-  const defaultCutoffH=(!show.default&&show.zip234)?zip234ActivationHeight:Infinity;
-  const showDefHere=(show.default||show.zip234)&&d.h<=defaultCutoffH;
+  const defaultCutoffH2=(!show.default&&show.zip234)?zip234ActivationHeight:Infinity;
+  const showDefHere=(show.default||show.zip234)&&d.h<=defaultCutoffH2;
 
   if(showDefHere){
     if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${d.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ZEC <span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
@@ -842,7 +814,6 @@ document.querySelectorAll('.ltoggle').forEach(el=>{
    ================================================================ */
 initTheme();clampView();
 targetHeightWanted=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
-// Sync legend toggle visuals with initial state
 document.querySelectorAll('.ltoggle').forEach(el=>{
   const key=el.dataset.series;
   if(key && show[key]!==undefined) el.classList.toggle('active',show[key]);
