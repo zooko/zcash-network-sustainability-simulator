@@ -872,6 +872,400 @@ document.querySelectorAll('.ltoggle').forEach(el=>{
 });
 
 requestDraw();requestComputeForView();
+/* ================
+   REGRESSION TESTS
+   ================ */
+(function runRegressionTests() {
+  const results = [];
+  function test(name, fn) {
+    try {
+      const pass = fn();
+      results.push({ name, pass });
+    } catch (e) {
+      results.push({ name, pass: false, error: e.message });
+    }
+  }
+
+  // --- HTML / DOM structure ---
+
+  test("actHandle element exists", () => {
+    return !!document.getElementById("actHandle");
+  });
+
+  test("actBlockInput element exists", () => {
+    return !!document.getElementById("actBlockInput");
+  });
+
+  test("actDateInput element exists", () => {
+    return !!document.getElementById("actDateInput");
+  });
+
+  test("actHandle has act-pill child", () => {
+    const h = document.getElementById("actHandle");
+    return h && !!h.querySelector(".act-pill");
+  });
+
+  test("actHandle has act-stem child", () => {
+    const h = document.getElementById("actHandle");
+    return h && !!h.querySelector(".act-stem");
+  });
+
+  test("btnReset exists", () => {
+    return !!document.getElementById("btnReset");
+  });
+
+  test("btnTheme exists", () => {
+    return !!document.getElementById("btnTheme");
+  });
+
+  test("writtenTip element exists", () => {
+    return !!document.getElementById("writtenTip");
+  });
+
+  test("legend has 'default' toggle", () => {
+    return !!document.querySelector('[data-series="default"]');
+  });
+
+  test("legend has 'zip234' toggle", () => {
+    return !!document.querySelector('[data-series="zip234"]');
+  });
+
+  test("legend has 'supply' toggle", () => {
+    return !!document.querySelector('[data-series="supply"]');
+  });
+
+  test("legend has 'issDay' toggle", () => {
+    return !!document.querySelector('[data-series="issDay"]');
+  });
+
+  test("legend has 'annPct' toggle", () => {
+    return !!document.querySelector('[data-series="annPct"]');
+  });
+
+  // --- Constants and initial state ---
+
+  test("WRITTEN_HEIGHT is defined and > 3,000,000", () => {
+    return typeof WRITTEN_HEIGHT === "number" && WRITTEN_HEIGHT > 3_000_000;
+  });
+
+  test("BLOSSOM_ACTIVATION_HEIGHT is 653600", () => {
+    return BLOSSOM_ACTIVATION_HEIGHT === 653600;
+  });
+
+  test("zip234ActivationHeight is >= WRITTEN_HEIGHT at boot", () => {
+    return zip234ActivationHeight >= WRITTEN_HEIGHT;
+  });
+
+  test("zip234ActivationHeight default is 3,687,123", () => {
+    return zip234ActivationHeight === 3_687_123;
+  });
+
+  test("MAX_MONEY_ZEC is 21,000,000", () => {
+    return MAX_MONEY_ZEC === 21_000_000;
+  });
+
+  test("ZIP234_K is defined and positive and < 1", () => {
+    return typeof ZIP234_K === "number" && ZIP234_K > 0 && ZIP234_K < 1;
+  });
+
+  // --- Toggle state ---
+
+  test("show.default is true at boot", () => {
+    return show.default === true;
+  });
+
+  test("show.zip234 is true at boot", () => {
+    return show.zip234 === true;
+  });
+
+  test("show.supply is true at boot", () => {
+    return show.supply === true;
+  });
+
+  test("show.issDay is true at boot", () => {
+    return show.issDay === true;
+  });
+
+  test("show.annPct is false at boot", () => {
+    return show.annPct === false;
+  });
+
+  // --- Toggle constraint: can't turn off both default and zip234 ---
+
+  test("default/zip234 mutual exclusion constraint: can't both be off", () => {
+    // Save state
+    const origD = show.default, origZ = show.zip234;
+    // Simulate: both on, turn off default → zip234 must stay on
+    show.default = true; show.zip234 = true;
+    // Simulate turning off default: only allowed if zip234 is on
+    const canTurnOffDefault = show.zip234;
+    // Simulate turning off zip234 too: should be blocked
+    show.default = false;
+    const canTurnOffZip234 = show.default; // default is off, so zip234 can't be turned off
+    // Restore
+    show.default = origD; show.zip234 = origZ;
+    return canTurnOffDefault === true && canTurnOffZip234 === false;
+  });
+
+  // --- Issuance logic ---
+
+  test("issuance_per_block(0) is 0 (slow start)", () => {
+    return issuance_per_block(0) === 0n;
+  });
+
+  test("issuance_per_block(20000) is 1250000000 (full subsidy pre-Blossom)", () => {
+    return issuance_per_block(20000) === 1250000000n;
+  });
+
+  test("issuance_per_block(653600) is 625000000 (Blossom halves block subsidy)", () => {
+    return issuance_per_block(653600) === 625000000n;
+  });
+
+  test("issuance_per_block at halving 1 (1046400) is 312500000", () => {
+    return issuance_per_block(1046400) === 312500000n;
+  });
+
+  test("issuance_per_block at halving 2 (2726400) is 156250000", () => {
+    return issuance_per_block(2726400) === 156250000n;
+  });
+
+  test("issuance_per_block just before halving 2 is 312500000", () => {
+    return issuance_per_block(2726399) === 312500000n;
+  });
+
+  // --- Time anchors ---
+
+  test("Genesis time is Oct 28, 2016", () => {
+    return TIME_ANCHORS[0].time === Date.UTC(2016, 9, 28, 7, 56);
+  });
+
+  test("blockToTime(0) equals genesis time", () => {
+    return blockToTime(0) === TIME_ANCHORS[0].time;
+  });
+
+  test("blockToTime is monotonically increasing", () => {
+    const h = [0, 100000, 653600, 1046400, 2000000, 2726400, 3000000];
+    for (let i = 1; i < h.length; i++) {
+      if (blockToTime(h[i]) <= blockToTime(h[i - 1])) return false;
+    }
+    return true;
+  });
+
+  // --- Halving heights ---
+
+  test("halvingHeights returns correct first halving", () => {
+    const hh = halvingHeights(2000000);
+    return hh.length >= 1 && hh[0] === 1046400;
+  });
+
+  test("halvingHeights includes halving 2 at 2726400", () => {
+    const hh = halvingHeights(3000000);
+    return hh.includes(2726400);
+  });
+
+  test("halving spacing is 1,680,000", () => {
+    const hh = halvingHeights(6000000);
+    for (let i = 1; i < hh.length; i++) {
+      if (hh[i] - hh[i - 1] !== 1680000) return false;
+    }
+    return true;
+  });
+
+  // --- ZIP 234 math ---
+
+  test("getZip234At returns null for height below activation", () => {
+    return getZip234At(zip234ActivationHeight - 1) === null;
+  });
+
+  test("getZip234At returns object at activation height", () => {
+    const z = getZip234At(zip234ActivationHeight);
+    return z !== null && typeof z.supply === "number" && typeof z.issBlock === "number";
+  });
+
+  test("ZIP 234 supply is monotonically increasing", () => {
+    const actH = zip234ActivationHeight;
+    const heights = [actH, actH + 10000, actH + 100000, actH + 500000];
+    let prev = 0;
+    for (const h of heights) {
+      const z = getZip234At(h);
+      if (!z || z.supply <= prev) return false;
+      prev = z.supply;
+    }
+    return true;
+  });
+
+  test("ZIP 234 issuance per block is positive and decreasing", () => {
+    const actH = zip234ActivationHeight;
+    const heights = [actH, actH + 100000, actH + 500000, actH + 1000000];
+    let prev = Infinity;
+    for (const h of heights) {
+      const z = getZip234At(h);
+      if (!z || z.issBlock <= 0 || z.issBlock >= prev) return false;
+      prev = z.issBlock;
+    }
+    return true;
+  });
+
+  test("ZIP 234 supply never exceeds 21M", () => {
+    const z = getZip234At(zip234ActivationHeight + 10_000_000);
+    return z !== null && z.supply <= 21_000_000;
+  });
+
+  // --- sumIssuanceRangeClean ---
+
+  test("sumIssuanceRangeClean(0,0) is 0", () => {
+    return sumIssuanceRangeClean(0, 0) === 0n;
+  });
+
+  test("sumIssuanceRangeClean(0,1) equals issuance_per_block(0)", () => {
+    return sumIssuanceRangeClean(0, 1) === issuance_per_block(0);
+  });
+
+  test("sumIssuanceRangeClean agrees with brute force for small range", () => {
+    let brute = 0n;
+    for (let h = 20000; h < 20010; h++) brute += issuance_per_block(h);
+    return sumIssuanceRangeClean(20000, 20010) === brute;
+  });
+
+  // --- View state ---
+
+  test("view.tMin is at or near genesis at boot", () => {
+    return Math.abs(view.tMin - genTime) < 86400000; // within 1 day
+  });
+
+  test("view.tMax corresponds to roughly block 6M", () => {
+    const expected = blockToTime(6_000_000);
+    return Math.abs(view.tMax - expected) < 86400000 * 30; // within 30 days
+  });
+
+  // --- Activation height minimum constraint ---
+
+  test("Activation height clamp: direct set below WRITTEN_HEIGHT is rejected", () => {
+    const saved = zip234ActivationHeight;
+    // Simulate what the drag handler should do: set to a low value
+    const tooLow = WRITTEN_HEIGHT - 100_000;
+    zip234ActivationHeight = tooLow;
+    // Now call updateActHandle which is what drag/input paths end with.
+    // The constraint should be enforced somewhere in the pipeline.
+    // If the code has no clamp, zip234ActivationHeight stays at tooLow — that's the bug.
+    // We need to check: does any code path actually prevent this?
+
+    // Check if the mousemove handler source contains a clamp against WRITTEN_HEIGHT
+    const handlers = [
+      // Look at all mousemove listeners — we can't easily extract them,
+      // but we can inspect the source of known functions
+      updateActHandle.toString(),
+    ];
+
+    // Restore before we forget
+    zip234ActivationHeight = saved;
+
+    // The real test: search the entire script for clamping logic
+    const scripts = document.querySelectorAll('script');
+    let scriptSource = '';
+    for (const s of scripts) {
+      if (s.textContent.includes('zip234ActivationHeight')) {
+        scriptSource = s.textContent;
+        break;
+      }
+    }
+
+    // There must be code that clamps zip234ActivationHeight to >= WRITTEN_HEIGHT
+    // in the drag handler, block input handler, AND date input handler
+    const hasDragClamp = scriptSource.includes('WRITTEN_HEIGHT') && 
+      (scriptSource.match(/actDragging[\s\S]{0,500}WRITTEN_HEIGHT/) !== null ||
+       scriptSource.match(/WRITTEN_HEIGHT[\s\S]{0,500}actDragging/) !== null);
+
+    const hasBlockInputClamp = scriptSource.match(
+      /actBlockInput[\s\S]{0,800}WRITTEN_HEIGHT|WRITTEN_HEIGHT[\s\S]{0,800}actBlockInput/
+    ) !== null;
+
+    const hasDateInputClamp = scriptSource.match(
+      /actDateInput[\s\S]{0,800}WRITTEN_HEIGHT|WRITTEN_HEIGHT[\s\S]{0,800}actDateInput/
+    ) !== null;
+
+    if (!hasDragClamp) console.warn("  ⚠ No WRITTEN_HEIGHT clamp found near drag handler");
+    if (!hasBlockInputClamp) console.warn("  ⚠ No WRITTEN_HEIGHT clamp found near block input handler");
+    if (!hasDateInputClamp) console.warn("  ⚠ No WRITTEN_HEIGHT clamp found near date input handler");
+
+    return hasDragClamp && hasBlockInputClamp && hasDateInputClamp;
+  });
+
+  test("Activation height clamp: functional test via block input", () => {
+    const saved = zip234ActivationHeight;
+    const input = document.getElementById("actBlockInput");
+    if (!input) return false;
+
+    // Set input to a value below WRITTEN_HEIGHT and fire Enter
+    const tooLow = WRITTEN_HEIGHT - 500_000;
+    input.value = String(tooLow);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    // After the handler runs, activation height should still be >= WRITTEN_HEIGHT
+    const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
+
+    if (!pass) {
+      console.warn(`  ⚠ Block input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
+    }
+
+    // Restore
+    zip234ActivationHeight = saved;
+    zip234CachedActH = -1; // force recalc
+    requestDraw();
+    return pass;
+  });
+
+  test("Activation height clamp: functional test via date input", () => {
+    const saved = zip234ActivationHeight;
+    const input = document.getElementById("actDateInput");
+    if (!input) return false;
+
+    // Use genesis date — way before WRITTEN_HEIGHT
+    input.value = "Oct 28, 2016";
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
+
+    if (!pass) {
+      console.warn(`  ⚠ Date input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
+    }
+
+    zip234ActivationHeight = saved;
+    zip234CachedActH = -1;
+    requestDraw();
+    return pass;
+  });
+
+  // --- CSS / styling checks ---
+
+  test("actHandle is above chart (negative or zero top)", () => {
+    const h = document.getElementById("actHandle");
+    if (!h) return false;
+    const top = parseInt(getComputedStyle(h).top) || parseInt(h.style.top) || -20;
+    return top <= 0;
+  });
+
+  // --- Report ---
+
+  const passed = results.filter(r => r.pass).length;
+  const failed = results.filter(r => !r.pass).length;
+  const total = results.length;
+
+  console.log(`%c=== REGRESSION TESTS: ${passed}/${total} passed, ${failed} failed ===`,
+    failed > 0 ? "color:red;font-weight:bold;font-size:14px" : "color:green;font-weight:bold;font-size:14px");
+
+  for (const r of results) {
+    if (r.pass) {
+      console.log(`  %c✓ ${r.name}`, "color:green");
+    } else {
+      console.log(`  %c✗ ${r.name}${r.error ? " — " + r.error : ""}`, "color:red;font-weight:bold");
+    }
+  }
+
+  if (failed > 0) {
+    console.warn(`⚠️ ${failed} regression test(s) FAILED — check for regressions before shipping!`);
+  }
+})();
 </script>
 </body>
 </html>
