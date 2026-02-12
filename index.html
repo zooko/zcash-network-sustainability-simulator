@@ -522,7 +522,7 @@ function draw(){
     ctx.closePath();ctx.fillStyle=color;ctx.fill();
   }
 
-  const ANNUAL_PCT_SPLIT_HEIGHT=WRITTEN_HEIGHT;
+  const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT - Math.floor(ONE_YEAR_MS / 1000 / secsPerBlock(WRITTEN_HEIGHT));
 
   // Default model curves
   if(D.length>=2){
