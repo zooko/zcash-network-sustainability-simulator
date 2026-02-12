@@ -12,8 +12,12 @@
     --annualObs:#4ade80; --annualExp:rgba(74,222,128,0.55);
     --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
     --written:rgba(167,139,250,0.65);
-    --zip234Supply:#ec4899; --zip234Iss:#a78bfa; --zip234Ann:#fb7185;
-    --zip234Act:rgba(236,72,153,0.50);
+    --zip234Supply: #38bdf8;   /* sky-400 */
+    --zip234Iss: #7dd3fc;      /* sky-300 */
+    --zip234Ann: #38bdf8;
+    --zip234Act: rgba(56,189,248,0.50);
+    --handleBg: rgba(56,189,248,0.92);
+    --handleBorder: #fff;
     --burnEvent:rgba(255,80,80,0.70);
     --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
     --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
@@ -21,7 +25,6 @@
     --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
     --gridLine:rgba(148,163,184,0.08); --capLine:rgba(245,158,11,0.20);
     --frameBorder:rgba(148,163,184,0.10);
-    --handleBg:rgba(236,72,153,0.92); --handleBorder:#fff;
     --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
   }
   [data-theme="light"]{
@@ -31,8 +34,12 @@
     --annualObs:#16a34a; --annualExp:rgba(22,163,74,0.55);
     --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
     --written:rgba(124,58,237,0.55);
-    --zip234Supply:#db2777; --zip234Iss:#7c3aed; --zip234Ann:#e11d48;
-    --zip234Act:rgba(219,39,119,0.40);
+    --zip234Supply: #0284c7;   /* sky-600 */
+    --zip234Iss: #0369a1;      /* sky-700 */
+    --zip234Ann: #0284c7;
+    --zip234Act: rgba(2,132,199,0.40);
+    --handleBg: rgba(2,132,199,0.92);
+    --handleBorder: #1e293b;
     --burnEvent:rgba(220,38,38,0.60);
     --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
     --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
@@ -40,7 +47,6 @@
     --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
     --gridLine:rgba(148,163,184,0.12); --capLine:rgba(217,119,6,0.25);
     --frameBorder:rgba(148,163,184,0.18);
-    --handleBg:rgba(219,39,119,0.92); --handleBorder:#1e293b;
     --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
   }
   *{margin:0;padding:0;box-sizing:border-box}
@@ -68,15 +74,39 @@
   /* Draggable activation handle — ABOVE the chart with gap */
   #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
     transform:translateX(-50%);pointer-events:auto;top:-20px}
-  #actHandle .act-pill{background:var(--handleBg);color:#fff;font:600 .68rem/1 system-ui;
-    padding:5px 8px;border-radius:6px;border:1.5px solid var(--handleBorder);
-    white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px;
-    box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none}
-  #actHandle .act-pill .act-row{display:flex;align-items:center;gap:4px}
+  #actHandle .act-pill {
+    background: var(--handleBg);
+    color: #fff;
+    font: 600 .68rem/1 system-ui;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1.5px solid var(--handleBorder);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    user-select: none;
+  }
+  #actHandle .act-pill .act-label { opacity: 0.85; }
+  #actHandle .act-pill .act-sep { opacity: 0.5; }
   #actHandle .act-pill input{width:72px;padding:2px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.3);
     background:rgba(0,0,0,.25);color:#fff;font:600 .66rem/1 system-ui;text-align:center}
   #actHandle .act-pill input.act-date{width:88px}
   #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
+  #actHandle .act-nub {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: var(--handleBg);
+    border: 1.5px solid var(--handleBorder);
+    cursor: ew-resize;
+    margin: 0 auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  #actHandle.collapsed .act-nub { display: block; }
+  #actHandle.collapsed .act-pill { display: none; }
   [data-theme="light"] #actHandle .act-pill input{background:rgba(255,255,255,.5);color:#1e293b;border-color:rgba(0,0,0,.2)}
   /* Written tooltip */
   #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
@@ -104,9 +134,12 @@
 <div class="chart-wrap" id="chartWrap">
   <canvas id="chart"></canvas>
   <div id="actHandle">
+    <div class="act-nub"></div>
     <div class="act-pill">
-      <div class="act-row">ZIP 234 at <input id="actBlockInput" type="text" value="3687123"></div>
-      <div class="act-row"><input id="actDateInput" type="text" class="act-date" value=""></div>
+      <span class="act-label">ZIP 234 at</span>
+      <input id="actBlockInput" type="text" value="3687123">
+      <span class="act-sep">·</span>
+      <input id="actDateInput" type="text" class="act-date" value="">
     </div>
     <div class="act-stem"></div>
   </div>
@@ -114,7 +147,9 @@
 </div>
 <div class="legend" id="legend">
   <span class="ltoggle active" data-series="default"><span class="sw" style="background:var(--supplyObs)"></span>Default</span>
-  <span class="ltoggle active" data-series="zip234"><span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
+  <span class="ltoggle active" data-series="zip234">
+    <span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234
+  </span>
   <span style="color:var(--muted)">│</span>
   <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
   <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
@@ -440,8 +475,8 @@ function draw(){
     burnEvent:cv("--burnEvent"),
     supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
     supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)",
-    zip234FillObs:getTheme()==="dark"?"rgba(236,72,153,0.12)":"rgba(219,39,119,0.08)",
-    zip234FillExp:getTheme()==="dark"?"rgba(236,72,153,0.06)":"rgba(219,39,119,0.04)"
+    zip234FillObs: getTheme()==="dark" ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)",
+    zip234FillExp: getTheme()==="dark" ? "rgba(56,189,248,0.06)" : "rgba(2,132,199,0.04)",
   };
 
   ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
@@ -658,6 +693,7 @@ function updateActHandle(){
 
   actBlockInput.value=zip234ActivationHeight.toLocaleString();
   actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
+  actHandle.classList.toggle('collapsed', actCollapsed);
 }
 
 /* ================================================================
@@ -860,26 +896,60 @@ const writtenTip=document.getElementById("writtenTip");
 let actDragging=false;
 
 // --- Activation handle: mouse drag ---
-actHandle.addEventListener("mousedown",e=>{
-  if(e.target.tagName==="INPUT")return;
-  actDragging=true;e.preventDefault();e.stopPropagation();
+let actPointerStart = { x: 0, y: 0, time: 0 };
+
+actHandle.addEventListener("mousedown", e => {
+  if (e.target.tagName === "INPUT") return;
+  actDragging = true;
+  actPointerStart = { x: e.clientX, y: e.clientY, time: Date.now() };
+  e.preventDefault();
+  e.stopPropagation();
 });
+
+window.addEventListener("mouseup", e => {
+  if (actDragging) {
+    const dx = Math.abs(e.clientX - actPointerStart.x);
+    const dt = Date.now() - actPointerStart.time;
+    // If barely moved and quick, it's a click → toggle collapsed
+    if (dx < 4 && dt < 300) {
+      actCollapsed = !actCollapsed;
+      requestDraw();
+    }
+    actDragging = false;
+  }
+});
+
 window.addEventListener("mousemove",e=>{
   if(!actDragging)return;
   handleActDrag(e.clientX);
 });
-window.addEventListener("mouseup",()=>{actDragging=false;});
 
 // --- Activation handle: touch drag ---
-actHandle.addEventListener("touchstart",e=>{
-  if(e.target.tagName==="INPUT")return;
-  actDragging=true;e.stopPropagation();
-},{passive:true});
+actHandle.addEventListener("touchstart", e => {
+  if (e.target.tagName === "INPUT") return;
+  actDragging = true;
+  const t = e.touches[0];
+  actPointerStart = { x: t.clientX, y: t.clientY, time: Date.now() };
+  e.stopPropagation();
+}, { passive: true });
+
+window.addEventListener("touchend", e => {
+  if (actDragging) {
+    const cx = e.changedTouches?.[0]?.clientX ?? actPointerStart.x;
+    const dx = Math.abs(cx - actPointerStart.x);
+    const dt = Date.now() - actPointerStart.time;
+    if (dx < 4 && dt < 300) {
+      actCollapsed = !actCollapsed;
+      requestDraw();
+    }
+    actDragging = false;
+  }
+});
+
 window.addEventListener("touchmove",e=>{
   if(!actDragging)return;
   handleActDrag(e.touches[0].clientX);
 },{passive:true});
-window.addEventListener("touchend",()=>{actDragging=false;});
 
 // --- Activation handle: block input ---
 actBlockInput.addEventListener("keydown",e=>{
@@ -941,6 +1011,7 @@ canvas.style.cursor="crosshair";
    ================================================================ */
 initTheme();
 zip234ActivationHeight=3_687_123;
+actCollapsed=false;
 ensureZip234Cache();
 view.tMin=genTime;
 view.tMax=blockToTime(6_000_000);
