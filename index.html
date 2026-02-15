@@ -73,8 +73,9 @@
   .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
   /* Draggable activation handle — ABOVE the chart with gap */
   #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
-    transform:translateX(-50%);pointer-events:auto;top:-20px}
+    transform:translateX(-50%);pointer-events:auto;top:-8px}
   #actHandle .act-pill {
+    position: relative;           /* ← add this line */
     background: var(--handleBg);
     color: #fff;
     font: 600 .68rem/1 system-ui;
@@ -87,6 +88,25 @@
     gap: 5px;
     box-shadow: 0 2px 8px rgba(0,0,0,.3);
     user-select: none;
+    opacity: 0.9;
+    transition: opacity 0.15s, filter 0.15s;
+  }
+  #actHandle .act-pill::after {
+    content: "✕";
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    font: 600 10px/16px system-ui;
+    text-align: center;
+    pointer-events: none;  /* the whole handle already catches clicks */
+  }
+  [data-theme="light"] #actHandle .act-pill::after {
+    background: rgba(0,0,0,0.25);
   }
   #actHandle .act-pill .act-label { opacity: 0.85; }
   #actHandle .act-pill .act-sep { opacity: 0.5; }
@@ -96,14 +116,34 @@
   #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
   #actHandle .act-nub {
     display: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
+    width: 44px;
+    height: 16px;
+    border-radius: 8px;
     background: var(--handleBg);
     border: 1.5px solid var(--handleBorder);
     cursor: ew-resize;
     margin: 0 auto;
     box-shadow: 0 1px 4px rgba(0,0,0,.3);
+    color: #fff;
+    font: 600 11px/16px system-ui;
+    text-align: center;
+    letter-spacing: 2px;
+    user-select: none;
+    opacity: 0.85;
+    transition: opacity 0.15s;
+  }
+  #actHandle .act-pill:hover {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+  #actHandle .act-nub:hover {
+    opacity: 1;
+  }
+  #actHandle.collapsed .act-nub { display: block; }
+  #actHandle.collapsed .act-pill { display: none; }
+
+  #actHandle.collapsed {
+    top: 20px;
   }
   #actHandle.collapsed .act-nub { display: block; }
   #actHandle.collapsed .act-pill { display: none; }
@@ -134,7 +174,7 @@
 <div class="chart-wrap" id="chartWrap">
   <canvas id="chart"></canvas>
   <div id="actHandle">
-    <div class="act-nub"></div>
+    <div class="act-nub">⋯</div>
     <div class="act-pill">
       <span class="act-label">ZIP 234 at</span>
       <input id="actBlockInput" type="text" value="3687123">
@@ -687,9 +727,29 @@ function updateActHandle(){
   actHandle.style.left=xPx+"px";
   const pillEl=actHandle.querySelector('.act-pill');
   const pillHeight=pillEl?pillEl.offsetHeight:40;
-  const handleTop=-20; // CSS top value
-  const stemHeight=Math.max(10, MG.top - (pillHeight + handleTop) + pillHeight);
-  actHandle.querySelector('.act-stem').style.height=stemHeight+"px";
+
+  // We want the stem bottom to reach the chart's top edge (y = MG.top in chart-wrap coordinates)
+
+  // Get the actual pixel position of the handle's top edge relative to chart-wrap
+  const handleEl = document.getElementById("actHandle");
+  const wrapEl = document.getElementById("chartWrap");
+
+  // After setting actHandle.style.left and actHandle.style.display, force layout:
+  handleEl.offsetHeight; // force reflow
+
+  // Now measure where the visible part (pill or nub) actually ends
+  const visibleEl = actCollapsed
+    ? handleEl.querySelector('.act-nub')
+    : handleEl.querySelector('.act-pill');
+  const visibleRect = visibleEl.getBoundingClientRect();
+  const wrapRect = wrapEl.getBoundingClientRect();
+
+  // Bottom of the visible element, in chart-wrap coordinates
+  const visibleBottomInWrap = visibleRect.bottom - wrapRect.top;
+
+  // We want the stem to reach MG.top (top of the plot area, in chart-wrap coordinates)
+  const stemHeight = Math.max(4, MG.top - visibleBottomInWrap);
+  handleEl.querySelector('.act-stem').style.height = stemHeight + "px";
 
   actBlockInput.value=zip234ActivationHeight.toLocaleString();
   actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
