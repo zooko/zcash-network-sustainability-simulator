@@ -18,6 +18,7 @@
     --zip234Act: rgba(56,189,248,0.50);
     --handleBg: rgba(56,189,248,0.92);
     --handleBorder: #fff;
+    --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
     --burnEvent:rgba(255,80,80,0.70);
     --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
     --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
@@ -40,6 +41,7 @@
     --zip234Act: rgba(2,132,199,0.40);
     --handleBg: rgba(2,132,199,0.92);
     --handleBorder: #1e293b;
+    --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
     --burnEvent:rgba(220,38,38,0.60);
     --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
     --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
@@ -75,29 +77,15 @@
   #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
     transform:translateX(-50%);pointer-events:auto;top:-8px}
 
-  #actHandle .act-pill {
-    background: var(--handleBg);
-    color: #fff;
-    font: 600 .68rem/1 system-ui;
-    padding: 5px 8px;
-    border-radius: 6px;
-    border: 1.5px solid var(--handleBorder);
-    white-space: nowrap;
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.3);
-    user-select: none;
-    opacity: 0.9;
-    transition: opacity 0.15s, filter 0.15s;
-  }
-  #actHandle .act-left {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    gap: 3px;
-  }
+  #actHandle .act-pill{
+    background:var(--handleBg);color:#fff;font:600 .68rem/1 system-ui;
+    padding:5px 8px;border-radius:6px;border:1.5px solid var(--handleBorder);
+    white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
+    transition:opacity 0.15s,filter 0.15s}
+  #actHandle .act-content{display:flex;align-items:stretch;gap:8px;width:100%}
+  #actHandle .act-left{display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:3px}
   #actHandle .act-pill .act-label { opacity: 0.85; font-size: .66rem; }
   #actHandle .act-collapse-icon {
     width: 18px;
@@ -124,6 +112,37 @@
   #actHandle .act-pill input.act-date{width:88px}
 
   #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
+
+  #burnHandle{position:absolute;display:none;z-index:19;cursor:ew-resize;
+      transform:translateX(-50%);pointer-events:auto;top:-8px}
+  #burnHandle .burn-nub{display:none;width:24px;height:16px;border-radius:8px;
+      background:var(--burnHandleBg);color:#fff;font:600 11px/16px system-ui;text-align:center;
+      border:1.5px solid var(--burnHandleBorder);cursor:ew-resize;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+  #burnHandle.collapsed .burn-nub{display:block}
+  #burnHandle.collapsed .burn-pill{display:none}
+  #burnHandle .burn-pill{
+    background:var(--burnHandleBg);color:#fff;font:600 .68rem/1 system-ui;
+    padding:5px 8px;border-radius:6px;border:1.5px solid var(--burnHandleBorder);
+    white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
+    transition:opacity 0.15s,filter 0.15s}
+  #burnHandle .burn-content{display:flex;align-items:stretch;gap:8px;width:100%}
+  #burnHandle .burn-left{display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:3px}
+  #burnHandle .burn-pill .burn-label{opacity:0.85;font-size:.66rem}
+  #burnHandle .burn-collapse-icon{width:18px;height:18px;border-radius:50%;
+      background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);
+      font:600 11px/18px system-ui;text-align:center;cursor:pointer;transition:background 0.12s}
+  #burnHandle .burn-collapse-icon:hover{background:rgba(255,255,255,0.3)}
+  #burnHandle .burn-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+  #burnHandle .burn-pill input{width:80px;padding:2px 4px;border-radius:3px;
+      border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);color:#fff;
+      font:600 .66rem/1 system-ui;text-align:center}
+  #burnHandle .burn-pill input.burn-date{width:88px}
+  #burnHandle .burn-amt-row{display:flex;align-items:center;gap:3px}
+  #burnHandle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
+  #burnHandle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
+
   #actHandle .act-nub {
     display: none;
     width: 44px;
@@ -180,16 +199,35 @@
   <div id="actHandle">
     <div class="act-nub">⋯</div>
     <div class="act-pill">
-      <div class="act-left">
-        <span class="act-label">ZIP 234 at</span>
-        <span class="act-collapse-icon" title="Click to collapse">▾</span>
+      <div class="act-content">
+        <div class="act-left">
+          <span class="act-label">ZIP 234 activation</span>
+        </div>
+        <div class="act-right">
+          <input id="actBlockInput" type="text" value="3687123">
+          <input id="actDateInput" type="text" class="act-date" value="">
+        </div>
       </div>
-      <div class="act-right">
-        <input id="actBlockInput" type="text" value="3687123">
-        <input id="actDateInput" type="text" class="act-date" value="">
-      </div>
+      <span class="act-collapse-icon" title="Click to collapse">▾</span>
     </div>
     <div class="act-stem"></div>
+  </div>
+  <div id="burnHandle">
+    <div class="burn-nub">⋯</div>
+    <div class="burn-pill">
+      <div class="burn-content">
+        <div class="burn-left">
+          <span class="burn-label">Burn</span>
+          <div class="burn-amt-row"><input id="burnAmtInput" type="text" value="2000000"><span class="burn-unit">ⓩ</span></div>
+        </div>
+        <div class="burn-right">
+          <input id="burnBlockInput" type="text" value="5000000">
+          <input id="burnDateInput" type="text" class="burn-date" value="">
+        </div>
+      </div>
+      <span class="burn-collapse-icon" title="Click to collapse">▾</span>
+    </div>
+    <div class="burn-stem"></div>
   </div>
   <div id="writtenTip"></div>
 </div>
@@ -319,15 +357,15 @@ const ZATOSHI=100_000_000,SAMPLE_EVERY=1000;
 const data=[];let computedUpTo=-1,cumulativeBig=0n,targetHeightWanted=0,computing=false;
 
 function pushPoint(h,cumBig){
-  const iss=issuance_per_block(h),issBlock=Number(iss)/ZATOSHI,spb=secsPerBlock(h),
-    time=blockToTime(h),supply=Number(cumBig)/ZATOSHI-totalBurnedAtHeight(h),issDay=issBlock*(86400/spb);
-  let annualPct=NaN,annualPctIsExpected=false;
-  if(supply>0&&h>=20000){
-    const h1yr=Math.floor(heightAfterDuration(h,ONE_YEAR_MS));
-    const annIss=Number(sumIssuanceRangeClean(h,h1yr))/ZATOSHI;
-    annualPct=(annIss/supply)*100;annualPctIsExpected=(h1yr>WRITTEN_HEIGHT);
-  }
-  data.push({h,time,supply,issBlock,issDay,annualPct,annualPctIsExpected});
+    const iss=issuance_per_block(h),issBlock=Number(iss)/ZATOSHI,spb=secsPerBlock(h),
+          time=blockToTime(h),rawSupply=Number(cumBig)/ZATOSHI,supply=rawSupply-totalBurnedAtHeight(h),issDay=issBlock*(86400/spb);
+    let annualPct=NaN,annualPctIsExpected=false,annIssZec=0;
+    if(supply>0&&h>=20000){
+        const h1yr=Math.floor(heightAfterDuration(h,ONE_YEAR_MS));
+        annIssZec=Number(sumIssuanceRangeClean(h,h1yr))/ZATOSHI;
+        annualPct=(annIssZec/supply)*100;annualPctIsExpected=(h1yr>WRITTEN_HEIGHT);
+    }
+    data.push({h,time,rawSupply,supply,issBlock,issDay,annualPct,annualPctIsExpected,annIssZec});
 }
 
 function advanceTo(targetH){
@@ -339,6 +377,37 @@ async function computeAsync(targetH){
   if(computing)return;computing=true;const BATCH=80_000;
   while(computedUpTo<targetH){advanceTo(Math.min(computedUpTo+BATCH,targetH));requestDraw();await new Promise(r=>setTimeout(r,0));}
   computing=false;requestDraw();
+}
+
+/* ================================================================
+   Burn event helpers
+   ================================================================ */
+function recomputeDataSupply(){
+    for(const d of data){
+        d.supply=d.rawSupply-totalBurnedAtHeight(d.h);
+        if(d.supply>0&&d.annIssZec>0){d.annualPct=(d.annIssZec/d.supply)*100;}
+    }
+}
+function formatBurnLabel(zec){
+    if(zec>=1_000_000&&zec%1_000_000===0)return"Burn "+zec/1_000_000+"M ⓩ";
+    if(zec>=1_000&&zec%1_000===0)return"Burn "+zec/1_000+"K ⓩ";
+    return"Burn "+zec.toLocaleString()+" ⓩ";
+}
+function supplyAtHeight(h){
+    return Number(sumIssuanceRangeClean(0,h))/ZATOSHI;
+}
+function clampBurnAmount(){
+    const b=BURN_EVENTS[0];
+    if(!b)return;
+    const maxBurn=Math.floor(supplyAtHeight(b.h));
+    if(b.zec>maxBurn)b.zec=maxBurn;
+}
+function onBurnChanged(){
+    clampBurnAmount();
+    BURN_EVENTS[0].label=formatBurnLabel(BURN_EVENTS[0].zec);
+    recomputeDataSupply();
+    zip234CachedActH=-1;
+    requestDraw();
 }
 
 /* ================================================================
@@ -704,6 +773,8 @@ function draw(){
 
   // Position activation handle
   updateActHandle();
+  // Position burn handle
+  updateBurnHandle();
 }
 
 /* ================================================================
@@ -786,6 +857,57 @@ function updateActHandle(){
 }
 
 /* ================================================================
+   Burn handle state & positioning
+   ================================================================ */
+const burnHandle=document.getElementById("burnHandle");
+const burnBlockInput=document.getElementById("burnBlockInput");
+const burnDateInput=document.getElementById("burnDateInput");
+const burnAmtInput=document.getElementById("burnAmtInput");
+let burnCollapsed=false;
+
+function clampBurnHeight(h){
+    if(h<0)h=0;
+    if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
+    return h;
+}
+
+function updateBurnHandle(){
+    if(!burnHandle)return null;
+    const{CSS_W,CSS_H,MG,PW,PH}=layout;
+    if(!PW){burnHandle.style.display="none";return null;}
+    const b=BURN_EVENTS[0];
+    if(!b){burnHandle.style.display="none";return null;}
+    const t=blockToTime(b.h);
+    if(t<view.tMin||t>view.tMax){burnHandle.style.display="none";return null;}
+    const frac=(t-view.tMin)/(view.tMax-view.tMin);
+    const xPx=MG.left+frac*PW;
+    burnHandle.style.display="block";
+    burnHandle.style.left=xPx+"px";
+    burnHandle.classList.toggle("collapsed",burnCollapsed);
+    const stem=burnHandle.querySelector('.burn-stem');
+    stem.style.height="0px";
+    burnHandle.style.top="0px";
+    burnHandle.offsetHeight;
+    const visibleEl=burnCollapsed
+      ? burnHandle.querySelector('.burn-nub')
+      : burnHandle.querySelector('.burn-pill');
+    const visH=visibleEl.offsetHeight;
+    burnHandle.style.top=(-visH/2)+"px";
+    burnHandle.offsetHeight;
+    const wrapEl=document.getElementById("chartWrap");
+    const wrapRect=wrapEl.getBoundingClientRect();
+    const handleRect=burnHandle.getBoundingClientRect();
+    const handleBottom=handleRect.bottom-wrapRect.top;
+    const capLineY=MG.top+PH-(21_000_000/22_000_000)*PH;
+    const stemHeight=Math.max(0,capLineY-handleBottom);
+    stem.style.height=stemHeight+"px";
+    burnBlockInput.value=b.h.toLocaleString();
+    burnDateInput.value=fmtDate(blockToTime(b.h));
+    burnAmtInput.value=b.zec.toLocaleString();
+    return {stemHeight};
+}
+    
+/* ================================================================
    Extracted handler: activation drag (shared by mouse & touch)
    ================================================================ */
 function handleActDrag(clientX){
@@ -833,6 +955,70 @@ function handleActDateInput(){
     zoomToActivation(zip234ActivationHeight);
   }
   actDateInput.blur();
+}
+
+/* ================================================================
+   Extracted handler: burn drag (shared by mouse & touch)
+   ================================================================ */
+let burnDragging=false,burnDragOffsetX=0;
+
+function handleBurnDrag(clientX){
+    const adjustedX=clientX-burnDragOffsetX;
+    const canvasEl=document.getElementById("chart");
+    const rect=canvasEl.getBoundingClientRect();
+    const{MG,PW}=layout;
+    const cssW=parseInt(canvasEl.style.width);
+    const mx=(adjustedX-rect.left)*(cssW/rect.width);
+    const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
+    const t=view.tMin+frac*(view.tMax-view.tMin);
+    let h=clampBurnHeight(Math.round(timeToHeight(t)));
+    if(h!==BURN_EVENTS[0].h){
+        BURN_EVENTS[0].h=h;
+        onBurnChanged();
+    }
+}
+
+/* ================================================================
+   Extracted handler: burn block input
+   ================================================================ */
+function handleBurnBlockInput(){
+    const raw=burnBlockInput.value.replace(/,/g,"").trim();
+    const v=parseInt(raw);
+    if(!isNaN(v)&&v>=0&&v<=100_000_000){
+        BURN_EVENTS[0].h=clampBurnHeight(v);
+        onBurnChanged();
+        requestComputeForView();
+    }
+    burnBlockInput.blur();
+}
+
+/* ================================================================
+   Extracted handler: burn date input
+   ================================================================ */
+function handleBurnDateInput(){
+    const raw=burnDateInput.value.trim();
+    const parsed=Date.parse(raw);
+    if(!isNaN(parsed)){
+        let h=clampBurnHeight(Math.round(timeToHeight(parsed)));
+        if(h>100_000_000)h=100_000_000;
+        BURN_EVENTS[0].h=h;
+        onBurnChanged();
+        requestComputeForView();
+    }
+    burnDateInput.blur();
+}
+
+/* ================================================================
+   Extracted handler: burn amount input
+   ================================================================ */
+function handleBurnAmtInput(){
+    const raw=burnAmtInput.value.replace(/,/g,"").trim();
+    const v=parseFloat(raw);
+    if(!isNaN(v)&&v>=0){
+        BURN_EVENTS[0].zec=v;
+        onBurnChanged();
+    }
+    burnAmtInput.blur();
 }
 
 /* ================================================================
@@ -891,7 +1077,7 @@ function handleLegendToggle(el){
 function handleChartHover(e){
   const tooltip=document.getElementById("tooltip");
   const writtenTipEl=document.getElementById("writtenTip");
-  if(dragging||actDragging||data.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
+  if(dragging||actDragging||burnDragging||data.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
   const canvasEl=document.getElementById("chart");
   const rect=canvasEl.getBoundingClientRect();
   const cssW=parseInt(canvasEl.style.width),cssH=parseInt(canvasEl.style.height);
@@ -1061,9 +1247,77 @@ actDateInput.addEventListener("keydown",e=>{
 actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
 actDateInput.addEventListener("click",e=>e.stopPropagation());
 
+// --- Burn handle: mouse drag ---
+let burnPointerStart={x:0,y:0,time:0};
+burnHandle.addEventListener("mousedown",e=>{
+    if(e.target.tagName==="INPUT")return;
+    burnDragging=true;
+    const hr=burnHandle.getBoundingClientRect();
+    burnDragOffsetX=e.clientX-(hr.left+hr.right)/2;
+    burnPointerStart={x:e.clientX,y:e.clientY,time:Date.now()};
+    e.preventDefault();
+    e.stopPropagation();
+});
+window.addEventListener("mouseup",e=>{
+    if(burnDragging){
+        const dx=Math.abs(e.clientX-burnPointerStart.x);
+        const dt=Date.now()-burnPointerStart.time;
+        if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
+        burnDragging=false;
+    }
+});
+window.addEventListener("mousemove",e=>{
+    if(!burnDragging)return;
+    handleBurnDrag(e.clientX);
+});
+// --- Burn handle: touch drag ---
+burnHandle.addEventListener("touchstart",e=>{
+    if(e.target.tagName==="INPUT")return;
+    burnDragging=true;
+    const t=e.touches[0];
+    const hr=burnHandle.getBoundingClientRect();
+    burnDragOffsetX=t.clientX-(hr.left+hr.right)/2;
+    burnPointerStart={x:t.clientX,y:t.clientY,time:Date.now()};
+    e.stopPropagation();
+},{passive:true});
+window.addEventListener("touchend",e=>{
+    if(burnDragging){
+        const cx=e.changedTouches?.[0]?.clientX??burnPointerStart.x;
+        const dx=Math.abs(cx-burnPointerStart.x);
+        const dt=Date.now()-burnPointerStart.time;
+        if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
+        burnDragging=false;
+    }
+});
+window.addEventListener("touchmove",e=>{
+    if(!burnDragging)return;
+    handleBurnDrag(e.touches[0].clientX);
+},{passive:true});
+// --- Burn handle: block input ---
+burnBlockInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){handleBurnBlockInput();}
+    e.stopPropagation();
+});
+burnBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
+burnBlockInput.addEventListener("click",e=>e.stopPropagation());
+// --- Burn handle: date input ---
+burnDateInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){handleBurnDateInput();}
+    e.stopPropagation();
+});
+burnDateInput.addEventListener("mousedown",e=>e.stopPropagation());
+burnDateInput.addEventListener("click",e=>e.stopPropagation());
+// --- Burn handle: amount input ---
+burnAmtInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){handleBurnAmtInput();}
+    e.stopPropagation();
+});
+burnAmtInput.addEventListener("mousedown",e=>e.stopPropagation());
+burnAmtInput.addEventListener("click",e=>e.stopPropagation());
+
 // --- Chart: mouse drag ---
-canvas.addEventListener("mousedown",e=>{if(actDragging)return;handleChartDragStart(e.clientX);});
-window.addEventListener("mousemove",e=>{if(!dragging||actDragging)return;handleChartDragMove(e.clientX);});
+canvas.addEventListener("mousedown",e=>{if(actDragging||burnDragging)return;handleChartDragStart(e.clientX);});
+window.addEventListener("mousemove",e=>{if(!dragging||actDragging||burnDragging)return;handleChartDragMove(e.clientX);});
 window.addEventListener("mouseup",()=>{dragging=false;canvas.style.cursor="crosshair";});
 
 // --- Chart: wheel ---
@@ -1106,6 +1360,7 @@ canvas.style.cursor="crosshair";
 initTheme();
 zip234ActivationHeight=3_687_123;
 actCollapsed=false;
+burnCollapsed=false;
 ensureZip234Cache();
 view.tMin=genTime;
 view.tMax=blockToTime(6_000_000);
