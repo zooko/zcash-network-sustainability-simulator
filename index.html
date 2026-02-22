@@ -141,12 +141,6 @@
   }
   #actHandle.collapsed .act-nub { display: block; }
   #actHandle.collapsed .act-pill { display: none; }
-
-  #actHandle.collapsed {
-    top: 20px;
-  }
-  #actHandle.collapsed .act-nub { display: block; }
-  #actHandle.collapsed .act-pill { display: none; }
   [data-theme="light"] #actHandle .act-pill input{background:rgba(255,255,255,.5);color:#1e293b;border-color:rgba(0,0,0,.2)}
   /* Written tooltip */
   #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
@@ -708,6 +702,31 @@ function clampActivationHeight(h){
 }
 
 /* ================================================================
+   Activation handle geometry helpers
+   ================================================================ */
+function computeStemHeightFromBottom(visibleBottomInWrap, plotTop, minHeight=4){
+  return Math.max(minHeight, plotTop - visibleBottomInWrap);
+}
+
+function measureActHandleGeometry({ actHandle, wrapEl, actCollapsed, MG }){
+  // Apply state before measuring so we measure the actual visible element
+  actHandle.classList.toggle("collapsed", actCollapsed);
+  actHandle.offsetHeight; // force layout
+
+  const visibleEl = actCollapsed
+    ? actHandle.querySelector(".act-nub")
+    : actHandle.querySelector(".act-pill");
+
+  const visibleRect = visibleEl.getBoundingClientRect();
+  const wrapRect = wrapEl.getBoundingClientRect();
+
+  const visibleBottomInWrap = visibleRect.bottom - wrapRect.top;
+  const stemHeight = computeStemHeightFromBottom(visibleBottomInWrap, MG.top);
+
+  return { visibleBottomInWrap, stemHeight };
+}
+ 
+/* ================================================================
    Activation handle positioning
    ================================================================ */
 const actHandle=document.getElementById("actHandle");
@@ -715,45 +734,25 @@ const actBlockInput=document.getElementById("actBlockInput");
 const actDateInput=document.getElementById("actDateInput");
 
 function updateActHandle(){
-  if(!show.zip234){actHandle.style.display="none";return;}
+  if(!show.zip234){actHandle.style.display="none";return null;}
   const {CSS_W,CSS_H,MG,PW,PH}=layout;
-  if(!PW){actHandle.style.display="none";return;}
+  if(!PW){actHandle.style.display="none";return null;}
   const t=blockToTime(zip234ActivationHeight);
-  if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return;}
+  if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return null;}
   const frac=(t-view.tMin)/(view.tMax-view.tMin);
   const xPx=MG.left+frac*PW;
 
   actHandle.style.display="block";
   actHandle.style.left=xPx+"px";
-  const pillEl=actHandle.querySelector('.act-pill');
-  const pillHeight=pillEl?pillEl.offsetHeight:40;
 
-  // We want the stem bottom to reach the chart's top edge (y = MG.top in chart-wrap coordinates)
-
-  // Get the actual pixel position of the handle's top edge relative to chart-wrap
-  const handleEl = document.getElementById("actHandle");
   const wrapEl = document.getElementById("chartWrap");
-
-  // After setting actHandle.style.left and actHandle.style.display, force layout:
-  handleEl.offsetHeight; // force reflow
-
-  // Now measure where the visible part (pill or nub) actually ends
-  const visibleEl = actCollapsed
-    ? handleEl.querySelector('.act-nub')
-    : handleEl.querySelector('.act-pill');
-  const visibleRect = visibleEl.getBoundingClientRect();
-  const wrapRect = wrapEl.getBoundingClientRect();
-
-  // Bottom of the visible element, in chart-wrap coordinates
-  const visibleBottomInWrap = visibleRect.bottom - wrapRect.top;
-
-  // We want the stem to reach MG.top (top of the plot area, in chart-wrap coordinates)
-  const stemHeight = Math.max(4, MG.top - visibleBottomInWrap);
-  handleEl.querySelector('.act-stem').style.height = stemHeight + "px";
+  const geom = measureActHandleGeometry({ actHandle, wrapEl, actCollapsed, MG });
+  actHandle.querySelector('.act-stem').style.height = geom.stemHeight + "px";
 
   actBlockInput.value=zip234ActivationHeight.toLocaleString();
   actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
-  actHandle.classList.toggle('collapsed', actCollapsed);
+
+  return geom;
 }
 
 /* ================================================================
@@ -1087,7 +1086,7 @@ requestDraw();requestComputeForView();
 /* ================
    REGRESSION TESTS
    ================ */
-(function runRegressionTests() {
+setTimeout(function runRegressionTests() {
   const results = [];
   function test(name, fn) {
     try {
@@ -1457,6 +1456,66 @@ requestDraw();requestComputeForView();
     return top <= 0;
   });
 
+  test("Activation stem bottom aligns in collapsed and expanded states", () => {
+    // This test needs the DOM to be fully laid out.
+    // Schedule it to run after next frame and report async.
+    // For now, force a synchronous draw + layout:
+
+    // Ensure enough data exists to draw
+    if (data.length < 2) return false;
+
+    // Force a synchronous draw (populates layout, sizes canvas, calls updateActHandle)
+    drawRAF = null; // clear any pending RAF
+    draw();
+
+    if (!layout || !layout.MG || !layout.PW) {
+      console.warn("  ⚠ Stem test: layout not populated after draw()");
+      return false;
+    }
+
+    const stem = document.querySelector("#actHandle .act-stem");
+    const wrapEl = document.getElementById("chartWrap");
+    if (!stem || !wrapEl) return false;
+
+    // Verify the handle is actually visible
+    if (actHandle.style.display === "none") {
+      console.warn("  ⚠ Stem test: actHandle is hidden (activation out of view?)");
+      return false;
+    }
+
+    const saved = actCollapsed;
+    const eps = 2.0;
+
+    // Measure in expanded mode
+    actCollapsed = false;
+    updateActHandle();
+    actHandle.offsetHeight;
+    const wrapRect1 = wrapEl.getBoundingClientRect();
+    const stemRect1 = stem.getBoundingClientRect();
+    const stemBottom1 = stemRect1.bottom - wrapRect1.top;
+
+    // Measure in collapsed mode
+    actCollapsed = true;
+    updateActHandle();
+    actHandle.offsetHeight;
+    const wrapRect2 = wrapEl.getBoundingClientRect();
+    const stemRect2 = stem.getBoundingClientRect();
+    const stemBottom2 = stemRect2.bottom - wrapRect2.top;
+
+    // Restore
+    actCollapsed = saved;
+    updateActHandle();
+
+    const diff = Math.abs(stemBottom1 - stemBottom2);
+    const pass = diff <= eps && stemRect1.height > 0 && stemRect2.height > 0;
+
+    if (!pass) {
+      console.warn(`  ⚠ Stem bottom expanded=${stemBottom1.toFixed(1)}px, collapsed=${stemBottom2.toFixed(1)}px, diff=${diff.toFixed(1)}px, heights=${stemRect1.height.toFixed(1)}/${stemRect2.height.toFixed(1)}`);
+    }
+
+    return pass;
+  });
+
   // --- Report ---
 
   const passed = results.filter(r => r.pass).length;
@@ -1477,7 +1536,7 @@ requestDraw();requestComputeForView();
   if (failed > 0) {
     console.warn(`⚠️ ${failed} regression test(s) FAILED — check for regressions before shipping!`);
   }
-})();
+}, 500);
 </script>
 </body>
 </html>
