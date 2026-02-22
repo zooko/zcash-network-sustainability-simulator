@@ -74,45 +74,55 @@
   /* Draggable activation handle — ABOVE the chart with gap */
   #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
     transform:translateX(-50%);pointer-events:auto;top:-8px}
+
   #actHandle .act-pill {
-    position: relative;           /* ← add this line */
     background: var(--handleBg);
     color: #fff;
     font: 600 .68rem/1 system-ui;
-    padding: 4px 10px;
+    padding: 5px 8px;
     border-radius: 6px;
     border: 1.5px solid var(--handleBorder);
     white-space: nowrap;
     display: flex;
-    align-items: center;
-    gap: 5px;
+    align-items: stretch;
+    gap: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,.3);
     user-select: none;
     opacity: 0.9;
     transition: opacity 0.15s, filter 0.15s;
   }
-  #actHandle .act-pill::after {
-    content: "✕";
-    position: absolute;
-    bottom: -8px;
-    right: -8px;
-    width: 16px;
-    height: 16px;
+  #actHandle .act-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+  }
+  #actHandle .act-pill .act-label { opacity: 0.85; font-size: .66rem; }
+  #actHandle .act-collapse-icon {
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    font: 600 10px/16px system-ui;
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.8);
+    font: 600 11px/18px system-ui;
     text-align: center;
-    pointer-events: none;  /* the whole handle already catches clicks */
+    cursor: pointer;
+    transition: background 0.12s;
   }
-  [data-theme="light"] #actHandle .act-pill::after {
-    background: rgba(0,0,0,0.25);
+  #actHandle .act-collapse-icon:hover {
+    background: rgba(255,255,255,0.3);
   }
-  #actHandle .act-pill .act-label { opacity: 0.85; }
-  #actHandle .act-pill .act-sep { opacity: 0.5; }
-  #actHandle .act-pill input{width:72px;padding:2px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.3);
+  #actHandle .act-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  #actHandle .act-pill input{width:80px;padding:2px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.3);
     background:rgba(0,0,0,.25);color:#fff;font:600 .66rem/1 system-ui;text-align:center}
   #actHandle .act-pill input.act-date{width:88px}
+
   #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
   #actHandle .act-nub {
     display: none;
@@ -170,10 +180,14 @@
   <div id="actHandle">
     <div class="act-nub">⋯</div>
     <div class="act-pill">
-      <span class="act-label">ZIP 234 at</span>
-      <input id="actBlockInput" type="text" value="3687123">
-      <span class="act-sep">·</span>
-      <input id="actDateInput" type="text" class="act-date" value="">
+      <div class="act-left">
+        <span class="act-label">ZIP 234 at</span>
+        <span class="act-collapse-icon" title="Click to collapse">▾</span>
+      </div>
+      <div class="act-right">
+        <input id="actBlockInput" type="text" value="3687123">
+        <input id="actDateInput" type="text" class="act-date" value="">
+      </div>
     </div>
     <div class="act-stem"></div>
   </div>
@@ -734,36 +748,53 @@ const actBlockInput=document.getElementById("actBlockInput");
 const actDateInput=document.getElementById("actDateInput");
 
 function updateActHandle(){
-  if(!show.zip234){actHandle.style.display="none";return null;}
-  const {CSS_W,CSS_H,MG,PW,PH}=layout;
-  if(!PW){actHandle.style.display="none";return null;}
-  const t=blockToTime(zip234ActivationHeight);
-  if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return null;}
-  const frac=(t-view.tMin)/(view.tMax-view.tMin);
-  const xPx=MG.left+frac*PW;
-
-  actHandle.style.display="block";
-  actHandle.style.left=xPx+"px";
-
-  const wrapEl = document.getElementById("chartWrap");
-  const geom = measureActHandleGeometry({ actHandle, wrapEl, actCollapsed, MG });
-  actHandle.querySelector('.act-stem').style.height = geom.stemHeight + "px";
-
-  actBlockInput.value=zip234ActivationHeight.toLocaleString();
-  actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
-
-  return geom;
+    if(!show.zip234){actHandle.style.display="none";return null;}
+    const{CSS_W,CSS_H,MG,PW,PH}=layout;
+    if(!PW){actHandle.style.display="none";return null;}
+    const t=blockToTime(zip234ActivationHeight);
+    if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return null;}
+    const frac=(t-view.tMin)/(view.tMax-view.tMin);
+    const xPx=MG.left+frac*PW;
+    actHandle.style.display="block";
+    actHandle.style.left=xPx+"px";
+    // Apply collapsed state
+    actHandle.classList.toggle("collapsed", actCollapsed);
+    // Zero out stem and reset top before measuring
+    const stem=actHandle.querySelector('.act-stem');
+    stem.style.height="0px";
+    actHandle.style.top="0px";
+    actHandle.offsetHeight;
+    // Center the visible element at y=0 (top of chart-wrap)
+    const visibleEl=actCollapsed
+      ? actHandle.querySelector('.act-nub')
+      : actHandle.querySelector('.act-pill');
+    const visH=visibleEl.offsetHeight;
+    actHandle.style.top=(-visH/2)+"px";
+    actHandle.offsetHeight;
+    // Measure where content ends
+    const wrapEl=document.getElementById("chartWrap");
+    const wrapRect=wrapEl.getBoundingClientRect();
+    const handleRect=actHandle.getBoundingClientRect();
+    const handleBottom=handleRect.bottom-wrapRect.top;
+    // Stem reaches the 21M cap line (ySupMax is 22M, so capY = MG.top + PH/22)
+    const capLineY=MG.top+PH-(21_000_000/22_000_000)*PH;
+    const stemHeight=Math.max(0, capLineY-handleBottom);
+    stem.style.height=stemHeight+"px";
+    actBlockInput.value=zip234ActivationHeight.toLocaleString();
+    actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
+    return {stemHeight};
 }
 
 /* ================================================================
    Extracted handler: activation drag (shared by mouse & touch)
    ================================================================ */
 function handleActDrag(clientX){
+  const adjustedX=clientX-actDragOffsetX;
   const canvasEl=document.getElementById("chart");
   const rect=canvasEl.getBoundingClientRect();
-  const {MG,PW}=layout;
+  const{MG,PW}=layout;
   const cssW=parseInt(canvasEl.style.width);
-  const mx=(clientX-rect.left)*(cssW/rect.width);
+  const mx=(adjustedX-rect.left)*(cssW/rect.width);
   const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
   let h=clampActivationHeight(Math.round(timeToHeight(t)));
@@ -952,17 +983,19 @@ function handleChartHover(e){
 const canvas=document.getElementById("chart");
 const tooltip=document.getElementById("tooltip");
 const writtenTip=document.getElementById("writtenTip");
-let actDragging=false;
+let actDragging=false, actDragOffsetX=0;
 
 // --- Activation handle: mouse drag ---
 let actPointerStart = { x: 0, y: 0, time: 0 };
 
-actHandle.addEventListener("mousedown", e => {
-  if (e.target.tagName === "INPUT") return;
-  actDragging = true;
-  actPointerStart = { x: e.clientX, y: e.clientY, time: Date.now() };
-  e.preventDefault();
-  e.stopPropagation();
+actHandle.addEventListener("mousedown",e=>{
+    if(e.target.tagName==="INPUT")return;
+    actDragging=true;
+    const hr=actHandle.getBoundingClientRect();
+    actDragOffsetX=e.clientX-(hr.left+hr.right)/2;
+    actPointerStart={x: e.clientX,y: e.clientY,time: Date.now()};
+    e.preventDefault();
+    e.stopPropagation();
 });
 
 window.addEventListener("mouseup", e => {
@@ -984,13 +1017,15 @@ window.addEventListener("mousemove",e=>{
 });
 
 // --- Activation handle: touch drag ---
-actHandle.addEventListener("touchstart", e => {
-  if (e.target.tagName === "INPUT") return;
-  actDragging = true;
-  const t = e.touches[0];
-  actPointerStart = { x: t.clientX, y: t.clientY, time: Date.now() };
-  e.stopPropagation();
-}, { passive: true });
+actHandle.addEventListener("touchstart",e=>{
+    if(e.target.tagName==="INPUT")return;
+    actDragging=true;
+    const t=e.touches[0];
+    const hr=actHandle.getBoundingClientRect();
+    actDragOffsetX=t.clientX-(hr.left+hr.right)/2;
+    actPointerStart={x: t.clientX,y: t.clientY,time: Date.now()};
+    e.stopPropagation();
+},{passive: true});
 
 window.addEventListener("touchend", e => {
   if (actDragging) {
