@@ -329,7 +329,7 @@ function issuance_per_block(blockheight){
 }
 
 /* ================================================================
-   Fast piecewise summation
+   Fast piecewise summation xxx delete me?
    ================================================================ */
 const G_MAX_SUB=1250000000n,G_SLOW_INT=20000,G_SLOW_SHIFT=10000,
   G_SLOW_RATE=62500n,G_BLOSSOM_H=653600,G_RATIO=2n,G_POST_HALV=1680000,G_HALV_OFF=633600;
@@ -351,43 +351,96 @@ function sumIssuanceRangeClean(startInc,endExc){
 }
 
 /* ================================================================
-   Default data & progressive computation
+   Simulation engine
    ================================================================ */
-const ZATOSHI=100_000_000,SAMPLE_EVERY=1000;
-const data=[];let computedUpTo=-1,cumulativeBig=0n,targetHeightWanted=0,computing=false;
+const ZATOSHI=100_000_000,SAMPLE_EVERY=1000,SIM_BATCH=80_000;
+const MAX_MONEY_ZEC=21_000_000;
+const ZIP234_K=1-Math.pow(2,-1/1680000);
+let zip234ActivationHeight=3_687_123;
 
-function pushPoint(h,cumBig){
-    const iss=issuance_per_block(h),issBlock=Number(iss)/ZATOSHI,spb=secsPerBlock(h),
-          time=blockToTime(h),rawSupply=Number(cumBig)/ZATOSHI,supply=rawSupply-totalBurnedAtHeight(h),issDay=issBlock*(86400/spb);
-    let annualPct=NaN,annualPctIsExpected=false,annIssZec=0;
-    if(supply>0&&h>=20000){
-        const h1yr=Math.floor(heightAfterDuration(h,ONE_YEAR_MS));
-        annIssZec=Number(sumIssuanceRangeClean(h,h1yr))/ZATOSHI;
-        annualPct=(annIssZec/supply)*100;annualPctIsExpected=(h1yr>WRITTEN_HEIGHT);
+function defaultIssuanceZat(h,supZat,remZat){return Number(issuance_per_block(h));}
+function zip234IssuanceZat(h,supZat,remZat){
+    if(h<zip234ActivationHeight)return Number(issuance_per_block(h));
+    return Math.round(ZIP234_K*remZat);
+}
+
+const scenarios={
+    default:{fn:defaultIssuanceZat,data:[]},
+    zip234:{fn:zip234IssuanceZat,data:[]}
+};
+let simVersion=0,simRunning=false,simComputedVer=-1,simComputedMaxH=-1;
+
+function fillAnnualPct(arr){
+    for(let i=0;i<arr.length;i++){
+        const p=arr[i];
+        if(p.supply<=0||p.h<20000)continue;
+        const targetH=Math.floor(heightAfterDuration(p.h,ONE_YEAR_MS));
+        let lo=i+1,hi=arr.length-1;
+        while(lo<hi){const mid=(lo+hi)>>1;arr[mid].h<targetH?lo=mid+1:hi=mid;}
+        if(lo>=arr.length)continue;
+        const annIss=arr[lo].cumIssuance-p.cumIssuance;
+        if(annIss>=0&&p.supply>0){
+            p.annualPct=(annIss/p.supply)*100;
+            p.annualPctIsExpected=(arr[lo].h>WRITTEN_HEIGHT);
+        }
     }
-    data.push({h,time,rawSupply,supply,issBlock,issDay,annualPct,annualPctIsExpected,annIssZec});
 }
 
-function advanceTo(targetH){
-  let h=computedUpTo+1;while(h<=targetH){cumulativeBig+=issuance_per_block(h);
-    if(h%SAMPLE_EVERY===0)pushPoint(h,cumulativeBig);h++;}computedUpTo=targetH;
+function lookupScenario(arr,h){
+    if(!arr.length)return null;
+    let lo=0,hi=arr.length-1;
+    while(lo<hi){const mid=(lo+hi)>>1;arr[mid].h<h?lo=mid+1:hi=mid;}
+    if(lo>0&&Math.abs(arr[lo-1].h-h)<Math.abs(arr[lo].h-h))lo--;
+    return arr[lo];
 }
 
-async function computeAsync(targetH){
-  if(computing)return;computing=true;const BATCH=80_000;
-  while(computedUpTo<targetH){advanceTo(Math.min(computedUpTo+BATCH,targetH));requestDraw();await new Promise(r=>setTimeout(r,0));}
-  computing=false;requestDraw();
+function invalidateSimulation(){
+    simVersion++;simComputedVer=-1;computeAllScenarios();
+}
+
+async function computeAllScenarios(){
+    const neededH=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
+    if(!simRunning&&simVersion===simComputedVer&&neededH<=simComputedMaxH)return;
+    if(simRunning){simVersion++;return;}
+    simRunning=true;
+
+    while(true){
+        const myVer=simVersion;
+        const maxH=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
+        let cancelled=false;
+
+        for(const name of['default','zip234']){
+            if(!show[name]){scenarios[name].data=[];continue;}
+            const result=[],fn=scenarios[name].fn;
+            let supZat=0,cumIssZat=0,remZat=MAX_MONEY_ZEC*ZATOSHI;
+
+            for(let h=0;h<=maxH;h++){
+                for(const b of BURN_EVENTS){if(b.h===h){const amt=Math.min(Math.round(b.zec*ZATOSHI),supZat);supZat-=amt;remZat+=amt;}}
+                const issZat=fn(h,supZat,remZat);
+                supZat+=issZat;cumIssZat+=issZat;remZat-=issZat;
+
+                if(h%SAMPLE_EVERY===0){
+                    const issZec=issZat/ZATOSHI,spb=secsPerBlock(h);
+                    result.push({h,time:blockToTime(h),supply:supZat/ZATOSHI,cumIssuance:cumIssZat/ZATOSHI,
+                        issBlock:issZec,issDay:issZec*(86400/spb),annualPct:NaN,annualPctIsExpected:false});
+                }
+                if(h>0&&h%SIM_BATCH===0){
+                    scenarios[name].data=result;requestDraw();
+                    await new Promise(r=>setTimeout(r,0));
+                    if(simVersion!==myVer){cancelled=true;break;}
+                }
+            }
+            if(cancelled)break;
+            fillAnnualPct(result);scenarios[name].data=result;
+        }
+        if(!cancelled&&simVersion===myVer){simComputedVer=myVer;simComputedMaxH=maxH;break;}
+    }
+    simRunning=false;requestDraw();
 }
 
 /* ================================================================
    Burn event helpers
    ================================================================ */
-function recomputeDataSupply(){
-    for(const d of data){
-        d.supply=d.rawSupply-totalBurnedAtHeight(d.h);
-        if(d.supply>0&&d.annIssZec>0){d.annualPct=(d.annIssZec/d.supply)*100;}
-    }
-}
 function formatBurnLabel(zec){
     if(zec>=1_000_000&&zec%1_000_000===0)return"Burn "+zec/1_000_000+"M ⓩ";
     if(zec>=1_000&&zec%1_000===0)return"Burn "+zec/1_000+"K ⓩ";
@@ -397,92 +450,14 @@ function supplyAtHeight(h){
     return Number(sumIssuanceRangeClean(0,h))/ZATOSHI;
 }
 function clampBurnAmount(){
-    const b=BURN_EVENTS[0];
-    if(!b)return;
+    const b=BURN_EVENTS[0];if(!b)return;
     const maxBurn=Math.floor(supplyAtHeight(b.h));
     if(b.zec>maxBurn)b.zec=maxBurn;
 }
 function onBurnChanged(){
     clampBurnAmount();
     BURN_EVENTS[0].label=formatBurnLabel(BURN_EVENTS[0].zec);
-    recomputeDataSupply();
-    zip234CachedActH=-1;
-    requestDraw();
-}
-
-/* ================================================================
-   ZIP 234 — smooth issuance
-   ================================================================ */
-const MAX_MONEY_ZEC=21_000_000;
-const ZIP234_K=1-Math.pow(2,-1/1680000);
-let zip234ActivationHeight=3_687_123;
-let zip234Data=[];
-let zip234RemainingAtAct=0;
-let zip234CachedActH=-1;
-let zip234MaxH=-1;
-
-function ensureZip234Cache(){
-  if(zip234CachedActH!==zip234ActivationHeight){
-    const supZat=sumIssuanceRangeClean(0,zip234ActivationHeight);
-    zip234RemainingAtAct = MAX_MONEY_ZEC - (Number(supZat)/ZATOSHI - totalBurnedAtHeight(zip234ActivationHeight));
-    zip234CachedActH=zip234ActivationHeight;
-    zip234Data=[];zip234MaxH=-1;
-  }
-}
-
-function computeZip234(maxH){
-  ensureZip234Cache();
-  if(maxH<=zip234MaxH)return;
-  zip234Data=[];
-  const actH=zip234ActivationHeight,R0=zip234RemainingAtAct;
-  pushZ234(actH,R0,actH);
-  let next=Math.ceil(actH/SAMPLE_EVERY)*SAMPLE_EVERY;
-  if(next===actH)next+=SAMPLE_EVERY;
-  for(let h=next;h<=maxH;h+=SAMPLE_EVERY)pushZ234(h,R0,actH);
-  zip234MaxH=maxH;
-}
-
-function getZip234At(h){
-  if(h<zip234ActivationHeight)return null;
-  ensureZip234Cache();
-  const actH=zip234ActivationHeight;
-  // Walk through burn events that fall between activation and h
-  // Between burns, closed-form exponential is valid
-  let segStart=actH;
-  let R=zip234RemainingAtAct; // remaining at start of current segment
-  // Add back burns that happened before activation (shouldn't happen, but safe)
-  // Process burns in order
-  const relevantBurns=BURN_EVENTS.filter(b=>b.h>=actH&&b.h<=h).sort((a,b)=>a.h-b.h);
-  for(const b of relevantBurns){
-    // Decay from segStart to burn height
-    const elapsed=b.h-segStart;
-    R=R*Math.pow(1-ZIP234_K,elapsed);
-    // Burn increases remaining (supply decreases, so 21M-supply increases)
-    R+=b.zec;
-    segStart=b.h;
-  }
-  // Decay from last segment start to h
-  const elapsed=h-segStart;
-  const decayBefore=Math.pow(1-ZIP234_K,elapsed);
-  const decayAfter=Math.pow(1-ZIP234_K,elapsed+1);
-  const remainBefore=R*decayBefore;
-  const remainAfter=R*decayAfter;
-  const supply=MAX_MONEY_ZEC-remainAfter;
-  const issBlock=ZIP234_K*remainBefore;
-  const spb=secsPerBlock(h);
-  const issDay=issBlock*(86400/spb);
-  const bpy=ONE_YEAR_MS/1000/spb;
-  // For annual %, we need to account for any burns in the coming year too
-  // Approximate: just use current remaining for simplicity
-  const yearIss=remainAfter*(1-Math.pow(1-ZIP234_K,bpy));
-  const annualPct=supply>0 ? (yearIss/supply)*100 : NaN;
-  return { supply, issBlock, issDay, annualPct };
-}
-
-function pushZ234(h,R0,actH){
-  const z=getZip234At(h);
-  if(!z)return;
-  zip234Data.push({ h, time:blockToTime(h), supply:z.supply, issBlock:z.issBlock, issDay:z.issDay, annualPct:z.annualPct });
+    invalidateSimulation();requestDraw();
 }
 
 /* ================================================================
@@ -508,11 +483,7 @@ function zoomToActivation(h){
   clampView();requestDraw();requestComputeForView();
 }
 
-function requestComputeForView(){
-  const needed=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
-  if(needed>targetHeightWanted)targetHeightWanted=needed;
-  if(targetHeightWanted>computedUpTo)computeAsync(targetHeightWanted);
-}
+function requestComputeForView(){computeAllScenarios();}
 
 /* ================================================================
    Right margin layout
@@ -553,16 +524,7 @@ let drawRAF=null;const layout={};
 function requestDraw(){if(!drawRAF)drawRAF=requestAnimationFrame(()=>{drawRAF=null;draw();});}
 
 function draw(){
-  if(data.length<2)return;
-
-  // Compute ZIP 234 data if needed
-  if(show.zip234){
-    const mh=Math.max(
-      Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000,
-      zip234ActivationHeight+100_000
-    );
-    computeZip234(mh);
-  }
+  if(!scenarios.default.data.length&&!scenarios.zip234.data.length)return;
 
   const canvas=document.getElementById("chart");
   const dpr=window.devicePixelRatio||1;
@@ -606,7 +568,7 @@ function draw(){
 
   // Determine how much default data to show
   const defaultCutoffH=show.default?Infinity:(show.zip234?zip234ActivationHeight:-1);
-  const D=data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h<=defaultCutoffH);
+  const D=scenarios.default.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h<=defaultCutoffH);
 
   // Grid
   if(show.supply){
@@ -687,8 +649,8 @@ function draw(){
   }
 
   // ZIP 234 curves
-  if(show.zip234&&zip234Data.length>=1){
-    const Z=zip234Data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax);
+  if(show.zip234&&scenarios.zip234.data.length>=1){
+    const Z=scenarios.zip234.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h>=zip234ActivationHeight);
     if(show.supply&&Z.length>=2){
       fillAreaAlways(Z,p=>ySP(p.supply),T.zip234FillObs);
     }
@@ -922,7 +884,7 @@ function handleActDrag(clientX){
   let h=clampActivationHeight(Math.round(timeToHeight(t)));
   if(h!==zip234ActivationHeight){
     zip234ActivationHeight=h;
-    zip234CachedActH=-1;
+    invalidateSimulation();
     requestDraw();
   }
 }
@@ -935,7 +897,7 @@ function handleActBlockInput(){
   const v=parseInt(raw);
   if(!isNaN(v)&&v>=0&&v<=100_000_000){
     zip234ActivationHeight=clampActivationHeight(v);
-    zip234CachedActH=-1;
+    invalidateSimulation();
     zoomToActivation(zip234ActivationHeight);
   }
   actBlockInput.blur();
@@ -951,7 +913,7 @@ function handleActDateInput(){
     let h=clampActivationHeight(Math.round(timeToHeight(parsed)));
     if(h>100_000_000)h=100_000_000;
     zip234ActivationHeight=h;
-    zip234CachedActH=-1;
+    invalidateSimulation();
     zoomToActivation(zip234ActivationHeight);
   }
   actDateInput.blur();
@@ -1068,7 +1030,7 @@ function handleLegendToggle(el){
     show[key]=!show[key];
   }
   el.classList.toggle('active',show[key]);requestDraw();
-  if(key==='zip234'||key==='default')requestComputeForView();
+  if(key==='zip234'||key==='default')invalidateSimulation();
 }
 
 /* ================================================================
@@ -1077,7 +1039,8 @@ function handleLegendToggle(el){
 function handleChartHover(e){
   const tooltip=document.getElementById("tooltip");
   const writtenTipEl=document.getElementById("writtenTip");
-  if(dragging||actDragging||burnDragging||data.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
+  const tooltipData=scenarios.default.data.length>=2?scenarios.default.data:scenarios.zip234.data;
+  if(dragging||actDragging||burnDragging||tooltipData.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
   const canvasEl=document.getElementById("chart");
   const rect=canvasEl.getBoundingClientRect();
   const cssW=parseInt(canvasEl.style.width),cssH=parseInt(canvasEl.style.height);
@@ -1122,10 +1085,10 @@ function handleChartHover(e){
   if(mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH){tooltip.style.display="none";return;}
   const mouseTime=view.tMin+((mx-MG.left)/PW)*(view.tMax-view.tMin);
 
-  let lo=0,hi=data.length-1;
-  while(lo<hi){const mid=(lo+hi)>>1;data[mid].time<mouseTime?lo=mid+1:hi=mid;}
-  if(lo>0&&Math.abs(data[lo-1].time-mouseTime)<Math.abs(data[lo].time-mouseTime))lo--;
-  const d=data[lo];
+  let lo=0,hi=tooltipData.length-1;
+  while(lo<hi){const mid=(lo+hi)>>1;tooltipData[mid].time<mouseTime?lo=mid+1:hi=mid;}
+  if(lo>0&&Math.abs(tooltipData[lo-1].time-mouseTime)<Math.abs(tooltipData[lo].time-mouseTime))lo--;
+  const d=tooltipData[lo];
 
   const isExp=d.h>WRITTEN_HEIGHT,status=isExp?"Expected":"Observed",sc=isExp?"tt-exp":"tt-obs";
   const pct=(d.supply/21e6*100);
@@ -1146,7 +1109,7 @@ function handleChartHover(e){
   }
 
   if(show.zip234&&d.h>=zip234ActivationHeight){
-    const z=getZip234At(d.h);
+    const z=lookupScenario(scenarios.zip234.data,d.h);
     if(z){
       html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
       if(show.supply){const zp=(z.supply/21e6*100);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${z.supply.toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${zp.toFixed(2)}%)</span></div>`;}
@@ -1361,12 +1324,10 @@ initTheme();
 zip234ActivationHeight=3_687_123;
 actCollapsed=false;
 burnCollapsed=false;
-ensureZip234Cache();
 view.tMin=genTime;
 view.tMax=blockToTime(6_000_000);
 clampView();
 
-targetHeightWanted=Math.max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
 document.querySelectorAll('.ltoggle').forEach(el=>{
   const key=el.dataset.series;
   if(key&&show[key]!==undefined)el.classList.toggle('active',show[key]);
