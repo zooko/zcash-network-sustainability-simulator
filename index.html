@@ -461,7 +461,7 @@ function invalidateAllFrom(fromH) {
 async function computeAllScenarios(){
     const neededH=max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
     if(!simRunning&&simVersion===simComputedVer&&neededH<=simComputedMaxH)return;
-    if(simRunning) return;
+    if(simRunning)return;
     simRunning=true;
 
     while(true){
@@ -469,50 +469,64 @@ async function computeAllScenarios(){
         const maxH=max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
         let cancelled=false;
 
-        for(const name of['default','zip234']){
-            if (name === 'zip234' && !showZip234()) { scenarios.zip234.data = []; continue; }
-            const result = scenarios[name].data, fn = scenarios[name].fn;
-            let startH, supZat, cumIssZat, remZat;
-            if (result.length > 0) {
-                const last = result[result.length - 1];
-                startH = last.h + 1;
-                supZat = last.supplyZat;
-                cumIssZat = last.cumIssZat;
-                remZat = MAX_MONEY_ZAT - supZat;
-            } else {
-                startH = 0; supZat = 0n; cumIssZat = 0n; remZat = MAX_MONEY_ZAT;
+        // Initialize per-scenario running state
+        const names=['default','zip234'];
+        const st={};
+        for(const name of names){
+            const result=scenarios[name].data,fn=scenarios[name].fn;
+            let startH,supZat,cumIssZat,remZat;
+            if(result.length>0){
+                const last=result[result.length-1];
+                startH=last.h+1;
+                supZat=last.supplyZat;
+                cumIssZat=last.cumIssZat;
+                remZat=MAX_MONEY_ZAT-supZat;
+            }else{
+                startH=0;supZat=0n;cumIssZat=0n;remZat=MAX_MONEY_ZAT;
             }
-            if (startH > maxH) continue;
-            for (let h = startH; h <= maxH; h++) {
-                for(const b of BURN_EVENTS){if(b.h===h){
-                    const amt = b.zat < supZat ? b.zat : supZat;
-                    supZat -= amt; remZat += amt;
-                }}
-                const issZat=fn(h,supZat,remZat);
-                supZat+=issZat;cumIssZat+=issZat;remZat-=issZat;
-
-                if(h%SAMPLE_EVERY===0){
-                  const spb = BigInt(h < BLOSSOM_ACTIVATION_HEIGHT ? 150 : 75);
-                  result.push({
-                      h, time: blockToTime(h),
-                      supplyZat: supZat,
-                      cumIssZat: cumIssZat,
-                      issBlockZat: issZat,
-                      issDayZat: issZat * 86400n / spb,
-                      annualPctX1M: -1n,
-                      annualPctIsExpected: false
-                  });
-                }
-                if(h>0&&h%SIM_BATCH===0){
-                    requestDraw();
-                    await new Promise(r=>setTimeout(r,0));
-                    if(simVersion!==myVer){cancelled=true;break;}
-                }
-            }
-            if(cancelled)break;
-            fillAnnualPct(result);scenarios[name].data=result;
+            st[name]={result,fn,h:startH,supZat,cumIssZat,remZat};
         }
-        if(!cancelled&&simVersion===myVer){simComputedVer=myVer;simComputedMaxH=maxH;break;}
+
+        // Advance both scenarios in lockstep batches
+        while(!cancelled){
+            let anyAdvanced=false;
+            for(const name of names){
+                const s=st[name];
+                if(s.h>maxH)continue;
+                anyAdvanced=true;
+                const batchEnd=min(s.h+SIM_BATCH,maxH+1);
+                for(let h=s.h;h<batchEnd;h++){
+                    for(const b of BURN_EVENTS){if(b.h===h){
+                        const amt=b.zat<s.supZat?b.zat:s.supZat;
+                        s.supZat-=amt;s.remZat+=amt;
+                    }}
+                    const issZat=s.fn(h,s.supZat,s.remZat);
+                    s.supZat+=issZat;s.cumIssZat+=issZat;s.remZat-=issZat;
+                    if(h%SAMPLE_EVERY===0){
+                        const spb=BigInt(h<BLOSSOM_ACTIVATION_HEIGHT?150:75);
+                        s.result.push({
+                            h,time:blockToTime(h),
+                            supplyZat:s.supZat,
+                            cumIssZat:s.cumIssZat,
+                            issBlockZat:issZat,
+                            issDayZat:issZat*86400n/spb,
+                            annualPctX1M:-1n,
+                            annualPctIsExpected:false
+                        });
+                    }
+                }
+                s.h=batchEnd;
+            }
+            if(!anyAdvanced)break;
+            requestDraw();
+            await new Promise(r=>setTimeout(r,0));
+            if(simVersion!==myVer){cancelled=true;}
+        }
+
+        if(!cancelled&&simVersion===myVer){
+            for(const name of names)fillAnnualPct(scenarios[name].data);
+            simComputedVer=myVer;simComputedMaxH=maxH;break;
+        }
     }
     simRunning=false;requestDraw();
 }
@@ -1410,7 +1424,8 @@ document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
         if (btn.dataset.mode === futureMode) return; // no change
         futureMode = btn.dataset.mode;
         document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
-        invalidateSimulation();
+        requestDraw();
+        computeAllScenarios();
     });
 });
 document.querySelectorAll('.ltoggle').forEach(el=>{
