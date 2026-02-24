@@ -186,6 +186,15 @@
   @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
     .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
     .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
+.seg-label { color: var(--muted); font-size: 0.78rem; margin-right: 2px; }
+.seg-group { display: inline-flex; border: 1px solid var(--controlsBorder); border-radius: 6px; overflow: hidden; }
+.seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
+  background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.seg:last-child { border-right: none; }
+.seg:hover { opacity: 0.85; }
+.seg.active[data-mode="both"]    { background: var(--frameBorder); color: var(--fg); }
+.seg.active[data-mode="default"] { background: rgba(245,158,11,0.25); color: var(--supplyObs); }
+.seg.active[data-mode="zip234"]  { background: rgba(56,189,248,0.25); color: var(--zip234Supply); }
 </style>
 </head>
 <body>
@@ -232,10 +241,13 @@
   <div id="writtenTip"></div>
 </div>
 <div class="legend" id="legend">
-  <span class="ltoggle active" data-series="default"><span class="sw" style="background:var(--supplyObs)"></span>Default</span>
-  <span class="ltoggle active" data-series="zip234">
-    <span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234
+<span class="seg-label">Future:</span>
+  <span class="seg-group" id="futureModeGroup">
+    <button class="seg active" data-mode="both">Both</button>
+    <button class="seg" data-mode="default">Default</button>
+    <button class="seg" data-mode="zip234">ZIP 234</button>
   </span>
+  <span>|</span>
   <span style="color:var(--muted)">│</span>
   <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
   <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
@@ -251,7 +263,10 @@
 /* ================================================================
    Toggle state
    ================================================================ */
-const show={supply:true,issDay:true,annPct:false,default:true,zip234:true};
+const show = {supply:true, issDay:true, annPct:false};
+let futureMode = 'both'; // 'default' | 'zip234' | 'both'
+function showDefaultFuture() { return futureMode !== 'zip234'; }
+function showZip234() { return futureMode !== 'default'; }
 
 function zatToZec(zat) { return Number(zat) / 1e8; }
 function annPctVal(p) { return p.annualPctX1M < 0n ? NaN : Number(p.annualPctX1M) / 1e6; }
@@ -306,7 +321,7 @@ const TIME_ANCHORS=[
 const BLOSSOM_ACTIVATION_HEIGHT=653_600;
 const WRITTEN_HEIGHT=3_234_946;
 const BURN_EVENTS = [{ h: 4_500_000, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ" }];
-function totalBurnedAtHeight(h){let total=0;for(const b of BURN_EVENTS)if(h>=b.h)total+=b.zec;return total;}
+function totalBurnedAtHeight(h){let total=0;for(const b of BURN_EVENTS)if(h>=b.h)total+=zatToZecString(b.zat);return total;}
 const ONE_YEAR_MS=365.25*86400*1000;
 
 const SEGMENTS=[];
@@ -458,7 +473,7 @@ async function computeAllScenarios(){
         let cancelled=false;
 
         for(const name of['default','zip234']){
-            if(!show[name]){scenarios[name].data=[];continue;}
+            if (name === 'zip234' && !showZip234()) { scenarios.zip234.data = []; continue; }
             const result=[],fn=scenarios[name].fn;
             let startH, supZat, cumIssZat, remZat;
             if (result.length > 0) {
@@ -480,7 +495,7 @@ async function computeAllScenarios(){
                 supZat+=issZat;cumIssZat+=issZat;remZat-=issZat;
 
                 if(h%SAMPLE_EVERY===0){
-                  const spb = BigInt(secsPerBlock(h));
+                  const spb = BigInt(h < BLOSSOM_ACTIVATION_HEIGHT ? 150 : 75);
                   result.push({
                       h, time: blockToTime(h),
                       supplyZat: supZat,
@@ -492,7 +507,6 @@ async function computeAllScenarios(){
                   });
                 }
                 if(h>0&&h%SIM_BATCH===0){
-                    scenarios[name].data=result;requestDraw();
                     await new Promise(r=>setTimeout(r,0));
                     if(simVersion!==myVer){cancelled=true;break;}
                 }
@@ -638,7 +652,7 @@ function draw(){
   const yAP=p=>MG.top+PH-(p/yAnnMax)*PH;
 
   // Determine how much default data to show
-  const defaultCutoffH=show.default?Infinity:(show.zip234?zip234ActivationHeight:-1);
+  const defaultCutoffH = showDefaultFuture() ? Infinity : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
   const D=scenarios.default.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h<=defaultCutoffH);
 
   // Grid
@@ -673,7 +687,7 @@ function draw(){
   for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.burnEvent;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
 
   // ZIP 234 activation
-  if(show.zip234){
+  if(showZip234()){
     const t=blockToTime(zip234ActivationHeight);
     if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.zip234Act;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
       ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}
@@ -713,14 +727,14 @@ function draw(){
   if(D.length>=2){
     if(show.supply){
         fillAreaAlways(D,p=>ySP(zatToZec(p.supplyZat)),T.supplyFillObs);
-      drawSplit(D,WRITTEN_HEIGHT,p=>ySP(zatToZec(p.supplyZat)),T.supplyObs,T.supplyExp,2);
+        drawSplit(D,WRITTEN_HEIGHT,p=>ySP(zatToZec(p.supplyZat)),T.supplyObs,T.supplyExp,2);
     }
-    if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(p.issDay),T.issObs,T.issExp,2);
-      if(show.annPct)drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
+    if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(zatToZec(p.issDayZat),T.issObs,T.issExp,2));
+    if(show.annPct)drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
   }
 
   // ZIP 234 curves
-  if(show.zip234&&scenarios.zip234.data.length>=1){
+  if(showZip234()&&scenarios.zip234.data.length>=1){
     const Z=scenarios.zip234.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h>=zip234ActivationHeight);
     if(show.supply&&Z.length>=2){
       fillAreaAlways(Z,p=>ySP(zatToZec(p.supplyZat)),T.zip234FillObs);
@@ -734,7 +748,7 @@ function draw(){
     }
 
     if(show.supply)drawZ234Line(p=>ySP(zatToZec(p.supplyZat)),T.zip234Supply,2.5);
-    if(show.issDay)drawZ234Line(p=>yIP(p.issDay),T.zip234Iss,2.5);
+      if(show.issDay)drawZ234Line(p=>yIP(zatToZec(p.issDayZat)),T.zip234Iss,2.5);
     if(show.annPct)drawZ234Line(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.zip234Ann,1.8);
   }
 
@@ -761,7 +775,7 @@ function draw(){
   for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=cv("--burnEvent");ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(b.label,0,0);ctx.restore();}}
 
   // ZIP 234 activation label
-  if(show.zip234){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
+    if(showZip234()){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
     ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
     ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
 
@@ -852,7 +866,7 @@ const actBlockInput=document.getElementById("actBlockInput");
 const actDateInput=document.getElementById("actDateInput");
 
 function updateActHandle(){
-    if(!show.zip234){actHandle.style.display="none";return null;}
+    if(!showZip234()){actHandle.style.display="none";return null;}
     const{CSS_W,CSS_H,MG,PW,PH}=layout;
     if(!PW){actHandle.style.display="none";return null;}
     const t=blockToTime(zip234ActivationHeight);
@@ -954,11 +968,11 @@ function handleActDrag(clientX){
   const frac=Math.max(0,Math.min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
   let h=clampActivationHeight(Math.round(timeToHeight(t)));
-  if(h!==zip234ActivationHeight){
-    const oldH = zip234ActivationHeight;
-    zip234ActivationHeight=h;
-    invalidateScenarioFrom('zip234', Math.min(oldH, h));
-    requestDraw();
+  if (h !== zip234ActivationHeight) {
+      const oldH = zip234ActivationHeight;
+      zip234ActivationHeight = h;
+      invalidateScenarioFrom('zip234', Math.min(oldH, h));
+      requestDraw();
   }
 }
 
@@ -1058,9 +1072,11 @@ function handleBurnAmtInput(){
     const v=parseFloat(raw);
     if(!isNaN(v)&&v>=0){
         const zat = parseZecToZat(burnAmtInput.value);
-        if (zat !== null && zat >= 0n) { BURN_EVENTS[0].zat = zat; onBurnChanged(); }
-
-        onBurnChanged();
+        if (zat !== null && zat >= 0n) {
+            if (BURN_EVENTS[0].zat !== zat) {
+                BURN_EVENTS[0].zat = zat; onBurnChanged();
+            }
+        }
     }
     burnAmtInput.blur();
 }
@@ -1100,19 +1116,11 @@ function handleChartWheel(e){
 /* ================================================================
    Extracted handler: legend toggle
    ================================================================ */
-function handleLegendToggle(el){
-  const key=el.dataset.series;
-  if(key==='default'||key==='zip234'){
-    if(show[key]){
-      const other=key==='default'?'zip234':'default';
-      if(!show[other])return;
-    }
-    show[key]=!show[key];
-  }else{
-    show[key]=!show[key];
-  }
-  el.classList.toggle('active',show[key]);requestDraw();
-  if(key==='zip234'||key==='default')invalidateSimulation();
+function handleLegendToggle(el) {
+    const key = el.dataset.series;
+    show[key] = !show[key];
+    el.classList.toggle('active', show[key]);
+    requestDraw();
 }
 
 /* ================================================================
@@ -1150,7 +1158,7 @@ function handleChartHover(e){
       if(bt>=view.tMin&&bt<=view.tMax){
         const bx=MG.left+((bt-view.tMin)/(view.tMax-view.tMin))*PW;
         if(Math.abs(mx-bx)<12&&my>=MG.top&&my<=MG.top+PH){
-          writtenTipEl.innerHTML=`<b style="color:var(--burnEvent)">${b.label}</b><br>Block ${b.h.toLocaleString()}<br>${fmtDate(bt)} (UTC)<br>${b.zec.toLocaleString()} ⓩ burned`;
+          writtenTipEl.innerHTML=`<b style="color:var(--burnEvent)">${b.label}</b><br>Block ${b.h.toLocaleString()}<br>${fmtDate(bt)} (UTC)<br>${zatToZecString(b.zat).toLocaleString()} ⓩ burned`;
           writtenTipEl.style.display="block";
           const tipScreenX=rect.left+(bx/cssW)*rect.width;
           const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
@@ -1181,24 +1189,24 @@ function handleChartHover(e){
   let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
     `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-  const defaultCutoffH2=show.default?Infinity:(show.zip234?zip234ActivationHeight:-1);
+    const defaultCutoffH2=showDefaultFuture()?Infinity:(showZip234()?zip234ActivationHeight:-1);
   const showDefHere=d.h<=defaultCutoffH2;
 
   if(showDefHere){
     if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${zatToZec(d.supplyZat).toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
-      if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${d.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZec(d.issBlockZat).toFixed(8)} ⓩ</div>`;
+      if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${zatToZec(d.issDayZat).toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZec(d.issBlockZat).toFixed(8)} ⓩ</div>`;
     if(show.annPct)html+=`<div><span style="color:${annColor}">Annual:</span> ${annVal} <span class="tt-muted">(${annStatus})</span></div>`;
   }
 
-  if(show.zip234&&d.h>=zip234ActivationHeight){
+  if(showZip234()&&d.h>=zip234ActivationHeight){
     const z=lookupScenario(scenarios.zip234.data,d.h);
     if(z){
       html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
         if(show.supply){const zp=(zatToZec(z.supplyZat)/21e6*100);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${zatToZec(z.supplyZat).toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${zp.toFixed(2)}%)</span></div>`;}
-        if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${z.issDay.toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZec(z.issBlockZat).toFixed(8)} ⓩ</div>`;
+        if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${zatToZec(z.issDayZat).toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZec(z.issBlockZat).toFixed(8)} ⓩ</div>`;
         if(show.annPct){const av=isFinite(annualPctVal(z))?annualPctVal(z).toFixed(2)+"%":"—";html+=`<div><span style="color:var(--zip234Ann)">Annual:</span> ${av}</div>`;}
     }
-  }else if(show.zip234&&d.h<zip234ActivationHeight){
+  }else if(showZip234()&&d.h<zip234ActivationHeight){
     html+=`<div style="margin-top:4px" class="tt-muted"><i>ZIP 234 activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
   }
 
@@ -1393,6 +1401,14 @@ document.getElementById("btnReset").addEventListener("click",()=>resetView());
 document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
 
 // --- Legend toggles ---
+document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (btn.dataset.mode === futureMode) return; // no change
+        futureMode = btn.dataset.mode;
+        document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
+        invalidateSimulation();
+    });
+});
 document.querySelectorAll('.ltoggle').forEach(el=>{
   el.addEventListener('click',()=>handleLegendToggle(el));
 });
@@ -1544,12 +1560,12 @@ setTimeout(function runRegressionTests() {
 
   // --- Toggle state ---
 
-  test("show.default is true at boot", () => {
-    return show.default === true;
+  test("futureMode is 'both' at boot", () => {
+    return futureMode === 'both';
   });
 
-  test("show.zip234 is true at boot", () => {
-    return show.zip234 === true;
+  test("showZip234() is true at boot", () => {
+    return showZip234() === true;
   });
 
   test("show.supply is true at boot", () => {
@@ -1566,19 +1582,8 @@ setTimeout(function runRegressionTests() {
 
   // --- Toggle constraint: can't turn off both default and zip234 ---
 
-  test("default/zip234 mutual exclusion constraint: can't both be off", () => {
-    // Save state
-    const origD = show.default, origZ = show.zip234;
-    // Simulate: both on, turn off default → zip234 must stay on
-    show.default = true; show.zip234 = true;
-    // Simulate turning off default: only allowed if zip234 is on
-    const canTurnOffDefault = show.zip234;
-    // Simulate turning off zip234 too: should be blocked
-    show.default = false;
-    const canTurnOffZip234 = show.default; // default is off, so zip234 can't be turned off
-    // Restore
-    show.default = origD; show.zip234 = origZ;
-    return canTurnOffDefault === true && canTurnOffZip234 === false;
+  test("futureMode only allows valid values", () => {
+    return ['default', 'zip234', 'both'].includes(futureMode);
   });
 
   // --- Issuance logic ---
