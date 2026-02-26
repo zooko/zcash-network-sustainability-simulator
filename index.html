@@ -142,6 +142,21 @@
   #burnHandle .burn-amt-row{display:flex;align-items:center;gap:3px}
   #burnHandle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
   #burnHandle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
+#burnHandle .burn-mode-row{display:flex;align-items:center;gap:4px;margin-top:3px}
+#burnHandle .burn-mode-group{display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
+#burnHandle .burn-mode-btn{padding:1px 6px;font:600 .58rem/1.2 system-ui;border:none;
+  border-right:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);
+  cursor:pointer;transition:all 0.12s}
+#burnHandle .burn-mode-btn:last-child{border-right:none}
+#burnHandle .burn-mode-btn.active{background:rgba(255,255,255,.2);color:#fff}
+#burnHandle .burn-mode-btn:hover{background:rgba(255,255,255,.12)}
+
+#burnHandle .burn-info-icon{position:relative;cursor:help;font-size:.6rem;opacity:0.65;user-select:none}
+#burnHandle .burn-info-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  width:210px;padding:6px 8px;border-radius:6px;font:normal .62rem/1.4 system-ui;
+  background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+  box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:normal;text-align:left;z-index:100;margin-bottom:6px}
+#burnHandle .burn-info-icon:hover .burn-info-tip{display:block}
 
   #actHandle .act-nub {
     display: none;
@@ -232,6 +247,18 @@
         <div class="burn-right">
           <input id="burnBlockInput" type="text" value="5000000">
           <input id="burnDateInput" type="text" class="burn-date" value="">
+          <div class="burn-mode-row">
+            <span class="burn-mode-group" id="burnModeGroup">
+              <button class="burn-mode-btn active" data-burn-mode="once">Once</button>
+              <button class="burn-mode-btn" data-burn-mode="perblock">/blk</button>
+            </span>
+            <span class="burn-info-icon" id="burnInfoIcon">ⓘ
+              <span class="burn-info-tip">
+                <b>Once</b>: a single burn at this block.<br>
+                <b>/blk</b>: this amount is burned every block from here on.
+              </span>
+            </span>
+          </div>
         </div>
       </div>
       <span class="burn-collapse-icon" title="Click to collapse">▾</span>
@@ -320,7 +347,7 @@ const TIME_ANCHORS=[
 
 const BLOSSOM_ACTIVATION_HEIGHT=653_600;
 const WRITTEN_HEIGHT=3_234_946;
-const BURN_EVENTS = [{ h: 4_500_000, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ" }];
+const BURN_EVENTS = [{ h: 4_500_000, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ", mode: 'once'}];
 function totalBurnedAtHeight(h){let total=0;for(const b of BURN_EVENTS)if(h>=b.h)total+=zatToZecString(b.zat);return total;}
 const ONE_YEAR_MS=365.25*86400*1000;
 
@@ -334,7 +361,7 @@ for(let i=0;i<TIME_ANCHORS.length-1;i++){
 function segmentForHeight(h){for(let i=0;i<SEGMENTS.length;i++)if(h<=SEGMENTS[i].endH)return SEGMENTS[i];return SEGMENTS[SEGMENTS.length-1];}
 function blockToTime(h){const s=segmentForHeight(h);return s.startTime+(h-s.startH)*s.secPerBlock*1000;}
 function secsPerBlock(h){return segmentForHeight(h).secPerBlock;}
-function timeToHeight(t){for(let i=SEGMENTS.length-1;i>=0;i--){const s=SEGMENTS[i];if(t>=s.startTime)return s.startH+(t-s.startTime)/1000/s.secPerBlock;}const s=SEGMENTS[0];return s.startH+(t-s.startTime)/1000/s.secPerBlock;}
+function timeToHeight(t){for(let i=SEGMENTS.length-1;i>=0;i--){const s=SEGMENTS[i];if(t>=s.startTime)return BigInt(Math.floor(s.startH+(t-s.startTime)/1000/s.secPerBlock));}const s=SEGMENTS[0];return BigInt(Math.floor(s.startH+(t-s.startTime)/1000/s.secPerBlock));}
 function heightAfterDuration(h,durationMs){
   let remaining=durationMs/1000,cur=h;
   for(let i=0;i<SEGMENTS.length;i++){const s=SEGMENTS[i];if(cur>s.endH)continue;
@@ -379,7 +406,7 @@ function nextHalvPost(h){return(halvIdxPost(h)+1)*G_POST_HALV-G_HALV_OFF;}
 
 function sumIssuanceRangeClean(startInc,endExc){
   if(endExc<=startInc)return 0n;let h=startInc,total=0n;
-  while(h<endExc){ // xxx floating point
+  while(h<endExc){
     if(h<G_SLOW_SHIFT){const e=min(endExc,G_SLOW_SHIFT);total+=G_SLOW_RATE*sumArith(h,e-1);h=e;continue;}
     if(h<G_SLOW_INT){const e=min(endExc,G_SLOW_INT);total+=G_SLOW_RATE*sumArith(h+1,e);h=e;continue;}
     if(h<G_BLOSSOM_H){const e=min(endExc,G_BLOSSOM_H);total+=G_MAX_SUB*BigInt(e-h);h=e;continue;}
@@ -450,23 +477,23 @@ function truncateScenarioData(name, fromH) {
 
 function invalidateScenarioFrom(name, fromH) {
     truncateScenarioData(name, fromH);
-    simVersion++; simComputedVer = -1; computeAllScenarios();
+    invalidateSimulation();
 }
 
 function invalidateAllFrom(fromH) {
     for (const n of ['default', 'zip234']) truncateScenarioData(n, fromH);
-    simVersion++; simComputedVer = -1; computeAllScenarios();
+    invalidateSimulation();
 }
 
 async function computeAllScenarios(){
-    const neededH=max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
+    const neededH=max(0,timeToHeight(view.tMax+ONE_YEAR_MS)+10_000n);
     if(!simRunning&&simVersion===simComputedVer&&neededH<=simComputedMaxH)return;
     if(simRunning)return;
     simRunning=true;
 
     while(true){
         const myVer=simVersion;
-        const maxH=max(0,Math.ceil(timeToHeight(view.tMax+ONE_YEAR_MS))+10_000);
+        const maxH=max(0,timeToHeight(view.tMax+ONE_YEAR_MS)+10_000n);
         let cancelled=false;
 
         // Initialize per-scenario running state
@@ -534,25 +561,31 @@ async function computeAllScenarios(){
 /* ================================================================
    Burn event helpers
    ================================================================ */
-function formatBurnLabel(zat) {
-    const w = zat / 100_000_000n, f = zat % 100_000_000n;
-    if (f === 0n) {
-        if (w >= 1_000_000n && w % 1_000_000n === 0n) return "Burn " + w / 1_000_000n + "M ⓩ";
-        if (w >= 1_000n && w % 1_000n === 0n) return "Burn " + w / 1_000n + "K ⓩ";
+function formatBurnLabel(zat, mode){
+    const w=zat/100_000_000n,f=zat%100_000_000n;
+    const u=mode==='perblock'?'ⓩ/blk':'ⓩ';
+    if(f===0n){
+        if(w>=1_000_000n&&w%1_000_000n===0n)return"Burn "+w/1_000_000n+"M "+u;
+        if(w>=1_000n&&w%1_000n===0n)return"Burn "+w/1_000n+"K "+u;
     }
-    return "Burn " + zatToZecString(zat) + " ⓩ";
+    return"Burn "+zatToZecString(zat)+" "+u;
 }
 
 function supplyAtHeightZat(h) { return sumIssuanceRangeClean(0, h); }
 
-function clampBurnAmount(burnH, burnAmt) {
-    return min(supplyAtHeightZat(burnH), burnAmt);
-}
+function changeBurn(newH=undefined, newZats=undefined, newMode=undefined) {
+    const clampedNewH = clampBurnHeight(newH);
+    const oldH = BURN_EVENTS[0].h;
+    minH = min(oldH, clampedNewH);
+    const oldZats = BURN_EVENTS[0].zat;
+    const clampedNewZats = min(supplyAtHeightZat(clampedNewH), newZats);
 
-function onBurnChanged(fromH) {
-    BURN_EVENTS[0].label = formatBurnLabel(BURN_EVENTS[0].zat);
-    invalidateAllFrom(fromH);
-    requestDraw();
+    if ((clampedNewH !== oldH) || (clampedNewZats !== oldZats)) {
+        BURN_EVENTS[0].h = clampedNewH;
+        BURN_EVENTS[0].label = formatBurnLabel(clampedNewZats);
+        invalidateAllFrom(minH);
+        requestDraw();
+    }
 }
 
 /* ================================================================
@@ -569,16 +602,14 @@ function clampView(){
   if(view.tMin<genTime-2*ONE_YEAR_MS)view.tMin=genTime-2*ONE_YEAR_MS;
 }
 
-function resetView(){view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();requestComputeForView();}
+function resetView(){view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();}
 
 function zoomToActivation(h){
   view.tMin=genTime;
   const endH=max(h*2,h+100_000);
   view.tMax=blockToTime(endH);
-  clampView();requestDraw();requestComputeForView();
+  clampView();requestDraw();computeAllScenarios();
 }
-
-function requestComputeForView(){computeAllScenarios();}
 
 /* ================================================================
    Right margin layout
@@ -686,7 +717,7 @@ function draw(){
     if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventObs;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
 
   // Halvings (only up to defaultCutoffH)
-  {const halvMax=defaultCutoffH===Infinity?Math.ceil(timeToHeight(view.tMax))+200_000:defaultCutoffH;
+  {const halvMax=defaultCutoffH===Infinity?timeToHeight(view.tMax)+200_000n:defaultCutoffH;
     for(const hh of halvingHeights(halvMax)){
       const t=blockToTime(hh);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventHalv;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}}
 
@@ -774,7 +805,7 @@ function draw(){
   }
 
   eventLabel(BLOSSOM_ACTIVATION_HEIGHT,"Blossom",T.eventObs);
-  {const halvMax=defaultCutoffH===Infinity?Math.ceil(timeToHeight(view.tMax))+200_000:defaultCutoffH;
+  {const halvMax=defaultCutoffH===Infinity?timeToHeight(view.tMax)+200_000n:defaultCutoffH;
     for(const hh of halvingHeights(halvMax)){
       const idx=Math.round((hh-1_046_400)/1_680_000)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
 
@@ -812,7 +843,7 @@ function draw(){
 
   // X axis
   ctx.fillStyle=T.muted;ctx.font="10px system-ui";ctx.textAlign="center";
-  const maxViewH=Math.ceil(timeToHeight(view.tMax))+200_000;
+  const maxViewH=timeToHeight(view.tMax)+200_000n;
   const allHalvings=halvingHeights(maxViewH);
   for(const hh of allHalvings){
     const t=blockToTime(hh);
@@ -832,15 +863,6 @@ function draw(){
   updateActHandle();
   // Position burn handle
   updateBurnHandle();
-}
-
-/* ================================================================
-   Shared helper: clamp activation height
-   ================================================================ */
-function clampActivationHeight(h){
-  if(h<0)h=0;
-  if(h<WRITTEN_HEIGHT)h=WRITTEN_HEIGHT;
-  return h;
 }
 
 /* ================================================================
@@ -975,13 +997,17 @@ function handleActDrag(clientX){
   const mx=(adjustedX-rect.left)*(cssW/rect.width);
   const frac=max(0,min(1,(mx-MG.left)/PW));
   const t=view.tMin+frac*(view.tMax-view.tMin);
-  let h=clampActivationHeight(Math.round(timeToHeight(t)));
-  if (h !== zip234ActivationHeight) {
-      const oldH = zip234ActivationHeight;
-      zip234ActivationHeight = h;
-      invalidateScenarioFrom('zip234', min(oldH, h));
-      requestDraw();
-  }
+  changeZIP234ActivationHeight(timeToHeight(t));
+}
+
+function changeZIP234ActivationHeight(newH) {
+    const clampedH = min(newH, WRITTEN_HEIGHT);
+    const oldH = zip234ActivationHeight;
+    if (oldH !== clampedH) {
+        zip234ActivationHeight = clampedH;
+        invalidateScenarioFrom('zip234', min(oldH, clampedH));
+        requestDraw();
+    }
 }
 
 /* ================================================================
@@ -990,13 +1016,9 @@ function handleActDrag(clientX){
 function handleActBlockInput(){
   const raw=actBlockInput.value.replace(/,/g,"").trim();
   const v=parseInt(raw);
-  if(!isNaN(v)&&v>=0&&v<=100_000_000){
-    const oldH = zip234ActivationHeight;
-    zip234ActivationHeight = clampActivationHeight(v);
-    if (zip234ActivationHeight !== oldH) {
-        invalidateScenarioFrom('zip234', min(oldH, zip234ActivationHeight));
-    }
-    zoomToActivation(zip234ActivationHeight);
+  if(!isNaN(v)&&v>=0){
+      changeZIP234ActivationHeight(v);
+      zoomToActivation(zip234ActivationHeight);
   }
   actBlockInput.blur();
 }
@@ -1008,15 +1030,8 @@ function handleActDateInput(){
   const raw=actDateInput.value.trim();
   const parsed=Date.parse(raw);
   if(!isNaN(parsed)){
-    let h=clampActivationHeight(Math.round(timeToHeight(parsed)));
-    if(h>100_000_000)h=100_000_000;
-
-    const oldH = zip234ActivationHeight;
-    zip234ActivationHeight = h;
-    if (zip234ActivationHeight !== oldH) {
-        invalidateScenarioFrom('zip234', min(oldH, zip234ActivationHeight));
-    }
-    zoomToActivation(zip234ActivationHeight);
+      changeZIP234ActivationHeight(timeToHeight(parsed));
+      zoomToActivation(zip234ActivationHeight);
   }
   actDateInput.blur();
 }
@@ -1035,14 +1050,7 @@ function handleBurnDrag(clientX) {
     const mx = (adjustedX - rect.left) * (cssW / rect.width);
     const frac = max(0, min(1, (mx - MG.left) / PW));
     const t = view.tMin + frac * (view.tMax - view.tMin);
-    let h = clampBurnHeight(Math.round(timeToHeight(t)));
-    if (h !== BURN_EVENTS[0].h) {
-        const oldH = BURN_EVENTS[0].h;
-        BURN_EVENTS[0].h = h;
-        BURN_EVENTS[0].zat = clampBurnAmount(h, BURN_EVENTS[0].zat);
-        
-        onBurnChanged(min(oldH, h));
-    }
+    changeBurn(timeToHeight(t));
 }
 
 /* ================================================================
@@ -1051,15 +1059,8 @@ function handleBurnDrag(clientX) {
 function handleBurnBlockInput() {
     const raw = burnBlockInput.value.replace(/,/g, "").trim();
     const v = parseInt(raw);
-    if (!isNaN(v) && v >= 0 && v <= 100_000_000) {
-        const newH = clampBurnHeight(v);
-        if (newH !== BURN_EVENTS[0].h) {
-            const oldH = BURN_EVENTS[0].h;
-            BURN_EVENTS[0].h = newH;
-            BURN_EVENTS[0].zat = clampBurnAmount(newH, BURN_EVENTS[0].zat);
-            onBurnChanged(min(oldH, newH));
-        }
-        requestComputeForView();
+    if (!isNaN(v) && v >= 0) {
+        changeBurn(v);
     }
     burnBlockInput.blur();
 }
@@ -1074,15 +1075,7 @@ function handleBurnDateInput() {
     const raw = burnDateInput.value.trim();
     const parsed = Date.parse(raw);
     if (!isNaN(parsed)) {
-        let h = clampBurnHeight(Math.round(timeToHeight(parsed)));
-        if (h > 100_000_000) h = 100_000_000;
-        if (h !== BURN_EVENTS[0].h) {
-            const oldH = BURN_EVENTS[0].h;
-            BURN_EVENTS[0].h = h;
-            BURN_EVENTS[0].zat = clampBurnAmount(h, BURN_EVENTS[0].zat);
-            onBurnChanged(min(oldH, h));
-        }
-        requestComputeForView();
+        changeBurn(timeToHeight(parsed));
     }
     burnDateInput.blur();
 }
@@ -1091,11 +1084,7 @@ function handleBurnDateInput() {
    Extracted handler: burn amount input
    ================================================================ */
 function handleBurnAmtInput() {
-    const zat = clampBurnAmount(BURN_EVENTS[0].h, parseZecToZat(burnAmtInput.value));
-    if (zat !== null && zat >= 0n && zat !== BURN_EVENTS[0].zat) {
-        BURN_EVENTS[0].zat = zat;
-        onBurnChanged(BURN_EVENTS[0].h);
-    }
+    changeBurn(undefined, parseZecToZat(burnAmtInput.value));
     burnAmtInput.blur();
 }
 
@@ -1114,7 +1103,7 @@ function handleChartDragMove(clientX){
   const dx=clientX-dragStartX;
   const pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;
   view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;
-  clampView();requestDraw();requestComputeForView();
+  clampView();requestDraw();computeAllScenarios();
 }
 
 /* ================================================================
@@ -1128,7 +1117,7 @@ function handleChartWheel(e){
     const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
     view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
   }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
-  clampView();requestDraw();requestComputeForView();
+  clampView();requestDraw();computeAllScenarios();
 }
 
 /* ================================================================
@@ -1405,7 +1394,7 @@ canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging&&!actD
   else if(e.touches.length===2){const dist=Math.abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
     if(lastTouchDist>0){const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),frac=(mid-rect.left)/rect.width,
       span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
-      clampView();requestDraw();requestComputeForView();}lastTouchDist=dist;}},{passive:true});
+      clampView();requestDraw();computeAllScenarios();}lastTouchDist=dist;}},{passive:true});
 canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
 
 // --- Chart: hover (tooltip) ---
@@ -1480,7 +1469,7 @@ function getZip234At(h) {
     return { supply: zatToZec(supNow), issBlock: zatToZec(issBlockZat) };
 }
 
-requestDraw();requestComputeForView();
+requestDraw();computeAllScenarios();
 /* ================
    REGRESSION TESTS
    ================ */
