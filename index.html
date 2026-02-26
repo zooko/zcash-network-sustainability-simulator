@@ -339,31 +339,43 @@ function cv(name){return getComputedStyle(document.documentElement).getPropertyV
    Time anchors
    ================================================================ */
 const TIME_ANCHORS=[
-  {h:0,time:Date.UTC(2016,9,28,7,56),label:"Genesis"},
-  {h:653_600,time:Date.UTC(2019,11,11,21,50),label:"Blossom"},
-  {h:1_046_400,time:Date.UTC(2020,10,18,12,34),label:"Halving 1"},
-  {h:2_726_400,time:Date.UTC(2024,10,23,1,51),label:"Halving 2"},
+  {h:0n,time:Date.UTC(2016,9,28,7,56),label:"Genesis"},
+  {h:653_600n,time:Date.UTC(2019,11,11,21,50),label:"Blossom"},
+  {h:1_046_400n,time:Date.UTC(2020,10,18,12,34),label:"Halving 1"},
+  {h:2_726_400n,time:Date.UTC(2024,10,23,1,51),label:"Halving 2"},
 ];
 
-const BLOSSOM_ACTIVATION_HEIGHT=653_600;
-const WRITTEN_HEIGHT=3_234_946;
-const BURN_EVENTS = [{ h: 4_500_000, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ", mode: 'once'}];
+const BLOSSOM_ACTIVATION_HEIGHT=653_600n;
+const WRITTEN_HEIGHT=3_234_946n;
+const BURN_EVENTS = [{ h: 4_500_000n, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ", mode: 'once'}];
+BURN_EVENTS[0].label = formatBurnLabel(BURN_EVENTS[0].zat, BURN_EVENTS[0].mode);
+
 function totalBurnedAtHeight(h){let total=0;for(const b of BURN_EVENTS)if(h>=b.h)total+=zatToZecString(b.zat);return total;}
-const ONE_YEAR_MS=365.25*86400*1000;
+const ONE_YEAR_MS=BigInt(365.25*86400*1000);
 
 const SEGMENTS=[];
 for(let i=0;i<TIME_ANCHORS.length-1;i++){
   const a=TIME_ANCHORS[i],b=TIME_ANCHORS[i+1];
   SEGMENTS.push({startH:a.h,endH:b.h,startTime:a.time,
-    secPerBlock:(b.time-a.time)/1000/(b.h-a.h)});
+    secPerBlock:BigInt(b.time-a.time)/1000n/(b.h-a.h)});
 }
 
 function segmentForHeight(h){for(let i=0;i<SEGMENTS.length;i++)if(h<=SEGMENTS[i].endH)return SEGMENTS[i];return SEGMENTS[SEGMENTS.length-1];}
-function blockToTime(h){const s=segmentForHeight(h);return s.startTime+(h-s.startH)*s.secPerBlock*1000;}
+function blockToTime(h){
+    const s=segmentForHeight(h);return s.startTime+(h-s.startH)*s.secPerBlock*1000;
+}
 function secsPerBlock(h){return segmentForHeight(h).secPerBlock;}
-function timeToHeight(t){for(let i=SEGMENTS.length-1;i>=0;i--){const s=SEGMENTS[i];if(t>=s.startTime)return BigInt(Math.floor(s.startH+(t-s.startTime)/1000/s.secPerBlock));}const s=SEGMENTS[0];return BigInt(Math.floor(s.startH+(t-s.startTime)/1000/s.secPerBlock));}
+function timeToHeight(t){
+    for(let i=SEGMENTS.length-1;i>=0;i--){
+        const s=SEGMENTS[i];
+        if(t>=s.startTime)
+            return BigInt(s.startH) + BigInt(t-s.startTime) / (BigInt(s.secPerBlock)*1000n);
+    }
+    const s=SEGMENTS[0];
+    return BigInt(s.startH) + BigInt(t-s.startTime) / (BigInt(s.secPerBlock)*1000n);
+}
 function heightAfterDuration(h,durationMs){
-  let remaining=durationMs/1000,cur=h;
+  let remaining=durationMs/1000n,cur=h;
   for(let i=0;i<SEGMENTS.length;i++){const s=SEGMENTS[i];if(cur>s.endH)continue;
     const hStart=max(cur,s.startH),secsToEnd=(s.endH-hStart)*s.secPerBlock;
     if(remaining<=secsToEnd)return hStart+remaining/s.secPerBlock;remaining-=secsToEnd;cur=s.endH;}
@@ -377,40 +389,45 @@ function fmtDate(ms){const d=new Date(ms);const mo=["Jan","Feb","Mar","Apr","May
 /* ================================================================
    Halving heights generator
    ================================================================ */
-function halvingHeights(maxH){const r=[];let h=1_046_400;while(h<=maxH){r.push(h);h+=1_680_000;}return r;}
+function halvingHeights(maxH){
+    const result=[];
+    let h=1_046_400n;
+    while(h<=maxH){result.push(h);h+=1_680_000n;}
+    return result;
+}
 
 /* ================================================================
    issuance_per_block() — zcash consensus
    ================================================================ */
 function issuance_per_block(blockheight){
-  const MAX_BLOCK_SUBSIDY=1250000000n,SLOW_START_INTERVAL=20000,SLOW_START_SHIFT=10000,
-    SLOW_START_RATE=62500n,BLOSSOM_ACT=653600,BLOSSOM_RATIO=2n,
-    PRE_HALVING=840000,POST_HALVING=1680000n;
+  const MAX_BLOCK_SUBSIDY=1250000000n,SLOW_START_INTERVAL=20000n,SLOW_START_SHIFT=10000n,
+    SLOW_START_RATE=62500n,BLOSSOM_ACT=653600n,BLOSSOM_RATIO=2n,
+    PRE_HALVING=840000n,POST_HALVING=1680000n;
   const h=BigInt(blockheight);
   if(blockheight<SLOW_START_SHIFT)return SLOW_START_RATE*h;
   if(blockheight<SLOW_START_INTERVAL)return SLOW_START_RATE*(h+1n);
   let halvings;
   if(blockheight>=BLOSSOM_ACT){const sc=BigInt(BLOSSOM_ACT-SLOW_START_SHIFT)*BLOSSOM_RATIO+(h-BigInt(BLOSSOM_ACT));halvings=Number(sc/POST_HALVING);}
   else halvings=Math.floor((blockheight-SLOW_START_SHIFT)/PRE_HALVING);
-  if(halvings>=64)return 0n;
+  if(halvings>=64n)return 0n;
   if(blockheight>=BLOSSOM_ACT)return(MAX_BLOCK_SUBSIDY/BLOSSOM_RATIO)>>BigInt(halvings);
   return MAX_BLOCK_SUBSIDY>>BigInt(halvings);
 }
 
-const G_MAX_SUB=1250000000n,G_SLOW_INT=20000,G_SLOW_SHIFT=10000,
-  G_SLOW_RATE=62500n,G_BLOSSOM_H=653600,G_RATIO=2n,G_POST_HALV=1680000,G_HALV_OFF=633600;
+const G_MAX_SUB=1250000000n,G_SLOW_INT=20000n,G_SLOW_SHIFT=10000n,
+  G_SLOW_RATE=62500n,G_BLOSSOM_H=653600n,G_RATIO=2n,G_POST_HALV=1680000n,G_HALV_OFF=633600n;
 
 function sumArith(a,b){if(b<a)return 0n;const A=BigInt(a),B=BigInt(b),n=B-A+1n;return(A+B)*n/2n;}
-function halvIdxPost(h){return Math.floor((h+G_HALV_OFF)/G_POST_HALV);}
-function nextHalvPost(h){return(halvIdxPost(h)+1)*G_POST_HALV-G_HALV_OFF;}
+function halvIdxPost(h){return (h+G_HALV_OFF)/G_POST_HALV;}  // BigInt division = floor
+function nextHalvPost(h){return(halvIdxPost(h)+1n)*G_POST_HALV - G_HALV_OFF;}
 
 function sumIssuanceRangeClean(startInc,endExc){
   if(endExc<=startInc)return 0n;let h=startInc,total=0n;
   while(h<endExc){
-    if(h<G_SLOW_SHIFT){const e=min(endExc,G_SLOW_SHIFT);total+=G_SLOW_RATE*sumArith(h,e-1);h=e;continue;}
-    if(h<G_SLOW_INT){const e=min(endExc,G_SLOW_INT);total+=G_SLOW_RATE*sumArith(h+1,e);h=e;continue;}
+    if(h<G_SLOW_SHIFT){const e=min(endExc,G_SLOW_SHIFT);total+=G_SLOW_RATE*sumArith(h,e-1n);h=e;continue;}
+    if(h<G_SLOW_INT){const e=min(endExc,G_SLOW_INT);total+=G_SLOW_RATE*sumArith(h+1n,e);h=e;continue;}
     if(h<G_BLOSSOM_H){const e=min(endExc,G_BLOSSOM_H);total+=G_MAX_SUB*BigInt(e-h);h=e;continue;}
-    const k=halvIdxPost(h);if(k>=64)break;
+    const k=halvIdxPost(h);if(k>=64n)break;
     const nxt=nextHalvPost(h),e=min(endExc,nxt);
     total+=(G_MAX_SUB/G_RATIO>>BigInt(k))*BigInt(e-h);h=e;
   }return total;
@@ -419,14 +436,14 @@ function sumIssuanceRangeClean(startInc,endExc){
 /* ================================================================
    Simulation engine
    ================================================================ */
-const ZATOSHI=100_000_000,SAMPLE_EVERY=1000,SIM_BATCH=80_000;
-const MAX_MONEY_ZEC=21_000_000;
+const ZATOSHI=100_000_000n,SAMPLE_EVERY=1000n,SIM_BATCH=80_000n;
+const MAX_MONEY_ZEC=21_000_000n;
 const MAX_MONEY_ZAT = 2_100_000_000_000_000n;
 const _kFloat = 1 - Math.pow(2, -1/1680000);
 const ZIP234_K = _kFloat; // kept for test compat
 const ZIP234_K_NUM = BigInt(Math.round(_kFloat * (2**32))) * (1n << 32n);
 const ZIP234_K_SHIFT = 64n;
-let zip234ActivationHeight=3_687_123;
+let zip234ActivationHeight=3_687_123n;
 
 function defaultIssuanceZat(h, supZat, remZat) { return issuance_per_block(h); }
 function zip234IssuanceZat(h, supZat, remZat) {
@@ -438,13 +455,13 @@ const scenarios={
     default:{fn:defaultIssuanceZat,data:[]},
     zip234:{fn:zip234IssuanceZat,data:[]}
 };
-let simVersion=0,simRunning=false,simComputedVer=-1,simComputedMaxH=-1;
+let simVersion=0n,simRunning=false,simComputedVer=-1n,simComputedMaxH=-1n;
 
 function fillAnnualPct(arr) {
     for (let i = 0; i < arr.length; i++) {
         const p = arr[i];
-        if (p.supplyZat <= 0n || p.h < 20000) continue;
-        const targetH = Math.floor(heightAfterDuration(p.h, ONE_YEAR_MS));
+        if (p.supplyZat <= 0n || p.h < 20000n) continue;
+        const targetH = heightAfterDuration(p.h, ONE_YEAR_MS);
         let lo = i + 1, hi = arr.length - 1;
         while (lo < hi) { const mid = (lo + hi) >> 1; arr[mid].h < targetH ? lo = mid + 1 : hi = mid; }
         if (lo >= arr.length) continue;
@@ -460,7 +477,8 @@ function lookupScenario(arr,h){
     if(!arr.length)return null;
     let lo=0,hi=arr.length-1;
     while(lo<hi){const mid=(lo+hi)>>1;arr[mid].h<h?lo=mid+1:hi=mid;}
-    if(lo>0&&Math.abs(arr[lo-1].h-h)<Math.abs(arr[lo].h-h))lo--;
+    if(lo>0 && (h - arr[lo-1].h) < (arr[lo].h - h)) lo--;
+
     return arr[lo];
 }
 
@@ -521,7 +539,7 @@ async function computeAllScenarios(){
                 const s=st[name];
                 if(s.h>maxH)continue;
                 anyAdvanced=true;
-                const batchEnd=min(s.h+SIM_BATCH,maxH+1);
+                const batchEnd=min(s.h+SIM_BATCH,maxH+1n);
                 for(let h=s.h;h<batchEnd;h++){
                     for(const b of BURN_EVENTS){if(b.h===h){
                         const amt=b.zat<s.supZat?b.zat:s.supZat;
@@ -529,8 +547,8 @@ async function computeAllScenarios(){
                     }}
                     const issZat=s.fn(h,s.supZat,s.remZat);
                     s.supZat+=issZat;s.cumIssZat+=issZat;s.remZat-=issZat;
-                    if(h%SAMPLE_EVERY===0){
-                        const spb=BigInt(h<BLOSSOM_ACTIVATION_HEIGHT?150:75);
+                    if(h%SAMPLE_EVERY===0n){
+                        const spb=BigInt(h<BLOSSOM_ACTIVATION_HEIGHT?150n:75n);
                         s.result.push({
                             h,time:blockToTime(h),
                             supplyZat:s.supZat,
@@ -573,19 +591,35 @@ function formatBurnLabel(zat, mode){
 
 function supplyAtHeightZat(h) { return sumIssuanceRangeClean(0, h); }
 
-function changeBurn(newH=undefined, newZats=undefined, newMode=undefined) {
-    const clampedNewH = clampBurnHeight(newH);
-    const oldH = BURN_EVENTS[0].h;
-    minH = min(oldH, clampedNewH);
-    const oldZats = BURN_EVENTS[0].zat;
-    const clampedNewZats = min(supplyAtHeightZat(clampedNewH), newZats);
+function changeBurn(newH=undefined, newZats=undefined, newMode=undefined){
+    const b = BURN_EVENTS[0];
+    const oldH = b.h;
+    const oldZat = b.zat;
+    const oldMode = b.mode;
 
-    if ((clampedNewH !== oldH) || (clampedNewZats !== oldZats)) {
-        BURN_EVENTS[0].h = clampedNewH;
-        BURN_EVENTS[0].label = formatBurnLabel(clampedNewZats);
-        invalidateAllFrom(minH);
-        requestDraw();
-    }
+    // Use current value if arg not provided
+    const h = newH !== undefined ? clampBurnHeight(newH) : oldH;
+    const mode = newMode !== undefined ? newMode : oldMode;
+    const zat = newZats !== undefined ? newZats : oldZat;
+
+    // Clamp: one-time burn can't exceed supply at that height
+    const clampedZat = (mode === 'once')
+        ? min(supplyAtHeightZat(h), zat)
+        : zat;  // per-block is clamped each block in the sim loop
+
+    // Skip if nothing changed
+    if(h === oldH && clampedZat === oldZat && mode === oldMode) return;
+
+    // Apply
+    b.h = h;
+    b.zat = clampedZat;
+    b.mode = mode;
+    b.label = formatBurnLabel(clampedZat, mode);
+
+    // Invalidate from the earliest affected height
+    const fromH = min(oldH, h);
+    invalidateAllFrom(fromH);
+    requestDraw();
 }
 
 /* ================================================================
@@ -606,7 +640,7 @@ function resetView(){view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampVie
 
 function zoomToActivation(h){
   view.tMin=genTime;
-  const endH=max(h*2,h+100_000);
+  const endH=max(h*2n,h+100_000n);
   view.tMax=blockToTime(endH);
   clampView();requestDraw();computeAllScenarios();
 }
@@ -693,7 +727,7 @@ function draw(){
   const yAP=p=>MG.top+PH-(p/yAnnMax)*PH;
 
   // Determine how much default data to show
-  const defaultCutoffH = showDefaultFuture() ? Infinity : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
+  const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
   const D=scenarios.default.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h<=defaultCutoffH);
 
   // Grid
@@ -762,7 +796,7 @@ function draw(){
     ctx.closePath();ctx.fillStyle=color;ctx.fill();
   }
 
-  const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT - Math.floor(ONE_YEAR_MS / 1000 / secsPerBlock(WRITTEN_HEIGHT));
+  const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT - ONE_YEAR_MS / 1000n / (WRITTEN_HEIGHT < 653600n ? 150n : 75n);
 
   // Default model curves
   if(D.length>=2){
@@ -807,7 +841,7 @@ function draw(){
   eventLabel(BLOSSOM_ACTIVATION_HEIGHT,"Blossom",T.eventObs);
   {const halvMax=defaultCutoffH===Infinity?timeToHeight(view.tMax)+200_000n:defaultCutoffH;
     for(const hh of halvingHeights(halvMax)){
-      const idx=Math.round((hh-1_046_400)/1_680_000)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
+      const idx=Number((hh-1_046_400n)/1_680_000n)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
 
   // "Sim written" label
   {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Sim written",0,0);ctx.restore();}}
@@ -982,6 +1016,9 @@ function updateBurnHandle(){
     burnDateInput.value=fmtDate(blockToTime(b.h));
     burnAmtInput.value = zatToZecString(b.zat);
 
+    document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(b=>
+        b.classList.toggle('active', b.dataset.burnMode === BURN_EVENTS[0].mode));
+
     return {stemHeight};
 }
     
@@ -1001,7 +1038,7 @@ function handleActDrag(clientX){
 }
 
 function changeZIP234ActivationHeight(newH) {
-    const clampedH = min(newH, WRITTEN_HEIGHT);
+    const clampedH = max(newH, WRITTEN_HEIGHT);
     const oldH = zip234ActivationHeight;
     if (oldH !== clampedH) {
         zip234ActivationHeight = clampedH;
@@ -1058,10 +1095,7 @@ function handleBurnDrag(clientX) {
    ================================================================ */
 function handleBurnBlockInput() {
     const raw = burnBlockInput.value.replace(/,/g, "").trim();
-    const v = parseInt(raw);
-    if (!isNaN(v) && v >= 0) {
-        changeBurn(v);
-    }
+    changeBurn(BigInt(raw));
     burnBlockInput.blur();
 }
 
@@ -1406,6 +1440,20 @@ canvas.addEventListener("mouseleave",()=>{tooltip.style.display="none";writtenTi
    ================================================================ */
 document.getElementById("btnReset").addEventListener("click",()=>resetView());
 document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
+
+document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const newMode = btn.dataset.burnMode;
+        if(newMode === BURN_EVENTS[0].mode) return;
+        changeBurn(undefined, undefined, newMode);
+        // Update UI
+        document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(b=>
+            b.classList.toggle('active', b===btn));
+    });
+    btn.addEventListener('mousedown',e=>e.stopPropagation());
+    btn.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+});
 
 // --- Legend toggles ---
 document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
