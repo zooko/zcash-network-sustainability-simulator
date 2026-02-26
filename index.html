@@ -295,20 +295,30 @@ let futureMode = 'both'; // 'default' | 'zip234' | 'both'
 function showDefaultFuture() { return futureMode !== 'zip234'; }
 function showZip234() { return futureMode !== 'default'; }
 
-function zatToZec(zat) { return Number(zat) / 1e8; }
-function annPctVal(p) { return p.annualPctX1M < 0n ? NaN : Number(p.annualPctX1M) / 1e6; }
-
-function zatToZecString(zat) {
-    if (zat < 0n) return "-" + zatToZecString(-zat);
+// For display: BigInt zats → formatted string (no floats involved)
+// Extended zatToZecString with precision control
+function zatToZecString(zat, maxDec = 8, minDec = 0) {
+    if (zat < 0n) return "-" + zatToZecString(-zat, maxDec, minDec);
     const w = zat / 100_000_000n, f = zat % 100_000_000n;
-    const fs = String(f).padStart(8, '0').replace(/0+$/, '');
     let ws = String(w), out = '';
     for (let i = 0; i < ws.length; i++) {
         if (i > 0 && (ws.length - i) % 3 === 0) out += ',';
         out += ws[i];
     }
+    if (maxDec <= 0) return out;
+    let fs = String(f).padStart(8, '0').substring(0, maxDec);
+    while (fs.length > minDec && fs.endsWith('0')) fs = fs.slice(0, -1);
     return fs ? out + '.' + fs : out;
 }
+
+// For "% of 21M cap": BigInt zats → string like "83.77"
+function pctOfCapStr(zat) {
+    const scaled = zat * 10000n / MAX_MONEY_ZAT;
+    const whole = scaled / 100n;
+    const frac = (scaled % 100n < 0n ? -(scaled % 100n) : scaled % 100n);
+    return String(whole) + '.' + String(frac).padStart(2, '0');
+}
+function annPctVal(p) { return p.annualPctX1M < 0n ? NaN : Number(p.annualPctX1M) / 1e6; }
 
 function parseZecToZat(str) {
     str = str.replace(/,/g, '').trim();
@@ -371,10 +381,10 @@ function timeToHeight(t){
     for(let i=SEGMENTS.length-1;i>=0;i--){
         const s=SEGMENTS[i];
         if(t>=s.startTime)
-            return BigInt(s.startH) + BigInt(t-s.startTime) / (BigInt(s.secPerBlock)*1000n);
+            return s.startH + BigInt(Math.trunc(t-s.startTime)) / (s.secPerBlock*1000n);
     }
     const s=SEGMENTS[0];
-    return BigInt(s.startH) + BigInt(t-s.startTime) / (BigInt(s.secPerBlock)*1000n);
+    return s.startH + BigInt(Math.trunc(t-s.startTime)) / (s.secPerBlock*1000n);
 }
 function heightAfterDuration(h,durationMs){
   let remaining=durationMs/1000n,cur=h;
@@ -725,11 +735,15 @@ function draw(){
 
   ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
 
-  const ySupMax=22_000_000,yIssDayMax=8_000,yAnnMax=30;
-  const xP=t=>MG.left+((t-view.tMin)/(view.tMax-view.tMin))*PW;
-  const ySP=s=>MG.top+PH-(s/ySupMax)*PH;
-  const yIP=v=>MG.top+PH-(v/yIssDayMax)*PH;
-  const yAP=p=>MG.top+PH-(p/yAnnMax)*PH;
+  const ySupMaxZat = 22_000_000n * ZATOSHI;
+  const yIssDayMaxZat = 8_000n * ZATOSHI;
+  const yAnnMax = 30;
+
+  // BigInt zats → Number pixel Y (conversion happens ONLY here, on pixel coords not currency)
+  const ySP = zat => MG.top + PH - Number(zat * BigInt(PH) * 1000n / ySupMaxZat) / 1000;
+  const yIP = zat => MG.top + PH - Number(zat * BigInt(PH) * 1000n / yIssDayMaxZat) / 1000;
+  const yAP = p => MG.top + PH - (p / yAnnMax) * PH;  // unchanged — % is not currency
+  const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
 
   // Determine how much default data to show
   const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
@@ -738,14 +752,16 @@ function draw(){
   // Grid
   if(show.supply){
     ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
-    for(let s=0;s<=ySupMax;s+=3_000_000){ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();}
+    for(let s=0n;s<=ySupMaxZat;s+=3_000_000n*ZATOSHI){
+        ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();
+    }
   }
 
   // 21M cap
   if(show.supply){
     ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(MG.left,ySP(21e6));ctx.lineTo(MG.left+PW,ySP(21e6));ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(21e6)-4);ctx.restore();
+    ctx.beginPath();ctx.moveTo(MG.left,ySP(MAX_MONEY_ZAT));ctx.lineTo(MG.left+PW,ySP(MAX_MONEY_ZAT));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(MAX_MONEY_ZAT)-4);ctx.restore();
   }
 
   // Event verticals
@@ -795,9 +811,9 @@ function draw(){
   function fillAreaAlways(pts,yFn,color){
     if(pts.length<2)return;
     ctx.beginPath();
-    ctx.moveTo(xP(pts[0].time),ySP(0));
+    ctx.moveTo(xP(pts[0].time),ySP(0n));
     for(const p of pts){const py=yFn(p);if(isFinite(py))ctx.lineTo(xP(p.time),py);}
-    ctx.lineTo(xP(pts[pts.length-1].time),ySP(0));
+    ctx.lineTo(xP(pts[pts.length-1].time),ySP(0n));
     ctx.closePath();ctx.fillStyle=color;ctx.fill();
   }
 
@@ -806,10 +822,10 @@ function draw(){
   // Default model curves
   if(D.length>=2){
     if(show.supply){
-        fillAreaAlways(D,p=>ySP(zatToZec(p.supplyZat)),T.supplyFillObs);
-        drawSplit(D,WRITTEN_HEIGHT,p=>ySP(zatToZec(p.supplyZat)),T.supplyObs,T.supplyExp,2);
+        fillAreaAlways(D,p=>ySP(p.supplyZat),T.supplyFillObs);
+        drawSplit(D,WRITTEN_HEIGHT,p=>ySP(p.supplyZat),T.supplyObs,T.supplyExp,2);
     }
-    if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(zatToZec(p.issDayZat)),T.issObs,T.issExp,2);
+    if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(p.issDayZat),T.issObs,T.issExp,2);
     if(show.annPct)drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
   }
 
@@ -817,7 +833,7 @@ function draw(){
   if(showZip234()&&scenarios.zip234.data.length>=1){
     const Z=scenarios.zip234.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h>=zip234ActivationHeight);
     if(show.supply&&Z.length>=2){
-      fillAreaAlways(Z,p=>ySP(zatToZec(p.supplyZat)),T.zip234FillObs);
+      fillAreaAlways(Z,p=>ySP(p.supplyZat),T.zip234FillObs);
     }
 
     function drawZ234Line(yFn,color,lw){
@@ -827,8 +843,8 @@ function draw(){
       ctx.stroke();ctx.setLineDash([]);
     }
 
-    if(show.supply)drawZ234Line(p=>ySP(zatToZec(p.supplyZat)),T.zip234Supply,2.5);
-      if(show.issDay)drawZ234Line(p=>yIP(zatToZec(p.issDayZat)),T.zip234Iss,2.5);
+    if(show.supply)drawZ234Line(p=>ySP(p.supplyZat),T.zip234Supply,2.5);
+      if(show.issDay)drawZ234Line(p=>yIP(p.issDayZat),T.zip234Iss,2.5);
     if(show.annPct)drawZ234Line(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.zip234Ann,1.8);
   }
 
@@ -862,7 +878,12 @@ function draw(){
   // Left axis 1 (Issuance/Day)
   if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left-ax.tickX;
     ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="right";
-    for(let v=0;v<=yIssDayMax;v+=2_000){const lb=isNarrow?(v>=1000?(v/1000)+"k":String(v)):v.toLocaleString();ctx.fillText(lb,bx,yIP(v)+4);}
+    for(let v=0n;v<=yIssDayMaxZat;v+=2_000n*ZATOSHI){
+        const vZec=v/ZATOSHI;
+        const lb=isNarrow?(vZec>=1000n?String(vZec/1000n)+"k":String(vZec)):vZec.toLocaleString();
+        ctx.fillText(lb,bx,yIP(v)+4);
+    }
+
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
       ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ⓩ)",0,0);ctx.restore();}}
 
@@ -876,7 +897,9 @@ function draw(){
   // Right axis (Supply)
   if(show.supply&&axR.supply){const ax=axR.supply,bx=MG.left+PW+ax.tickX;
     ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="left";
-    for(let s=0;s<=ySupMax;s+=3_000_000)ctx.fillText((s/1e6).toFixed(0)+" M",bx,ySP(s)+4);
+    for(let s=0n;s<=ySupMaxZat;s+=3_000_000n*ZATOSHI)
+        ctx.fillText(String(s/ZATOSHI/1_000_000n)+" M",bx,ySP(s)+4);
+
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
       ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ⓩ)",0,0);ctx.restore();}}
 
@@ -1230,7 +1253,7 @@ function handleChartHover(e){
   const d=tooltipData[lo];
 
   const isExp=d.h>WRITTEN_HEIGHT,status=isExp?"Expected":"Observed",sc=isExp?"tt-exp":"tt-obs";
-    const pct=(zatToZec(d.supplyZat)/21e6*100);
+    const pct = pctOfCapStr(d.supplyZat);
   const annStatus=d.annualPctIsExpected?"expected":"observed";
     const annVal=isFinite(annPctVal(d))?annPctVal(d).toFixed(2)+"%":"—";
   const annColor=d.annualPctIsExpected?"var(--annualExp)":"var(--annualObs)";
@@ -1238,12 +1261,12 @@ function handleChartHover(e){
   let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
     `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-    const defaultCutoffH2=showDefaultFuture()?Infinity:(showZip234()?zip234ActivationHeight:-1n); // xxx hey claude this is wrong because it uses Infinity pls fix kthx
+    const defaultCutoffH2=showDefaultFuture()?0x7FFFFFFFFFFFFFn:(showZip234()?zip234ActivationHeight:-1n);
   const showDefHere=d.h<=defaultCutoffH2;
 
   if(showDefHere){
-    if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${zatToZec(d.supplyZat).toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${pct.toFixed(2)}% of cap)</span></div>`;
-      if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${zatToZec(d.issDayZat).toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZec(d.issBlockZat).toFixed(8)} ⓩ</div>`;
+    if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${zatToZecString(d.supplyZat, 2)} ⓩ <span class="tt-muted">(${pct}% of cap)</span></div>`;
+    if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${zatToZecString(d.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(d.issBlockZat, 8, 8)} ⓩ</div>`;
     if(show.annPct)html+=`<div><span style="color:${annColor}">Annual:</span> ${annVal} <span class="tt-muted">(${annStatus})</span></div>`;
   }
 
@@ -1251,8 +1274,8 @@ function handleChartHover(e){
     const z=lookupScenario(scenarios.zip234.data,d.h);
     if(z){
       html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
-        if(show.supply){const zp=(zatToZec(z.supplyZat)/21e6*100);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${zatToZec(z.supplyZat).toLocaleString(undefined,{maximumFractionDigits:2})} ⓩ <span class="tt-muted">(${zp.toFixed(2)}%)</span></div>`;}
-        if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${zatToZec(z.issDayZat).toLocaleString(undefined,{maximumFractionDigits:1})} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZec(z.issBlockZat).toFixed(8)} ⓩ</div>`;
+        if(show.supply){const zp=pctOfCapStr(z.supplyZat);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${zatToZecString(z.supplyZat, 2)} ⓩ <span class="tt-muted">(${zp}%)</span></div>`;}
+        if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${zatToZecString(z.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(z.issBlockZat, 8, 8)} ⓩ</div>`;
         if(show.annPct){const av=isFinite(annPctVal(z))?annPctVal(z).toFixed(2)+"%":"—";html+=`<div><span style="color:var(--zip234Ann)">Annual:</span> ${av}</div>`;}
     }
   }else if(showZip234()&&d.h<zip234ActivationHeight){
@@ -1511,7 +1534,7 @@ function getZip234At(h) {
     if (scenarios.zip234.data.length > 0) {
         const z = lookupScenario(scenarios.zip234.data, h);
         if (z && abs(z.h - h) <= SAMPLE_EVERY)
-            return { supply: zatToZec(z.supplyZat), issBlock: zatToZec(z.issBlockZat) };
+            return { supply: z.supplyZat, issBlock: z.issBlockZat };
     }
     // Analytical fallback: closed-form exponential decay
     const supAtAct = sumIssuanceRangeClean(0n, zip234ActivationHeight);
@@ -1522,7 +1545,7 @@ function getZip234At(h) {
     const remNow = (remAtAct * decayFP) >> 64n;
     const supNow = MAX_MONEY_ZAT - remNow;
     const issBlockZat = (remNow * ZIP234_K_NUM) >> 64n;
-    return { supply: zatToZec(supNow), issBlock: zatToZec(issBlockZat) };
+    return { supply: supNow, issBlock: issBlockZat };
 }
 
 requestDraw();computeAllScenarios();
@@ -1625,10 +1648,10 @@ setTimeout(function runRegressionTests() {
   test("ZIP 234 issuance per block is positive and decreasing", () => {
     const actH = zip234ActivationHeight;
     const heights = [actH, actH + 100000n, actH + 500000n, actH + 1000000n];
-    let prev = Infinity; // xxx hey claude this is wrong because it uses Infinity pls fix kthx
+    let prev = MAX_MONEY_ZAT;
     for (const h of heights) {
       const z = getZip234At(h);
-      if (!z || z.issBlock <= 0 || z.issBlock >= prev) return false;
+      if (!z || z.issBlock <= 0n || z.issBlock >= prev) return false;
       prev = z.issBlock;
     }
     return true;
@@ -1636,7 +1659,7 @@ setTimeout(function runRegressionTests() {
 
   test("ZIP 234 supply never exceeds 21M", () => {
     const z = getZip234At(zip234ActivationHeight + 10_000_000n);
-    return z !== null && z.supply <= 21_000_000n;
+    return z !== null && z.supply <= MAX_MONEY_ZAT;
   });
 
   // --- sumIssuanceRangeClean ---
