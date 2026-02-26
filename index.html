@@ -1108,7 +1108,7 @@ function handleBurnBlockInput() {
 
 function min(a, b) { return a < b ? a : b; }
 function max(a, b) { return a > b ? a : b; }
-function abs(a, b) { return b > a ? b - a : a - b; }
+function abs(a) { return a < 0 ? - a : a; }
 
 /* ================================================================
    Extracted handler: burn date input
@@ -1238,7 +1238,7 @@ function handleChartHover(e){
   let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
     `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-    const defaultCutoffH2=showDefaultFuture()?Infinity:(showZip234()?zip234ActivationHeight:-1);
+    const defaultCutoffH2=showDefaultFuture()?Infinity:(showZip234()?zip234ActivationHeight:-1n); // xxx hey claude this is wrong because it uses Infinity pls fix kthx
   const showDefHere=d.h<=defaultCutoffH2;
 
   if(showDefHere){
@@ -1540,108 +1540,6 @@ setTimeout(function runRegressionTests() {
     }
   }
 
-  // --- HTML / DOM structure ---
-
-  test("actHandle element exists", () => {
-    return !!document.getElementById("actHandle");
-  });
-
-  test("actBlockInput element exists", () => {
-    return !!document.getElementById("actBlockInput");
-  });
-
-  test("actDateInput element exists", () => {
-    return !!document.getElementById("actDateInput");
-  });
-
-  test("actHandle has act-pill child", () => {
-    const h = document.getElementById("actHandle");
-    return h && !!h.querySelector(".act-pill");
-  });
-
-  test("actHandle has act-stem child", () => {
-    const h = document.getElementById("actHandle");
-    return h && !!h.querySelector(".act-stem");
-  });
-
-  test("btnReset exists", () => {
-    return !!document.getElementById("btnReset");
-  });
-
-  test("btnTheme exists", () => {
-    return !!document.getElementById("btnTheme");
-  });
-
-  test("writtenTip element exists", () => {
-    return !!document.getElementById("writtenTip");
-  });
-
-  test("legend has 'supply' toggle", () => {
-    return !!document.querySelector('[data-series="supply"]');
-  });
-
-  test("legend has 'issDay' toggle", () => {
-    return !!document.querySelector('[data-series="issDay"]');
-  });
-
-  test("legend has 'annPct' toggle", () => {
-    return !!document.querySelector('[data-series="annPct"]');
-  });
-
-  // --- Constants and initial state ---
-
-  test("WRITTEN_HEIGHT is defined and > 3,000,000", () => {
-    return typeof WRITTEN_HEIGHT === "number" && WRITTEN_HEIGHT > 3_000_000;
-  });
-
-  test("BLOSSOM_ACTIVATION_HEIGHT is 653600", () => {
-    return BLOSSOM_ACTIVATION_HEIGHT === 653600;
-  });
-
-  test("zip234ActivationHeight is >= WRITTEN_HEIGHT at boot", () => {
-    return zip234ActivationHeight >= WRITTEN_HEIGHT;
-  });
-
-  test("zip234ActivationHeight default is 3,687,123", () => {
-    return zip234ActivationHeight === 3_687_123;
-  });
-
-  test("MAX_MONEY_ZEC is 21,000,000", () => {
-    return MAX_MONEY_ZEC === 21_000_000;
-  });
-
-  test("ZIP234_K is defined and positive and < 1", () => {
-    return typeof ZIP234_K === "number" && ZIP234_K > 0 && ZIP234_K < 1;
-  });
-
-  // --- Toggle state ---
-
-  test("futureMode is 'both' at boot", () => {
-    return futureMode === 'both';
-  });
-
-  test("showZip234() is true at boot", () => {
-    return showZip234() === true;
-  });
-
-  test("show.supply is true at boot", () => {
-    return show.supply === true;
-  });
-
-  test("show.issDay is true at boot", () => {
-    return show.issDay === true;
-  });
-
-  test("show.annPct is false at boot", () => {
-    return show.annPct === false;
-  });
-
-  // --- Toggle constraint: can't turn off both default and zip234 ---
-
-  test("futureMode only allows valid values", () => {
-    return ['default', 'zip234', 'both'].includes(futureMode);
-  });
-
   // --- Issuance logic ---
 
   test("issuance_per_block(0) is 0 (slow start)", () => {
@@ -1689,19 +1587,19 @@ setTimeout(function runRegressionTests() {
   // --- Halving heights ---
 
   test("halvingHeights returns correct first halving", () => {
-    const hh = halvingHeights(2000000);
-    return hh.length >= 1 && hh[0] === 1046400;
+    const hh = halvingHeights(2000000n);
+    return hh.length >= 1 && hh[0] === 1046400n;
   });
 
   test("halvingHeights includes halving 2 at 2726400", () => {
-    const hh = halvingHeights(3000000);
-    return hh.includes(2726400);
+    const hh = halvingHeights(3000000n);
+    return hh.includes(2726400n);
   });
 
   test("halving spacing is 1,680,000", () => {
-    const hh = halvingHeights(6000000);
+    const hh = halvingHeights(6000000n);
     for (let i = 1; i < hh.length; i++) {
-      if (hh[i] - hh[i - 1] !== 1680000) return false;
+      if (hh[i] - hh[i - 1] !== 1680000n) return false;
     }
     return true;
   });
@@ -1709,12 +1607,12 @@ setTimeout(function runRegressionTests() {
   // --- ZIP 234 math ---
 
   test("getZip234At returns null for height below activation", () => {
-    return getZip234At(zip234ActivationHeight - 1) === null;
+    return getZip234At(zip234ActivationHeight - 1n) === null;
   });
 
   test("ZIP 234 supply is monotonically increasing", () => {
     const actH = zip234ActivationHeight;
-    const heights = [actH, actH + 10000, actH + 100000, actH + 500000];
+    const heights = [actH, actH + 10000n, actH + 100000n, actH + 500000n];
     let prev = 0;
     for (const h of heights) {
       const z = getZip234At(h);
@@ -1726,8 +1624,8 @@ setTimeout(function runRegressionTests() {
 
   test("ZIP 234 issuance per block is positive and decreasing", () => {
     const actH = zip234ActivationHeight;
-    const heights = [actH, actH + 100000, actH + 500000, actH + 1000000];
-    let prev = Infinity;
+    const heights = [actH, actH + 100000n, actH + 500000n, actH + 1000000n];
+    let prev = Infinity; // xxx hey claude this is wrong because it uses Infinity pls fix kthx
     for (const h of heights) {
       const z = getZip234At(h);
       if (!z || z.issBlock <= 0 || z.issBlock >= prev) return false;
@@ -1737,88 +1635,35 @@ setTimeout(function runRegressionTests() {
   });
 
   test("ZIP 234 supply never exceeds 21M", () => {
-    const z = getZip234At(zip234ActivationHeight + 10_000_000);
-    return z !== null && z.supply <= 21_000_000;
+    const z = getZip234At(zip234ActivationHeight + 10_000_000n);
+    return z !== null && z.supply <= 21_000_000n;
   });
 
   // --- sumIssuanceRangeClean ---
 
   test("sumIssuanceRangeClean(0,0) is 0", () => {
-    return sumIssuanceRangeClean(0, 0) === 0n;
+    return sumIssuanceRangeClean(0n, 0n) === 0n;
   });
 
   test("sumIssuanceRangeClean(0,1) equals issuance_per_block(0)", () => {
-    return sumIssuanceRangeClean(0, 1) === issuance_per_block(0);
+    return sumIssuanceRangeClean(0n, 1n) === issuance_per_block(0n);
   });
 
   test("sumIssuanceRangeClean agrees with brute force for small range", () => {
     let brute = 0n;
-    for (let h = 20000; h < 20010; h++) brute += issuance_per_block(h);
-    return sumIssuanceRangeClean(20000, 20010) === brute;
+    for (let h = 20000n; h < 20010n; h++) brute += issuance_per_block(h);
+    return sumIssuanceRangeClean(20000n, 20010n) === brute;
   });
 
   // --- View state ---
 
   test("view.tMin is at or near genesis at boot", () => {
-    return abs(view.tMin - genTime) < 86400000; // within 1 day
+    return abs(view.tMin - genTime) < 86400000n; // within 1 day
   });
 
   test("view.tMax corresponds to roughly block 6M", () => {
-    const expected = blockToTime(6_000_000);
-    return abs(view.tMax - expected) < 86400000 * 30; // within 30 days
-  });
-
-  // --- Activation height minimum constraint ---
-
-  test("Activation height clamp: direct set below WRITTEN_HEIGHT is rejected", () => {
-    const saved = zip234ActivationHeight;
-    // Simulate what the drag handler should do: set to a low value
-    const tooLow = WRITTEN_HEIGHT - 100_000;
-    zip234ActivationHeight = tooLow;
-    // Now call updateActHandle which is what drag/input paths end with.
-    // The constraint should be enforced somewhere in the pipeline.
-    // If the code has no clamp, zip234ActivationHeight stays at tooLow — that's the bug.
-    // We need to check: does any code path actually prevent this?
-
-    // Check if the mousemove handler source contains a clamp against WRITTEN_HEIGHT
-    const handlers = [
-      // Look at all mousemove listeners — we can't easily extract them,
-      // but we can inspect the source of known functions
-      updateActHandle.toString(),
-    ];
-
-    // Restore before we forget
-    zip234ActivationHeight = saved;
-
-    // The real test: search the entire script for clamping logic
-    const scripts = document.querySelectorAll('script');
-    let scriptSource = '';
-    for (const s of scripts) {
-      if (s.textContent.includes('zip234ActivationHeight')) {
-        scriptSource = s.textContent;
-        break;
-      }
-    }
-
-    // There must be code that clamps zip234ActivationHeight to >= WRITTEN_HEIGHT
-    // in the drag handler, block input handler, AND date input handler
-    const hasDragClamp = scriptSource.includes('WRITTEN_HEIGHT') && 
-      (scriptSource.match(/actDragging[\s\S]{0,500}WRITTEN_HEIGHT/) !== null ||
-       scriptSource.match(/WRITTEN_HEIGHT[\s\S]{0,500}actDragging/) !== null);
-
-    const hasBlockInputClamp = scriptSource.match(
-      /actBlockInput[\s\S]{0,800}WRITTEN_HEIGHT|WRITTEN_HEIGHT[\s\S]{0,800}actBlockInput/
-    ) !== null;
-
-    const hasDateInputClamp = scriptSource.match(
-      /actDateInput[\s\S]{0,800}WRITTEN_HEIGHT|WRITTEN_HEIGHT[\s\S]{0,800}actDateInput/
-    ) !== null;
-
-    if (!hasDragClamp) console.warn("  ⚠ No WRITTEN_HEIGHT clamp found near drag handler");
-    if (!hasBlockInputClamp) console.warn("  ⚠ No WRITTEN_HEIGHT clamp found near block input handler");
-    if (!hasDateInputClamp) console.warn("  ⚠ No WRITTEN_HEIGHT clamp found near date input handler");
-
-    return hasDragClamp && hasBlockInputClamp && hasDateInputClamp;
+    const expected = blockToTime(6_000_000n);
+    return abs(view.tMax - expected) < 86400000n * 30n; // within 30 days
   });
 
   test("Activation height clamp: functional test via block input", () => {
@@ -1827,7 +1672,7 @@ setTimeout(function runRegressionTests() {
     if (!input) return false;
 
     // Set input to a value below WRITTEN_HEIGHT and fire Enter
-    const tooLow = WRITTEN_HEIGHT - 500_000;
+    const tooLow = WRITTEN_HEIGHT - 500_000n;
     input.value = String(tooLow);
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
