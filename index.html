@@ -651,10 +651,11 @@ function clampView(){
   if(view.tMin<genTime-2*ONE_YEAR_NUM)view.tMin=genTime-2*ONE_YEAR_NUM;
 }
 
-function resetView(){view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();}
+ function resetView(){yDirty=true;view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();}
 
-function zoomToActivation(h){
-  view.tMin=genTime;
+ function zoomToActivation(h){
+   yDirty=true;
+   view.tMin=genTime;
   const endH=max(h*2n,h+100_000n);
   view.tMax=blockToTime(endH);
   clampView();requestDraw();computeAllScenarios();
@@ -692,11 +693,158 @@ function leftAxisLayout(isNarrow){
 }
 
 /* ================================================================
-   Drawing
+   Y-axis helpers (all monetary math in BigInt zats)
    ================================================================ */
-let drawRAF=null;const layout={};
+function bigPow10(n) { const bn = BigInt(n); let r = 1n; for (let i = 0n; i < bn; i++) r *= 10n; return r; }
+function ceilDivBig(a, b) { return (a + b - 1n) / b; }
 
-function requestDraw(){if(!drawRAF)drawRAF=requestAnimationFrame(()=>{drawRAF=null;draw();});}
+function niceStepZat(rangeZat, targetTicks) {
+    if (rangeZat <= 0n) return ZATOSHI;
+    const rough = rangeZat / BigInt(targetTicks);
+    if (rough <= 0n) return 1n;
+    let mag = 1n; while (mag * 10n <= rough) mag *= 10n;
+    if (rough * 2n < mag * 3n) return mag;
+    if (rough < mag * 3n) return mag * 2n;
+    if (rough < mag * 7n) return mag * 5n;
+    return mag * 10n;
+}
+
+function niceScaleZat(dataMinZat, dataMaxZat, startFromZero) {
+    if (dataMaxZat <= dataMinZat) dataMaxZat = dataMinZat + ZATOSHI;
+    if (!startFromZero && dataMinZat >= 0n && dataMinZat * 10n < dataMaxZat * 3n) startFromZero = true;
+    if (startFromZero) {
+        const raw = dataMaxZat + dataMaxZat / 20n;
+        const step = niceStepZat(raw, 5);
+        return { minZat: 0n, maxZat: ceilDivBig(raw, step) * step, stepZat: step };
+    }
+    const range = dataMaxZat - dataMinZat;
+    const pad = range / 10n > 0n ? range / 10n : ZATOSHI;
+    const step = niceStepZat(range + pad * 2n, 5);
+    const rawMin = dataMinZat - pad;
+    const scMin = rawMin >= 0n ? rawMin / step * step : 0n;
+    return { minZat: scMin, maxZat: ceilDivBig(dataMaxZat + pad, step) * step, stepZat: step };
+}
+
+function niceStepNum(range, targetTicks) {
+    if (range <= 0) return 1;
+    const rough = range / targetTicks, mag = Math.pow(10, Math.floor(Math.log10(rough)));
+    const f = rough / mag;
+    if (f < 1.5) return mag; if (f < 3) return 2 * mag; if (f < 7) return 5 * mag; return 10 * mag;
+}
+
+function commaFormatBig(n) {
+    if (n < 0n) return "-" + commaFormatBig(-n);
+    const s = String(n); let out = '';
+    for (let i = 0; i < s.length; i++) { if (i > 0 && (s.length - i) % 3 === 0) out += ','; out += s[i]; }
+    return out;
+}
+
+function formatZatForAxis(zat, stepZat, isNarrow, useMSuffix) {
+    const M_ZAT = 1_000_000n * ZATOSHI;
+    if (useMSuffix) {
+        let dec = 0; let t = stepZat;
+        while (t < M_ZAT && dec < 4) { t *= 10n; dec++; }
+        if (dec === 0) return String(zat / M_ZAT) + " M";
+        const p = bigPow10(dec);
+        const units = zat * p / M_ZAT;
+        const w = units / p; let f = units % p; if (f < 0n) f = -f;
+        return String(w) + "." + String(f).padStart(dec, '0') + " M";
+    }
+    const wholeZec = zat / ZATOSHI, fracZat = zat % ZATOSHI;
+    let dec = 0; let t = stepZat;
+    while (t < ZATOSHI && dec < 8) { t *= 10n; dec++; }
+    if (dec === 0) {
+        if (isNarrow && wholeZec >= 1000n && wholeZec % 1000n === 0n) return String(wholeZec / 1000n) + "k";
+        return commaFormatBig(wholeZec);
+    }
+    const p = bigPow10(dec);
+    let f = fracZat * p / ZATOSHI; if (f < 0n) f = -f;
+    return commaFormatBig(wholeZec) + "." + String(f).padStart(dec, '0');
+}
+
+const FIXED_SUP_MIN_ZAT = 0n;
+const FIXED_SUP_MAX_ZAT = 22_000_000n * ZATOSHI;
+const FIXED_SUP_STEP_ZAT = 3_000_000n * ZATOSHI;
+const FIXED_ISS_MAX_ZAT = 8_000n * ZATOSHI;
+const FIXED_ISS_STEP_ZAT = 2_000n * ZATOSHI;
+const FIXED_ANN_MAX = 30;
+const FIXED_ANN_STEP = 5;
+
+/* Y-axis animation state */
+const yTarget = {
+    supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT, supStepZat: FIXED_SUP_STEP_ZAT,
+    issMaxZat: FIXED_ISS_MAX_ZAT, issStepZat: FIXED_ISS_STEP_ZAT,
+    annMax: FIXED_ANN_MAX, annStep: FIXED_ANN_STEP,
+};
+const yDisp = {
+    supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT,
+    issMaxZat: FIXED_ISS_MAX_ZAT, annMax: FIXED_ANN_MAX,
+};
+let yInitialized = false;
+let yDirty = true;
+let lastYDataLen = 0;
+
+ function lerpZat(cur, tgt) {
+   if (cur === tgt) return cur;
+    const step = (tgt - cur) * 3n / 20n;
+    return step === 0n ? tgt : cur + step;
+}
+
+function animateYAxes() {
+    let changed = false;
+    const ns = lerpZat(yDisp.supMinZat, yTarget.supMinZat);
+    const nx = lerpZat(yDisp.supMaxZat, yTarget.supMaxZat);
+    const ni = lerpZat(yDisp.issMaxZat, yTarget.issMaxZat);
+    if (ns !== yDisp.supMinZat || nx !== yDisp.supMaxZat || ni !== yDisp.issMaxZat) changed = true;
+    yDisp.supMinZat = ns; yDisp.supMaxZat = nx; yDisp.issMaxZat = ni;
+    const ad = yTarget.annMax - yDisp.annMax;
+    if (Math.abs(ad) > 0.01) { yDisp.annMax += ad * 0.15; changed = true; }
+    else if (yDisp.annMax !== yTarget.annMax) { yDisp.annMax = yTarget.annMax; changed = true; }
+    return changed;
+}
+
+function updateYTargets() {
+    const cutH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
+    let sMin = MAX_MONEY_ZAT, sMax = 0n, iMax = 0n, aMax = 0n;
+    for (const p of scenarios.default.data) {
+        if (p.time < view.tMin || p.time > view.tMax || p.h > cutH) continue;
+        if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
+        if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
+        if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
+    }
+    if (showZip234()) for (const p of scenarios.zip234.data) {
+        if (p.time < view.tMin || p.time > view.tMax || p.h < zip234ActivationHeight) continue;
+        if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
+        if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
+        if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
+    }
+    if (show.supply && sMax > 0n && MAX_MONEY_ZAT * 10n <= sMax * 12n) sMax = max(sMax, MAX_MONEY_ZAT);
+
+    if (show.supply && sMax > sMin && (sMax - sMin) * 100n < FIXED_SUP_MAX_ZAT * 40n) {
+        const sc = niceScaleZat(sMin, sMax, false);
+        yTarget.supMinZat = sc.minZat; yTarget.supMaxZat = sc.maxZat; yTarget.supStepZat = sc.stepZat;
+    } else { yTarget.supMinZat = FIXED_SUP_MIN_ZAT; yTarget.supMaxZat = FIXED_SUP_MAX_ZAT; yTarget.supStepZat = FIXED_SUP_STEP_ZAT; }
+
+    if (show.issDay && iMax > 0n && iMax * 100n < FIXED_ISS_MAX_ZAT * 40n) {
+        const sc = niceScaleZat(0n, iMax, true);
+        yTarget.issMaxZat = sc.maxZat; yTarget.issStepZat = sc.stepZat;
+    } else { yTarget.issMaxZat = FIXED_ISS_MAX_ZAT; yTarget.issStepZat = FIXED_ISS_STEP_ZAT; }
+
+    const aPct = Number(aMax) / 1_000_000, eff = Math.min(aPct, FIXED_ANN_MAX);
+    if (show.annPct && eff > 0 && eff / FIXED_ANN_MAX < 0.4) {
+        const r = eff * 1.05, st = niceStepNum(r, 5);
+        yTarget.annMax = Math.ceil(r / st) * st; yTarget.annStep = st;
+    } else { yTarget.annMax = FIXED_ANN_MAX; yTarget.annStep = FIXED_ANN_STEP; }
+
+    requestDraw();
+ }
+
+ /* ================================================================
+    Drawing
+    ================================================================ */
+ let drawRAF=null;const layout={};
+
+ function requestDraw(){if(!drawRAF)drawRAF=requestAnimationFrame(()=>{drawRAF=null;draw();});}
 
 function draw(){
   if(!scenarios.default.data.length&&!scenarios.zip234.data.length)return;
@@ -735,33 +883,54 @@ function draw(){
 
   ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
 
-  const ySupMaxZat = 22_000_000n * ZATOSHI;
-  const yIssDayMaxZat = 8_000n * ZATOSHI;
-  const yAnnMax = 30;
-
-  // BigInt zats → Number pixel Y (conversion happens ONLY here, on pixel coords not currency)
-  const ySP = zat => MG.top + PH - Number(zat * BigInt(PH) * 1000n / ySupMaxZat) / 1000;
-  const yIP = zat => MG.top + PH - Number(zat * BigInt(PH) * 1000n / yIssDayMaxZat) / 1000;
-  const yAP = p => MG.top + PH - (p / yAnnMax) * PH;  // unchanged — % is not currency
   const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
 
   // Determine how much default data to show
   const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
-  const D=scenarios.default.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h<=defaultCutoffH);
+  const D = scenarios.default.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h <= defaultCutoffH);
+  const Z = (showZip234() && scenarios.zip234.data.length >= 1)
+      ? scenarios.zip234.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
+      : [];
+
+   const totalDataLen = scenarios.default.data.length + scenarios.zip234.data.length;
+   if (totalDataLen !== lastYDataLen) { yDirty = true; lastYDataLen = totalDataLen; }
+   if (yDirty && (D.length >= 2 || Z.length >= 1)) { updateYTargets(); yDirty = false; }
+
+   // Animate Y axes toward targets
+   const yAnimating = animateYAxes();
+
+   // Pixel mapping from animated display values
+   const ySupRange = yDisp.supMaxZat - yDisp.supMinZat;
+  const ySP = zat => {
+      if (ySupRange <= 0n) return MG.top + PH / 2;
+      return MG.top + PH - Number((zat - yDisp.supMinZat) * BigInt(PH) * 1000n / ySupRange) / 1000;
+  };
+  const yIP = zat => {
+      if (yDisp.issMaxZat <= 0n) return MG.top + PH;
+      return MG.top + PH - Number(zat * BigInt(PH) * 1000n / yDisp.issMaxZat) / 1000;
+  };
+  const yAP = p => MG.top + PH - (p / yDisp.annMax) * PH;
+
+  // Compute display steps for grid/ticks
+  const dispSupStep = niceStepZat(ySupRange, 6);
+  const dispIssStep = niceStepZat(yDisp.issMaxZat, 5);
+  const dispAnnStep = niceStepNum(yDisp.annMax, 5);
+  const supUseMSuffix = yDisp.supMaxZat >= 1_000_000n * ZATOSHI;
 
   // Grid
   if(show.supply){
-    ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
-    for(let s=0n;s<=ySupMaxZat;s+=3_000_000n*ZATOSHI){
-        ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();
-    }
+      ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
+      const gridStart = yDisp.supMinZat <= 0n ? 0n : (yDisp.supMinZat / dispSupStep) * dispSupStep;
+      for(let s=gridStart;s<=yDisp.supMaxZat;s+=dispSupStep){
+          ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();
+      }
   }
 
-  // 21M cap
-  if(show.supply){
-    ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(MG.left,ySP(MAX_MONEY_ZAT));ctx.lineTo(MG.left+PW,ySP(MAX_MONEY_ZAT));ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(MAX_MONEY_ZAT)-4);ctx.restore();
+  // 21M cap (only draw if within visible Y range)
+  if(show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat){
+      ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(MG.left,ySP(MAX_MONEY_ZAT));ctx.lineTo(MG.left+PW,ySP(MAX_MONEY_ZAT));ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(MAX_MONEY_ZAT)-4);ctx.restore();
   }
 
   // Event verticals
@@ -807,13 +976,14 @@ function draw(){
       if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
     ctx.stroke();ctx.setLineDash([]);
   }
-  // Helper: fill under supply curve
+
   function fillAreaAlways(pts,yFn,color){
     if(pts.length<2)return;
+    const baseline=MG.top+PH;
     ctx.beginPath();
-    ctx.moveTo(xP(pts[0].time),ySP(0n));
+    ctx.moveTo(xP(pts[0].time),baseline);
     for(const p of pts){const py=yFn(p);if(isFinite(py))ctx.lineTo(xP(p.time),py);}
-    ctx.lineTo(xP(pts[pts.length-1].time),ySP(0n));
+    ctx.lineTo(xP(pts[pts.length-1].time),baseline);
     ctx.closePath();ctx.fillStyle=color;ctx.fill();
   }
 
@@ -830,8 +1000,7 @@ function draw(){
   }
 
   // ZIP 234 curves
-  if(showZip234()&&scenarios.zip234.data.length>=1){
-    const Z=scenarios.zip234.data.filter(d=>d.time>=view.tMin&&d.time<=view.tMax&&d.h>=zip234ActivationHeight);
+  if(showZip234()&&Z.length>=1){
     if(show.supply&&Z.length>=2){
       fillAreaAlways(Z,p=>ySP(p.supplyZat),T.zip234FillObs);
     }
@@ -878,10 +1047,10 @@ function draw(){
   // Left axis 1 (Issuance/Day)
   if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left-ax.tickX;
     ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="right";
-    for(let v=0n;v<=yIssDayMaxZat;v+=2_000n*ZATOSHI){
-        const vZec=v/ZATOSHI;
-        const lb=isNarrow?(vZec>=1000n?String(vZec/1000n)+"k":String(vZec)):vZec.toLocaleString();
-        ctx.fillText(lb,bx,yIP(v)+4);
+    for(let v=0n;v<=yDisp.issMaxZat;v+=dispIssStep){
+        const py = yIP(v);
+        if (py >= MG.top - 5 && py <= MG.top + PH + 5)
+            ctx.fillText(formatZatForAxis(v, dispIssStep, isNarrow, false),bx,py+4);
     }
 
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
@@ -890,15 +1059,25 @@ function draw(){
   // Left axis 2 (Annual %)
   if(show.annPct&&axL.annPct){const ax=axL.annPct,bx=MG.left-ax.tickX;
     ctx.fillStyle=T.annualObs;ctx.font="10px system-ui";ctx.textAlign="right";
-    for(let p=0;p<=yAnnMax;p+=5)ctx.fillText(p+"%",bx,yAP(p)+3);
+    for(let p=0;p<=yDisp.annMax;p+=dispAnnStep){
+        const py = yAP(p);
+        if (py >= MG.top - 5 && py <= MG.top + PH + 5) {
+            const dec = dispAnnStep < 1 ? (dispAnnStep < 0.1 ? 2 : 1) : 0;
+            ctx.fillText(p.toFixed(dec)+"%",bx,py+3);
+        }
+    }
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
       ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Issuance %",0,0);ctx.restore();}}
 
   // Right axis (Supply)
   if(show.supply&&axR.supply){const ax=axR.supply,bx=MG.left+PW+ax.tickX;
     ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="left";
-    for(let s=0n;s<=ySupMaxZat;s+=3_000_000n*ZATOSHI)
-        ctx.fillText(String(s/ZATOSHI/1_000_000n)+" M",bx,ySP(s)+4);
+    const supTickStart = yDisp.supMinZat <= 0n ? 0n : (yDisp.supMinZat / dispSupStep) * dispSupStep;
+    for(let s=supTickStart;s<=yDisp.supMaxZat;s+=dispSupStep){
+        const py = ySP(s);
+        if (py >= MG.top - 5 && py <= MG.top + PH + 5)
+            ctx.fillText(formatZatForAxis(s, dispSupStep, isNarrow, supUseMSuffix),bx,py+4);
+    }
 
     if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
       ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ⓩ)",0,0);ctx.restore();}}
@@ -921,16 +1100,22 @@ function draw(){
   // Frame
   ctx.strokeStyle=T.frameBorder;ctx.lineWidth=1;ctx.strokeRect(MG.left,MG.top,PW,PH);
 
-  // Position activation handle
-  updateActHandle();
-  // Position burn handle
-  updateBurnHandle();
-}
+   // Stem target for handles: cap line if visible, else plot top
+   layout.stemTargetY = (show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat)
+                      ? ySP(MAX_MONEY_ZAT) : MG.top;
 
-/* ================================================================
-   Activation handle geometry helpers
-   ================================================================ */
-function computeStemHeightFromBottom(visibleBottomInWrap, plotTop, minHeight=4){
+   // Position activation handle
+   updateActHandle();
+   // Position burn handle
+   updateBurnHandle();
+   // Continue animating if Y axes haven't converged
+   if (yAnimating) requestDraw();
+ }
+
+ /* ================================================================
+    Activation handle geometry helpers
+    ================================================================ */
+ function computeStemHeightFromBottom(visibleBottomInWrap, plotTop, minHeight=4){
   return max(minHeight, plotTop - visibleBottomInWrap);
 }
 
@@ -989,8 +1174,8 @@ function updateActHandle(){
     const handleRect=actHandle.getBoundingClientRect();
     const handleBottom=handleRect.bottom-wrapRect.top;
     // Stem reaches the 21M cap line (ySupMax is 22M, so capY = MG.top + PH/22)
-    const capLineY=MG.top+PH-(21_000_000/22_000_000)*PH;
-    const stemHeight=max(0, capLineY-handleBottom);
+    const stemTargetY=layout.stemTargetY||MG.top;
+    const stemHeight=max(0, stemTargetY-handleBottom);
     stem.style.height=stemHeight+"px";
     actBlockInput.value=zip234ActivationHeight.toLocaleString();
     actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
@@ -1037,8 +1222,8 @@ function updateBurnHandle(){
     const wrapRect=wrapEl.getBoundingClientRect();
     const handleRect=burnHandle.getBoundingClientRect();
     const handleBottom=handleRect.bottom-wrapRect.top;
-    const capLineY=MG.top+PH-(21_000_000/22_000_000)*PH;
-    const stemHeight=max(0,capLineY-handleBottom);
+    const stemTargetY=layout.stemTargetY||MG.top;
+    const stemHeight=max(0,stemTargetY-handleBottom);
     stem.style.height=stemHeight+"px";
     burnBlockInput.value=b.h.toLocaleString();
     burnDateInput.value=fmtDate(blockToTime(b.h));
@@ -1179,6 +1364,7 @@ function handleChartWheel(e){
   const rect=document.getElementById("chart").getBoundingClientRect();
   const frac=(e.clientX-rect.left)/rect.width;
   if(e.ctrlKey||e.metaKey||abs(e.deltaY)>50&&abs(e.deltaX)<5){
+    yDirty=true;
     const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
     view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
   }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
@@ -1189,10 +1375,11 @@ function handleChartWheel(e){
    Extracted handler: legend toggle
    ================================================================ */
 function handleLegendToggle(el) {
-    const key = el.dataset.series;
-    show[key] = !show[key];
-    el.classList.toggle('active', show[key]);
-    requestDraw();
+   const key = el.dataset.series;
+   show[key] = !show[key];
+   el.classList.toggle('active', show[key]);
+   yDirty=true;
+   requestDraw();
 }
 
 /* ================================================================
@@ -1457,10 +1644,10 @@ canvas.addEventListener("touchstart",e=>{if(e.touches.length===1){handleChartDra
   else if(e.touches.length===2){dragging=false;lastTouchDist=abs(e.touches[0].clientX-e.touches[1].clientX);}},{passive:true});
 canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging&&!actDragging){handleChartDragMove(e.touches[0].clientX);}
   else if(e.touches.length===2){const dist=abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
-    if(lastTouchDist>0){const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),frac=(mid-rect.left)/rect.width,
-      span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
+    if(lastTouchDist>0){yDirty=true;const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),
+                                          span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
       clampView();requestDraw();computeAllScenarios();}lastTouchDist=dist;}},{passive:true});
-canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
+ canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
 
 // --- Chart: hover (tooltip) ---
 canvas.addEventListener("mousemove",handleChartHover);
@@ -1490,6 +1677,7 @@ document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
     btn.addEventListener('click', () => {
         if (btn.dataset.mode === futureMode) return; // no change
         futureMode = btn.dataset.mode;
+      yDirty=true;
         document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
         requestDraw();
         computeAllScenarios();
