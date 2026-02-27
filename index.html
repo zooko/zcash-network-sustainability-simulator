@@ -1477,10 +1477,9 @@ document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
         e.stopPropagation();
         const newMode = btn.dataset.burnMode;
         if(newMode === BURN_EVENTS[0].mode) return;
-        changeBurn(undefined, undefined, newMode);
-        // Update UI
-        document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(b=>
-            b.classList.toggle('active', b===btn));
+        const currentZat = parseZecToZat(burnAmtInput.value);
+        const currentBlock = (() => { try { return BigInt(burnBlockInput.value.replace(/,/g,"")); } catch(e) { return undefined; } })();
+        changeBurn(currentBlock, currentZat !== null ? currentZat : undefined, newMode);
     });
     btn.addEventListener('mousedown',e=>e.stopPropagation());
     btn.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
