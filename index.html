@@ -520,9 +520,10 @@ async function computeAllScenarios(){
     if(!simRunning&&simVersion===simComputedVer&&neededH<=simComputedMaxH)return;
     if(simRunning)return;
     simRunning=true;
+    const isFirstRun = simComputedMaxH < 0n;
 
-    while(true){
-        const myVer=simVersion;
+   while(true){
+     const myVer=simVersion;
         const maxH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
         let cancelled=false;
 
@@ -578,8 +579,9 @@ async function computeAllScenarios(){
                 s.h=batchEnd;
             }
             if(!anyAdvanced)break;
-            requestDraw();
-            await new Promise(r=>setTimeout(r,0));
+          if(isFirstRun) yDirty = true;
+          requestDraw();
+          await new Promise(r=>setTimeout(r,0));
             if(simVersion!==myVer){cancelled=true;}
         }
 
@@ -588,13 +590,13 @@ async function computeAllScenarios(){
             simComputedVer=myVer;simComputedMaxH=maxH;break;
         }
     }
-    simRunning=false;requestDraw();
-}
+   simRunning=false;if(isFirstRun) yDirty=true;requestDraw();
+ }
 
-/* ================================================================
-   Burn event helpers
-   ================================================================ */
-function formatBurnLabel(zat, mode){
+ /* ================================================================
+    Burn event helpers
+    ================================================================ */
+ function formatBurnLabel(zat, mode){
     const w=zat/100_000_000n,f=zat%100_000_000n;
     const u=mode==='perblock'?'ⓩ/blk':'ⓩ';
     if(f===0n){
@@ -782,7 +784,6 @@ const yDisp = {
 };
 let yInitialized = false;
 let yDirty = true;
-let lastYDataLen = 0;
 
  function lerpZat(cur, tgt) {
    if (cur === tgt) return cur;
@@ -892,8 +893,6 @@ function draw(){
       ? scenarios.zip234.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
       : [];
 
-   const totalDataLen = scenarios.default.data.length + scenarios.zip234.data.length;
-   if (totalDataLen !== lastYDataLen) { yDirty = true; lastYDataLen = totalDataLen; }
    if (yDirty && (D.length >= 2 || Z.length >= 1)) { updateYTargets(); yDirty = false; }
 
    // Animate Y axes toward targets
