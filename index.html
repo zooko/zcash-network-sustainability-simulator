@@ -1,2151 +1,2151 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Zcash Supply & Issuance</title>
-<style>
-  :root{
-    --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
-    --supplyObs:#f59e0b; --issObs:#22d3ee;
-    --supplyExp:rgba(245,158,11,0.55); --issExp:rgba(34,211,238,0.55);
-    --annualObs:#4ade80; --annualExp:rgba(74,222,128,0.55);
-    --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
-    --written:rgba(167,139,250,0.65);
-    --zip234Supply: #38bdf8;   /* sky-400 */
-    --zip234Iss: #7dd3fc;      /* sky-300 */
-    --zip234Ann: #38bdf8;
-    --zip234Act: rgba(56,189,248,0.50);
-    --handleBg: rgba(56,189,248,0.92);
-    --handleBorder: #fff;
-    --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
-    --burnEvent:rgba(255,80,80,0.70);
-    --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
-    --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
-    --btnHover:rgba(148,163,184,0.4);
-    --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
-    --gridLine:rgba(148,163,184,0.08); --capLine:rgba(245,158,11,0.20);
-    --frameBorder:rgba(148,163,184,0.10);
-    --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
-  }
-  [data-theme="light"]{
-    --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
-    --supplyObs:#d97706; --issObs:#0891b2;
-    --supplyExp:rgba(217,119,6,0.55); --issExp:rgba(8,145,178,0.55);
-    --annualObs:#16a34a; --annualExp:rgba(22,163,74,0.55);
-    --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
-    --written:rgba(124,58,237,0.55);
-    --zip234Supply: #0284c7;   /* sky-600 */
-    --zip234Iss: #0369a1;      /* sky-700 */
-    --zip234Ann: #0284c7;
-    --zip234Act: rgba(2,132,199,0.40);
-    --handleBg: rgba(2,132,199,0.92);
-    --handleBorder: #1e293b;
-    --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
-    --burnEvent:rgba(220,38,38,0.60);
-    --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
-    --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
-    --btnHover:rgba(148,163,184,0.55);
-    --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
-    --gridLine:rgba(148,163,184,0.12); --capLine:rgba(217,119,6,0.25);
-    --frameBorder:rgba(148,163,184,0.18);
-    --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
-    display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
-  h1{font-size:1.35rem;color:var(--supplyObs);margin-bottom:2px}
-  .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
-  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
-    background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
-  .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
-    border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
-  .controls button:hover{background:var(--btnHover)}
-  .chart-wrap{position:relative;display:inline-block}
-  canvas{border-radius:8px;background:var(--panel);display:block}
-  .legend{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:.78rem;align-items:center;justify-content:center;color:var(--muted)}
-  .legend span{display:flex;align-items:center;gap:5px}
-  .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
-  .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
-  .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
-    border:1.5px solid transparent;transition:opacity .15s,border-color .15s,background .15s}
-  .ltoggle.active{border-color:var(--btnBorder);background:var(--toggleActiveBg);opacity:1}
-  .ltoggle:not(.active){opacity:.38}
-  .ltoggle:not(.active) .sw{background:var(--muted)!important}
-  .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
-  /* Draggable activation handle — ABOVE the chart with gap */
-  #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
-    transform:translateX(-50%);pointer-events:auto;top:-8px}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zcash Supply & Issuance</title>
+    <style>
+     :root{
+       --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
+       --supplyObs:#f59e0b; --issObs:#22d3ee;
+       --supplyExp:rgba(245,158,11,0.55); --issExp:rgba(34,211,238,0.55);
+       --annualObs:#4ade80; --annualExp:rgba(74,222,128,0.55);
+       --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
+       --written:rgba(167,139,250,0.65);
+       --zip234Supply: #38bdf8;   /* sky-400 */
+       --zip234Iss: #7dd3fc;      /* sky-300 */
+       --zip234Ann: #38bdf8;
+       --zip234Act: rgba(56,189,248,0.50);
+       --handleBg: rgba(56,189,248,0.92);
+       --handleBorder: #fff;
+       --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
+       --burnEvent:rgba(255,80,80,0.70);
+       --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
+       --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
+       --btnHover:rgba(148,163,184,0.4);
+       --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
+       --gridLine:rgba(148,163,184,0.08); --capLine:rgba(245,158,11,0.20);
+       --frameBorder:rgba(148,163,184,0.10);
+       --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
+     }
+     [data-theme="light"]{
+       --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
+       --supplyObs:#d97706; --issObs:#0891b2;
+       --supplyExp:rgba(217,119,6,0.55); --issExp:rgba(8,145,178,0.55);
+       --annualObs:#16a34a; --annualExp:rgba(22,163,74,0.55);
+       --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
+       --written:rgba(124,58,237,0.55);
+       --zip234Supply: #0284c7;   /* sky-600 */
+       --zip234Iss: #0369a1;      /* sky-700 */
+       --zip234Ann: #0284c7;
+       --zip234Act: rgba(2,132,199,0.40);
+       --handleBg: rgba(2,132,199,0.92);
+       --handleBorder: #1e293b;
+       --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
+       --burnEvent:rgba(220,38,38,0.60);
+       --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
+       --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
+       --btnHover:rgba(148,163,184,0.55);
+       --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
+       --gridLine:rgba(148,163,184,0.12); --capLine:rgba(217,119,6,0.25);
+       --frameBorder:rgba(148,163,184,0.18);
+       --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
+     }
+     *{margin:0;padding:0;box-sizing:border-box}
+     body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
+       display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
+     h1{font-size:1.35rem;color:var(--supplyObs);margin-bottom:2px}
+     .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
+     .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
+       background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
+     .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
+       border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
+     .controls button:hover{background:var(--btnHover)}
+     .chart-wrap{position:relative;display:inline-block}
+     canvas{border-radius:8px;background:var(--panel);display:block}
+     .legend{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:.78rem;align-items:center;justify-content:center;color:var(--muted)}
+     .legend span{display:flex;align-items:center;gap:5px}
+     .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+     .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
+     .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
+       border:1.5px solid transparent;transition:opacity .15s,border-color .15s,background .15s}
+     .ltoggle.active{border-color:var(--btnBorder);background:var(--toggleActiveBg);opacity:1}
+     .ltoggle:not(.active){opacity:.38}
+     .ltoggle:not(.active) .sw{background:var(--muted)!important}
+     .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
+     /* Draggable activation handle — ABOVE the chart with gap */
+     #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
+       transform:translateX(-50%);pointer-events:auto;top:-8px}
 
-  #actHandle .act-pill{
-    background:var(--handleBg);color:#fff;font:600 .68rem/1 system-ui;
-    padding:5px 8px;border-radius:6px;border:1.5px solid var(--handleBorder);
-    white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
-    box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
-    transition:opacity 0.15s,filter 0.15s}
-  #actHandle .act-content{display:flex;align-items:stretch;gap:8px;width:100%}
-  #actHandle .act-left{display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:3px}
-  #actHandle .act-pill .act-label { opacity: 0.85; font-size: .66rem; }
-  #actHandle .act-collapse-icon {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.8);
-    font: 600 11px/18px system-ui;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.12s;
-  }
-  #actHandle .act-collapse-icon:hover {
-    background: rgba(255,255,255,0.3);
-  }
-  #actHandle .act-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-  }
-  #actHandle .act-pill input{width:80px;padding:2px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.3);
-    background:rgba(0,0,0,.25);color:#fff;font:600 .66rem/1 system-ui;text-align:center}
-  #actHandle .act-pill input.act-date{width:88px}
+     #actHandle .act-pill{
+       background:var(--handleBg);color:#fff;font:600 .68rem/1 system-ui;
+       padding:5px 8px;border-radius:6px;border:1.5px solid var(--handleBorder);
+       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
+       transition:opacity 0.15s,filter 0.15s}
+     #actHandle .act-content{display:flex;align-items:stretch;gap:8px;width:100%}
+     #actHandle .act-left{display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:3px}
+     #actHandle .act-pill .act-label { opacity: 0.85; font-size: .66rem; }
+     #actHandle .act-collapse-icon {
+       width: 18px;
+       height: 18px;
+       border-radius: 50%;
+       background: rgba(255,255,255,0.15);
+       color: rgba(255,255,255,0.8);
+       font: 600 11px/18px system-ui;
+       text-align: center;
+       cursor: pointer;
+       transition: background 0.12s;
+     }
+     #actHandle .act-collapse-icon:hover {
+       background: rgba(255,255,255,0.3);
+     }
+     #actHandle .act-right {
+       display: flex;
+       flex-direction: column;
+       align-items: flex-end;
+       gap: 3px;
+     }
+     #actHandle .act-pill input{width:80px;padding:2px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.3);
+       background:rgba(0,0,0,.25);color:#fff;font:600 .66rem/1 system-ui;text-align:center}
+     #actHandle .act-pill input.act-date{width:88px}
 
-  #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
+     #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
 
-  #burnHandle{position:absolute;display:none;z-index:19;cursor:ew-resize;
-      transform:translateX(-50%);pointer-events:auto;top:-8px}
-  #burnHandle .burn-nub{display:none;width:24px;height:16px;border-radius:8px;
-      background:var(--burnHandleBg);color:#fff;font:600 11px/16px system-ui;text-align:center;
-      border:1.5px solid var(--burnHandleBorder);cursor:ew-resize;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-  #burnHandle.collapsed .burn-nub{display:block}
-  #burnHandle.collapsed .burn-pill{display:none}
-  #burnHandle .burn-pill{
-    background:var(--burnHandleBg);color:#fff;font:600 .68rem/1 system-ui;
-    padding:5px 8px;border-radius:6px;border:1.5px solid var(--burnHandleBorder);
-    white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
-    box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
-    transition:opacity 0.15s,filter 0.15s}
-  #burnHandle .burn-content{display:flex;align-items:stretch;gap:8px;width:100%}
-  #burnHandle .burn-left{display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:3px}
-  #burnHandle .burn-pill .burn-label{opacity:0.85;font-size:.66rem}
-  #burnHandle .burn-collapse-icon{width:18px;height:18px;border-radius:50%;
-      background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);
-      font:600 11px/18px system-ui;text-align:center;cursor:pointer;transition:background 0.12s}
-  #burnHandle .burn-collapse-icon:hover{background:rgba(255,255,255,0.3)}
-  #burnHandle .burn-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-  #burnHandle .burn-pill input{width:80px;padding:2px 4px;border-radius:3px;
-      border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);color:#fff;
-      font:600 .66rem/1 system-ui;text-align:center}
-  #burnHandle .burn-pill input.burn-date{width:88px}
-  #burnHandle .burn-amt-row{display:flex;align-items:center;gap:3px}
-  #burnHandle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
-  #burnHandle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
-#burnHandle .burn-mode-row{display:flex;align-items:center;gap:4px;margin-top:3px}
-#burnHandle .burn-mode-group{display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
-#burnHandle .burn-mode-btn{padding:1px 6px;font:600 .58rem/1.2 system-ui;border:none;
-  border-right:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);
-  cursor:pointer;transition:all 0.12s}
-#burnHandle .burn-mode-btn:last-child{border-right:none}
-#burnHandle .burn-mode-btn.active{background:rgba(255,255,255,.2);color:#fff}
-#burnHandle .burn-mode-btn:hover{background:rgba(255,255,255,.12)}
+     #burnHandle{position:absolute;display:none;z-index:19;cursor:ew-resize;
+       transform:translateX(-50%);pointer-events:auto;top:-8px}
+     #burnHandle .burn-nub{display:none;width:24px;height:16px;border-radius:8px;
+       background:var(--burnHandleBg);color:#fff;font:600 11px/16px system-ui;text-align:center;
+       border:1.5px solid var(--burnHandleBorder);cursor:ew-resize;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+     #burnHandle.collapsed .burn-nub{display:block}
+     #burnHandle.collapsed .burn-pill{display:none}
+     #burnHandle .burn-pill{
+       background:var(--burnHandleBg);color:#fff;font:600 .68rem/1 system-ui;
+       padding:5px 8px;border-radius:6px;border:1.5px solid var(--burnHandleBorder);
+       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
+       transition:opacity 0.15s,filter 0.15s}
+     #burnHandle .burn-content{display:flex;align-items:stretch;gap:8px;width:100%}
+     #burnHandle .burn-left{display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:3px}
+     #burnHandle .burn-pill .burn-label{opacity:0.85;font-size:.66rem}
+     #burnHandle .burn-collapse-icon{width:18px;height:18px;border-radius:50%;
+       background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);
+       font:600 11px/18px system-ui;text-align:center;cursor:pointer;transition:background 0.12s}
+     #burnHandle .burn-collapse-icon:hover{background:rgba(255,255,255,0.3)}
+     #burnHandle .burn-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+     #burnHandle .burn-pill input{width:80px;padding:2px 4px;border-radius:3px;
+       border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);color:#fff;
+       font:600 .66rem/1 system-ui;text-align:center}
+     #burnHandle .burn-pill input.burn-date{width:88px}
+     #burnHandle .burn-amt-row{display:flex;align-items:center;gap:3px}
+     #burnHandle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
+     #burnHandle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
+     #burnHandle .burn-mode-row{display:flex;align-items:center;gap:4px;margin-top:3px}
+     #burnHandle .burn-mode-group{display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
+     #burnHandle .burn-mode-btn{padding:1px 6px;font:600 .58rem/1.2 system-ui;border:none;
+       border-right:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);
+       cursor:pointer;transition:all 0.12s}
+     #burnHandle .burn-mode-btn:last-child{border-right:none}
+     #burnHandle .burn-mode-btn.active{background:rgba(255,255,255,.2);color:#fff}
+     #burnHandle .burn-mode-btn:hover{background:rgba(255,255,255,.12)}
 
-#burnHandle .burn-info-icon{position:relative;cursor:help;font-size:.6rem;opacity:0.65;user-select:none}
-#burnHandle .burn-info-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
-  width:210px;padding:6px 8px;border-radius:6px;font:normal .62rem/1.4 system-ui;
-  background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-  box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:normal;text-align:left;z-index:100;margin-bottom:6px}
-#burnHandle .burn-info-icon:hover .burn-info-tip{display:block}
+     #burnHandle .burn-info-icon{position:relative;cursor:help;font-size:.6rem;opacity:0.65;user-select:none}
+     #burnHandle .burn-info-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+       width:210px;padding:6px 8px;border-radius:6px;font:normal .62rem/1.4 system-ui;
+       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+       box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:normal;text-align:left;z-index:100;margin-bottom:6px}
+     #burnHandle .burn-info-icon:hover .burn-info-tip{display:block}
 
-  #actHandle .act-nub {
-    display: none;
-    width: 44px;
-    height: 16px;
-    border-radius: 8px;
-    background: var(--handleBg);
-    border: 1.5px solid var(--handleBorder);
-    cursor: ew-resize;
-    margin: 0 auto;
-    box-shadow: 0 1px 4px rgba(0,0,0,.3);
-    color: #fff;
-    font: 600 11px/16px system-ui;
-    text-align: center;
-    letter-spacing: 2px;
-    user-select: none;
-    opacity: 0.85;
-    transition: opacity 0.15s;
-  }
-  #actHandle .act-pill:hover {
-    opacity: 1;
-    filter: brightness(1.15);
-  }
-  #actHandle .act-nub:hover {
-    opacity: 1;
-  }
-  #actHandle.collapsed .act-nub { display: block; }
-  #actHandle.collapsed .act-pill { display: none; }
-  [data-theme="light"] #actHandle .act-pill input{background:rgba(255,255,255,.5);color:#1e293b;border-color:rgba(0,0,0,.2)}
-  /* Written tooltip */
-  #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
-    background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-    border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
-    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;
-    transform:translateX(-50%)}
-  #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
-    pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
-    background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-  #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#38bdf8;font-weight:600}
-  #tooltip .tt-exp{color:var(--written);font-weight:600}
-  @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
-    .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
-    .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
-.seg-label { color: var(--muted); font-size: 0.78rem; margin-right: 2px; }
-.seg-group { display: inline-flex; border: 1px solid var(--controlsBorder); border-radius: 6px; overflow: hidden; }
-.seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
-  background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-.seg:last-child { border-right: none; }
-.seg:hover { opacity: 0.85; }
-.seg.active[data-mode="both"]    { background: var(--frameBorder); color: var(--fg); }
-.seg.active[data-mode="default"] { background: rgba(245,158,11,0.25); color: var(--supplyObs); }
-.seg.active[data-mode="zip234"]  { background: rgba(56,189,248,0.25); color: var(--zip234Supply); }
-</style>
-</head>
-<body>
-<h1>Zcash Supply &amp; Issuance</h1>
-<p class="sub">
-  Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
-  <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
-</p>
-<div class="chart-wrap" id="chartWrap">
-  <canvas id="chart"></canvas>
-  <div id="actHandle">
-    <div class="act-nub">⋯</div>
-    <div class="act-pill">
-      <div class="act-content">
-        <div class="act-left">
-          <span class="act-label">ZIP 234 activation</span>
-        </div>
-        <div class="act-right">
-          <input id="actBlockInput" type="text" value="3687123">
-          <input id="actDateInput" type="text" class="act-date" value="">
-        </div>
-      </div>
-      <span class="act-collapse-icon" title="Click to collapse">▾</span>
-    </div>
-    <div class="act-stem"></div>
-  </div>
-  <div id="burnHandle">
-    <div class="burn-nub">⋯</div>
-    <div class="burn-pill">
-      <div class="burn-content">
-        <div class="burn-left">
-          <span class="burn-label">Burn</span>
-          <div class="burn-amt-row"><input id="burnAmtInput" type="text" value="2000000"><span class="burn-unit">ⓩ</span></div>
-        </div>
-        <div class="burn-right">
-          <input id="burnBlockInput" type="text" value="5000000">
-          <input id="burnDateInput" type="text" class="burn-date" value="">
-          <div class="burn-mode-row">
-            <span class="burn-mode-group" id="burnModeGroup">
-              <button class="burn-mode-btn active" data-burn-mode="once">Once</button>
-              <button class="burn-mode-btn" data-burn-mode="perblock">/blk</button>
-            </span>
-            <span class="burn-info-icon" id="burnInfoIcon">ⓘ
-              <span class="burn-info-tip">
-                <b>Once</b>: a single burn at this block.<br>
-                <b>/blk</b>: this amount is burned every block from here on.
-              </span>
-            </span>
+     #actHandle .act-nub {
+       display: none;
+       width: 44px;
+       height: 16px;
+       border-radius: 8px;
+       background: var(--handleBg);
+       border: 1.5px solid var(--handleBorder);
+       cursor: ew-resize;
+       margin: 0 auto;
+       box-shadow: 0 1px 4px rgba(0,0,0,.3);
+       color: #fff;
+       font: 600 11px/16px system-ui;
+       text-align: center;
+       letter-spacing: 2px;
+       user-select: none;
+       opacity: 0.85;
+       transition: opacity 0.15s;
+     }
+     #actHandle .act-pill:hover {
+       opacity: 1;
+       filter: brightness(1.15);
+     }
+     #actHandle .act-nub:hover {
+       opacity: 1;
+     }
+     #actHandle.collapsed .act-nub { display: block; }
+     #actHandle.collapsed .act-pill { display: none; }
+     [data-theme="light"] #actHandle .act-pill input{background:rgba(255,255,255,.5);color:#1e293b;border-color:rgba(0,0,0,.2)}
+     /* Written tooltip */
+     #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
+       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+       border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
+       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;
+       transform:translateX(-50%)}
+     #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
+       pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
+       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+     #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#38bdf8;font-weight:600}
+     #tooltip .tt-exp{color:var(--written);font-weight:600}
+     @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
+       .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
+       .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
+     .seg-label { color: var(--muted); font-size: 0.78rem; margin-right: 2px; }
+     .seg-group { display: inline-flex; border: 1px solid var(--controlsBorder); border-radius: 6px; overflow: hidden; }
+     .seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
+       background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+     .seg:last-child { border-right: none; }
+     .seg:hover { opacity: 0.85; }
+     .seg.active[data-mode="both"]    { background: var(--frameBorder); color: var(--fg); }
+     .seg.active[data-mode="default"] { background: rgba(245,158,11,0.25); color: var(--supplyObs); }
+     .seg.active[data-mode="zip234"]  { background: rgba(56,189,248,0.25); color: var(--zip234Supply); }
+    </style>
+  </head>
+  <body>
+    <h1>Zcash Supply &amp; Issuance</h1>
+    <p class="sub">
+      Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
+      <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
+    </p>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="chart"></canvas>
+      <div id="actHandle">
+        <div class="act-nub">⋯</div>
+        <div class="act-pill">
+          <div class="act-content">
+            <div class="act-left">
+              <span class="act-label">ZIP 234 activation</span>
+            </div>
+            <div class="act-right">
+              <input id="actBlockInput" type="text" value="3687123">
+              <input id="actDateInput" type="text" class="act-date" value="">
+            </div>
           </div>
+          <span class="act-collapse-icon" title="Click to collapse">▾</span>
         </div>
+        <div class="act-stem"></div>
       </div>
-      <span class="burn-collapse-icon" title="Click to collapse">▾</span>
+      <div id="burnHandle">
+        <div class="burn-nub">⋯</div>
+        <div class="burn-pill">
+          <div class="burn-content">
+            <div class="burn-left">
+              <span class="burn-label">Burn</span>
+              <div class="burn-amt-row"><input id="burnAmtInput" type="text" value="2000000"><span class="burn-unit">ⓩ</span></div>
+            </div>
+            <div class="burn-right">
+              <input id="burnBlockInput" type="text" value="5000000">
+              <input id="burnDateInput" type="text" class="burn-date" value="">
+              <div class="burn-mode-row">
+                <span class="burn-mode-group" id="burnModeGroup">
+                  <button class="burn-mode-btn active" data-burn-mode="once">Once</button>
+                  <button class="burn-mode-btn" data-burn-mode="perblock">/blk</button>
+                </span>
+                <span class="burn-info-icon" id="burnInfoIcon">ⓘ
+                  <span class="burn-info-tip">
+                    <b>Once</b>: a single burn at this block.<br>
+                    <b>/blk</b>: this amount is burned every block from here on.
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <span class="burn-collapse-icon" title="Click to collapse">▾</span>
+        </div>
+        <div class="burn-stem"></div>
+      </div>
+      <div id="writtenTip"></div>
     </div>
-    <div class="burn-stem"></div>
-  </div>
-  <div id="writtenTip"></div>
-</div>
-<div class="legend" id="legend">
-<span class="seg-label">Future:</span>
-  <span class="seg-group" id="futureModeGroup">
-    <button class="seg active" data-mode="both">Both</button>
-    <button class="seg" data-mode="default">Default</button>
-    <button class="seg" data-mode="zip234">ZIP 234</button>
-  </span>
-  <span>|</span>
-  <span style="color:var(--muted)">│</span>
-  <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
-  <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
-  <span class="ltoggle" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
-  <span><span class="dash"></span> Dashed = <b>Expected</b></span>
-</div>
-<div id="tooltip"></div>
-<div class="controls">
-  <button id="btnReset">Reset view</button>
-  <button id="btnShare">📋 Share view</button>
-  <button id="btnTheme">☀/🌙</button>
-</div>
-<script>
-/* ================================================================
-   Toggle state
-   ================================================================ */
-const show = {supply:true, issDay:true, annPct:false};
-let futureMode = 'both'; // 'default' | 'zip234' | 'both'
-function showDefaultFuture() { return futureMode !== 'zip234'; }
-function showZip234() { return futureMode !== 'default'; }
-
-// For display: BigInt zats → formatted string (no floats involved)
-// Extended zatToZecString with precision control
-function zatToZecString(zat, maxDec = 8, minDec = 0) {
-    if (zat < 0n) return "-" + zatToZecString(-zat, maxDec, minDec);
-    const w = zat / 100_000_000n, f = zat % 100_000_000n;
-    let ws = String(w), out = '';
-    for (let i = 0; i < ws.length; i++) {
-        if (i > 0 && (ws.length - i) % 3 === 0) out += ',';
-        out += ws[i];
-    }
-    if (maxDec <= 0) return out;
-    let fs = String(f).padStart(8, '0').substring(0, maxDec);
-    while (fs.length > minDec && fs.endsWith('0')) fs = fs.slice(0, -1);
-    return fs ? out + '.' + fs : out;
-}
-
-// For "% of 21M cap": BigInt zats → string like "83.77"
-function pctOfCapStr(zat) {
-    const scaled = zat * 10000n / MAX_MONEY_ZAT;
-    const whole = scaled / 100n;
-    const frac = (scaled % 100n < 0n ? -(scaled % 100n) : scaled % 100n);
-    return String(whole) + '.' + String(frac).padStart(2, '0');
-}
-function annPctVal(p) { return p.annualPctX1M < 0n ? NaN : Number(p.annualPctX1M) / 1e6; }
-
-function parseZecToZat(str) {
-    str = str.replace(/,/g, '').trim();
-    if (!str) return null;
-    const neg = str.startsWith('-');
-    if (neg) str = str.substring(1);
-    const dot = str.indexOf('.');
-    let whole = dot >= 0 ? str.substring(0, dot) : str;
-    let frac  = dot >= 0 ? str.substring(dot + 1) : '';
-    whole = whole.replace(/[^0-9]/g, '') || '0';
-    frac = (frac.replace(/[^0-9]/g, '') + '00000000').substring(0, 8);
-    try { const v = BigInt(whole) * 100_000_000n + BigInt(frac); return neg ? -v : v; }
-    catch(e) { return null; }
-}
-
-/* ================================================================
-   Theme
-   ================================================================ */
-function getTheme(){return document.documentElement.getAttribute("data-theme")||"dark";}
-function setTheme(t){if(t==="light")document.documentElement.setAttribute("data-theme","light");
-  else document.documentElement.removeAttribute("data-theme");try{localStorage.setItem("zec-theme",t)}catch(e){}}
-function toggleTheme(){setTheme(getTheme()==="dark"?"light":"dark");requestDraw();}
-function initTheme(){try{const s=localStorage.getItem("zec-theme");if(s){setTheme(s);return;}}catch(e){}
-  if(window.matchMedia&&window.matchMedia("(prefers-color-scheme:light)").matches)setTheme("light");}
-function cv(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
-
-/* ================================================================
-   Time anchors
-   ================================================================ */
-const TIME_ANCHORS=[
-  {h:0n,time:Date.UTC(2016,9,28,7,56),label:"Genesis"},
-  {h:653_600n,time:Date.UTC(2019,11,11,21,50),label:"Blossom"},
-  {h:1_046_400n,time:Date.UTC(2020,10,18,12,34),label:"Halving 1"},
-  {h:2_726_400n,time:Date.UTC(2024,10,23,1,51),label:"Halving 2"},
-];
-
-const BLOSSOM_ACTIVATION_HEIGHT=653_600n;
-const WRITTEN_HEIGHT=3_234_946n;
-const BURN_EVENTS = [{ h: 4_500_000n, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ", mode: 'once'}];
-BURN_EVENTS[0].label = formatBurnLabel(BURN_EVENTS[0].zat, BURN_EVENTS[0].mode);
-
-const ONE_YEAR_NUM = 365.25*86400*1000;          // Number, for timestamp math
-const ONE_YEAR_MS  = BigInt(Math.round(ONE_YEAR_NUM)); // BigInt, for block math
-
-const SEGMENTS=[];
-for(let i=0;i<TIME_ANCHORS.length-1;i++){
-  const a=TIME_ANCHORS[i],b=TIME_ANCHORS[i+1];
-  SEGMENTS.push({startH:a.h,endH:b.h,startTime:a.time,
-    secPerBlock:BigInt(b.time-a.time)/1000n/(b.h-a.h)});
-}
-
-function segmentForHeight(h){for(let i=0;i<SEGMENTS.length;i++)if(h<=SEGMENTS[i].endH)return SEGMENTS[i];return SEGMENTS[SEGMENTS.length-1];}
-function blockToTime(h){
-    const s=segmentForHeight(h);
-    const hB = typeof h === 'bigint' ? h : BigInt(h);
-    return s.startTime + Number((hB - s.startH) * s.secPerBlock) * 1000;
-}
-function secsPerBlock(h){return segmentForHeight(h).secPerBlock;}
-function timeToHeight(t){
-    for(let i=SEGMENTS.length-1;i>=0;i--){
-        const s=SEGMENTS[i];
-        if(t>=s.startTime)
-            return s.startH + BigInt(Math.trunc(t-s.startTime)) / (s.secPerBlock*1000n);
-    }
-    const s=SEGMENTS[0];
-    return s.startH + BigInt(Math.trunc(t-s.startTime)) / (s.secPerBlock*1000n);
-}
-function heightAfterDuration(h,durationMs){
-  let remaining=durationMs/1000n,cur=h;
-  for(let i=0;i<SEGMENTS.length;i++){const s=SEGMENTS[i];if(cur>s.endH)continue;
-    const hStart=max(cur,s.startH),secsToEnd=(s.endH-hStart)*s.secPerBlock;
-    if(remaining<=secsToEnd)return hStart+remaining/s.secPerBlock;remaining-=secsToEnd;cur=s.endH;}
-  const last=SEGMENTS[SEGMENTS.length-1];return max(cur,last.endH)+remaining/last.secPerBlock;
-}
-
-const genTime=blockToTime(0);
-const writtenTime=blockToTime(WRITTEN_HEIGHT);
-function fmtDate(ms){const d=new Date(ms);const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return mo[d.getUTCMonth()]+" "+d.getUTCDate()+", "+d.getUTCFullYear();}
-
-/* ================================================================
-   Halving heights generator
-   ================================================================ */
-function halvingHeights(maxH){
-    const result=[];
-    let h=1_046_400n;
-    while(h<=maxH){result.push(h);h+=1_680_000n;}
-    return result;
-}
-
-/* ================================================================
-   issuance_per_block() — zcash consensus
-   ================================================================ */
-function issuance_per_block(blockheight){
-  const MAX_BLOCK_SUBSIDY=1250000000n,SLOW_START_INTERVAL=20000n,SLOW_START_SHIFT=10000n,
-    SLOW_START_RATE=62500n,BLOSSOM_ACT=653600n,BLOSSOM_RATIO=2n,
-    PRE_HALVING=840000n,POST_HALVING=1680000n;
-  const h=BigInt(blockheight);
-  if(blockheight<SLOW_START_SHIFT)return SLOW_START_RATE*h;
-  if(blockheight<SLOW_START_INTERVAL)return SLOW_START_RATE*(h+1n);
-  let halvings;
-  if(blockheight>=BLOSSOM_ACT){const sc=BigInt(BLOSSOM_ACT-SLOW_START_SHIFT)*BLOSSOM_RATIO+(h-BigInt(BLOSSOM_ACT));halvings=Number(sc/POST_HALVING);}
-  else halvings=Number((h-SLOW_START_SHIFT)/PRE_HALVING);
-  if(halvings>=64n)return 0n;
-  if(blockheight>=BLOSSOM_ACT)return(MAX_BLOCK_SUBSIDY/BLOSSOM_RATIO)>>BigInt(halvings);
-  return MAX_BLOCK_SUBSIDY>>BigInt(halvings);
-}
-
-const G_MAX_SUB=1250000000n,G_SLOW_INT=20000n,G_SLOW_SHIFT=10000n,
-  G_SLOW_RATE=62500n,G_BLOSSOM_H=653600n,G_RATIO=2n,G_POST_HALV=1680000n,G_HALV_OFF=633600n;
-
-function sumArith(a,b){if(b<a)return 0n;const A=BigInt(a),B=BigInt(b),n=B-A+1n;return(A+B)*n/2n;}
-function halvIdxPost(h){return (h+G_HALV_OFF)/G_POST_HALV;}  // BigInt division = floor
-function nextHalvPost(h){return(halvIdxPost(h)+1n)*G_POST_HALV - G_HALV_OFF;}
-
-function sumIssuanceRangeClean(startInc,endExc){
-  if(endExc<=startInc)return 0n;let h=startInc,total=0n;
-  while(h<endExc){
-    if(h<G_SLOW_SHIFT){const e=min(endExc,G_SLOW_SHIFT);total+=G_SLOW_RATE*sumArith(h,e-1n);h=e;continue;}
-    if(h<G_SLOW_INT){const e=min(endExc,G_SLOW_INT);total+=G_SLOW_RATE*sumArith(h+1n,e);h=e;continue;}
-    if(h<G_BLOSSOM_H){const e=min(endExc,G_BLOSSOM_H);total+=G_MAX_SUB*BigInt(e-h);h=e;continue;}
-    const k=halvIdxPost(h);if(k>=64n)break;
-    const nxt=nextHalvPost(h),e=min(endExc,nxt);
-    total+=(G_MAX_SUB/G_RATIO>>BigInt(k))*BigInt(e-h);h=e;
-  }return total;
-}
-
-/* ================================================================
-   Simulation engine
-   ================================================================ */
-const ZATOSHI=100_000_000n,SAMPLE_EVERY=1000n,SIM_BATCH=80_000n;
-const MAX_MONEY_ZEC=21_000_000n;
-const MAX_MONEY_ZAT = 2_100_000_000_000_000n;
-const _kFloat = 1 - Math.pow(2, -1/1680000);
-const ZIP234_K = _kFloat; // kept for test compat
-const ZIP234_K_NUM = BigInt(Math.round(_kFloat * (2**32))) * (1n << 32n);
-const ZIP234_K_SHIFT = 64n;
-let zip234ActivationHeight=3_687_123n;
-
-function defaultIssuanceZat(h, supZat, remZat) { return issuance_per_block(h); }
-function zip234IssuanceZat(h, supZat, remZat) {
-    if (h < zip234ActivationHeight) return issuance_per_block(h);
-    return (remZat * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
-}
-
-const scenarios={
-    default:{fn:defaultIssuanceZat,data:[]},
-    zip234:{fn:zip234IssuanceZat,data:[]}
-};
-let simVersion=0n,simRunning=false,simComputedVer=-1n,simComputedMaxH=-1n;
-
-function fillAnnualPct(arr) {
-    for (let i = 0; i < arr.length; i++) {
-        const p = arr[i];
-        if (p.supplyZat <= 0n || p.h < 20000n) continue;
-        const targetH = heightAfterDuration(p.h, ONE_YEAR_MS);
-        let lo = i + 1, hi = arr.length - 1;
-        while (lo < hi) { const mid = (lo + hi) >> 1; arr[mid].h < targetH ? lo = mid + 1 : hi = mid; }
-        if (lo >= arr.length) continue;
-        const annIssZat = arr[lo].cumIssZat - p.cumIssZat;
-        if (annIssZat >= 0n && p.supplyZat > 0n) {
-            p.annualPctX1M = (annIssZat * 100_000_000n) / p.supplyZat;
-            p.annualPctIsExpected = (arr[lo].h > WRITTEN_HEIGHT);
-        }
-    }
-}
-
-function lookupScenario(arr,h){
-    if(!arr.length)return null;
-    let lo=0,hi=arr.length-1;
-    while(lo<hi){const mid=(lo+hi)>>1;arr[mid].h<h?lo=mid+1:hi=mid;}
-    if(lo>0 && (h - arr[lo-1].h) < (arr[lo].h - h)) lo--;
-
-    return arr[lo];
-}
-
-function invalidateSimulation(){
-    simVersion++;simComputedVer=-1n;computeAllScenarios();
-}
-
-function truncateScenarioData(name, fromH) {
-    const d = scenarios[name].data;
-    let keep = d.length;
-    while (keep > 0 && d[keep - 1].h >= fromH) keep--;
-    d.length = keep;
-}
-
-function invalidateScenarioFrom(name, fromH) {
-    truncateScenarioData(name, fromH);
-    invalidateSimulation();
-}
-
-function invalidateAllFrom(fromH) {
-    for (const n of ['default', 'zip234']) truncateScenarioData(n, fromH);
-    invalidateSimulation();
-}
-
-async function computeAllScenarios(){
-    const neededH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
-    if(!simRunning&&simVersion===simComputedVer&&neededH<=simComputedMaxH)return;
-    if(simRunning)return;
-    simRunning=true;
-    const isFirstRun = simComputedMaxH < 0n;
-
-   while(true){
-     const myVer=simVersion;
-        const maxH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
-        let cancelled=false;
-
-        // Initialize per-scenario running state
-        const names=['default','zip234'];
-        const st={};
-        for(const name of names){
-            const result=scenarios[name].data,fn=scenarios[name].fn;
-            let startH,supZat,cumIssZat,remZat;
-            if(result.length>0){
-                const last=result[result.length-1];
-                startH=last.h+1n;
-                supZat=last.supplyZat;
-                cumIssZat=last.cumIssZat;
-                remZat=MAX_MONEY_ZAT-supZat;
-            }else{
-                startH=0n;supZat=0n;cumIssZat=0n;remZat=MAX_MONEY_ZAT;
-            }
-            st[name]={result,fn,h:startH,supZat,cumIssZat,remZat};
-        }
-
-        // Advance both scenarios in lockstep batches
-        while(!cancelled){
-            let anyAdvanced=false;
-            for(const name of names){
-                const s=st[name];
-                if(s.h>maxH)continue;
-                anyAdvanced=true;
-                const batchEnd=min(s.h+SIM_BATCH,maxH+1n);
-                for(let h=s.h;h<batchEnd;h++){
-                    for(const b of BURN_EVENTS){
-                        const shouldBurn = (b.mode==='once' && b.h===h) || (b.mode==='perblock' && h>=b.h);
-                        if(shouldBurn){
-                            const amt=b.zat<s.supZat?b.zat:s.supZat;
-                            s.supZat-=amt;s.remZat+=amt;
-                        }
-                    }
-                    const issZat=s.fn(h,s.supZat,s.remZat);
-                    s.supZat+=issZat;s.cumIssZat+=issZat;s.remZat-=issZat;
-                    if(h%SAMPLE_EVERY===0n){
-                        const spb=BigInt(h<BLOSSOM_ACTIVATION_HEIGHT?150n:75n);
-                        s.result.push({
-                            h,time:blockToTime(h),
-                            supplyZat:s.supZat,
-                            cumIssZat:s.cumIssZat,
-                            issBlockZat:issZat,
-                            issDayZat:issZat*86400n/spb,
-                            annualPctX1M:-1n,
-                            annualPctIsExpected:false
-                        });
-                    }
-                }
-                s.h=batchEnd;
-            }
-            if(!anyAdvanced)break;
-          if(isFirstRun && !yLockedFromURL) yDirty = true;
-          requestDraw();
-          await new Promise(r=>setTimeout(r,0));
-            if(simVersion!==myVer){cancelled=true;}
-        }
-
-        if(!cancelled&&simVersion===myVer){
-            for(const name of names)fillAnnualPct(scenarios[name].data);
-            simComputedVer=myVer;simComputedMaxH=maxH;break;
-        }
-    }
-   simRunning=false;if(isFirstRun && !yLockedFromURL) yDirty=true;yLockedFromURL=false;requestDraw();
- }
-
- /* ================================================================
-    Burn event helpers
-    ================================================================ */
- function formatBurnLabel(zat, mode){
-    const w=zat/100_000_000n,f=zat%100_000_000n;
-    const u=mode==='perblock'?'ⓩ/blk':'ⓩ';
-    if(f===0n){
-        if(w>=1_000_000n&&w%1_000_000n===0n)return"Burn "+w/1_000_000n+"M "+u;
-        if(w>=1_000n&&w%1_000n===0n)return"Burn "+w/1_000n+"K "+u;
-    }
-    return"Burn "+zatToZecString(zat)+" "+u;
-}
-
-function supplyAtHeightZat(h) { return sumIssuanceRangeClean(0n, h); }
-
-function changeBurn(newH=undefined, newZats=undefined, newMode=undefined){
-    const b = BURN_EVENTS[0];
-    const oldH = b.h;
-    const oldZat = b.zat;
-    const oldMode = b.mode;
-
-    // Use current value if arg not provided
-    const h = newH !== undefined ? clampBurnHeight(newH) : oldH;
-    const mode = newMode !== undefined ? newMode : oldMode;
-    const zat = newZats !== undefined ? newZats : oldZat;
-
-    // Clamp: one-time burn can't exceed supply at that height
-    const clampedZat = (mode === 'once')
-        ? min(supplyAtHeightZat(h), zat)
-        : zat;  // per-block is clamped each block in the sim loop
-
-    // Skip if nothing changed
-    if(h === oldH && clampedZat === oldZat && mode === oldMode) return;
-
-    // Apply
-    b.h = h;
-    b.zat = clampedZat;
-    b.mode = mode;
-    b.label = formatBurnLabel(clampedZat, mode);
-
-    // Invalidate from the earliest affected height
-    const fromH = min(oldH, h);
-    invalidateAllFrom(fromH);
-    requestDraw();
-}
-
-/* ================================================================
-   View state
-   ================================================================ */
-const MAX_TIME=Date.UTC(2100,0,1),MIN_SPAN=30*86400_000;
-const view={tMin: genTime,tMax: blockToTime(6_000_000)};
-
-function clampView(){
-  let span=view.tMax-view.tMin;
-  if(span<MIN_SPAN){const mid=(view.tMin+view.tMax)/2;view.tMin=mid-MIN_SPAN/2;view.tMax=mid+MIN_SPAN/2;span=MIN_SPAN;}
-  if(view.tMin<genTime-2*ONE_YEAR_NUM){view.tMax+=(genTime-2*ONE_YEAR_NUM-view.tMin);view.tMin=genTime-2*ONE_YEAR_NUM;}
-  if(view.tMax>MAX_TIME){view.tMin-=(view.tMax-MAX_TIME);view.tMax=MAX_TIME;}
-  if(view.tMin<genTime-2*ONE_YEAR_NUM)view.tMin=genTime-2*ONE_YEAR_NUM;
-}
-
- function resetView(){yDirty=true;view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();}
-
- function zoomToActivation(h){
-   yDirty=true;
-   view.tMin=genTime;
-  const endH=max(h*2n,h+100_000n);
-  view.tMax=blockToTime(endH);
-  clampView();requestDraw();computeAllScenarios();
-}
-
-/* ================================================================
-   Right margin layout
-   ================================================================ */
-function computeRightMargin(isNarrow){
-  if(isNarrow){if(show.supply)return 52;return 16;}
-  return show.supply?70:20;
-}
-
-function rightAxisLayout(isNarrow){
-  const r={supply:null};
-  if(!show.supply)return r;
-  if(isNarrow){r.supply={tickX:6,titleX:null};return r;}
-  r.supply={tickX:6,titleX:50};
-  return r;
-}
-
-function computeLeftMargin(isNarrow){
-  if(isNarrow){if(show.issDay||show.annPct)return 52;return 16;}
-  const AXIS_W=62;let count=0;if(show.issDay)count++;if(show.annPct)count++;
-  return count===0?20:8+count*AXIS_W;
-}
-
-function leftAxisLayout(isNarrow){
-  const r={issDay:null,annPct:null};
-  if(isNarrow){if(show.issDay)r.issDay={tickX:6,titleX:null};else if(show.annPct)r.annPct={tickX:6,titleX:null};return r;}
-  let off=6;
-  if(show.issDay){r.issDay={tickX:off,titleX:off+44};off+=62;}
-  if(show.annPct){r.annPct={tickX:off,titleX:off+44};off+=62;}
-  return r;
-}
-
-/* ================================================================
-   Y-axis helpers (all monetary math in BigInt zats)
-   ================================================================ */
-function bigPow10(n) { const bn = BigInt(n); let r = 1n; for (let i = 0n; i < bn; i++) r *= 10n; return r; }
-function ceilDivBig(a, b) { return (a + b - 1n) / b; }
-
-function niceStepZat(rangeZat, targetTicks) {
-    if (rangeZat <= 0n) return ZATOSHI;
-    const rough = rangeZat / BigInt(targetTicks);
-    if (rough <= 0n) return 1n;
-    let mag = 1n; while (mag * 10n <= rough) mag *= 10n;
-    if (rough * 2n < mag * 3n) return mag;
-    if (rough < mag * 3n) return mag * 2n;
-    if (rough < mag * 7n) return mag * 5n;
-    return mag * 10n;
-}
-
-function niceScaleZat(dataMinZat, dataMaxZat, startFromZero) {
-    if (dataMaxZat <= dataMinZat) dataMaxZat = dataMinZat + ZATOSHI;
-    if (!startFromZero && dataMinZat >= 0n && dataMinZat * 10n < dataMaxZat * 3n) startFromZero = true;
-    if (startFromZero) {
-        const raw = dataMaxZat + dataMaxZat / 20n;
-        const step = niceStepZat(raw, 5);
-        return { minZat: 0n, maxZat: ceilDivBig(raw, step) * step, stepZat: step };
-    }
-    const range = dataMaxZat - dataMinZat;
-    const pad = range / 10n > 0n ? range / 10n : ZATOSHI;
-    const step = niceStepZat(range + pad * 2n, 5);
-    const rawMin = dataMinZat - pad;
-    const scMin = rawMin >= 0n ? rawMin / step * step : 0n;
-    return { minZat: scMin, maxZat: ceilDivBig(dataMaxZat + pad, step) * step, stepZat: step };
-}
-
-function niceStepNum(range, targetTicks) {
-    if (range <= 0) return 1;
-    const rough = range / targetTicks, mag = Math.pow(10, Math.floor(Math.log10(rough)));
-    const f = rough / mag;
-    if (f < 1.5) return mag; if (f < 3) return 2 * mag; if (f < 7) return 5 * mag; return 10 * mag;
-}
-
-function commaFormatBig(n) {
-    if (n < 0n) return "-" + commaFormatBig(-n);
-    const s = String(n); let out = '';
-    for (let i = 0; i < s.length; i++) { if (i > 0 && (s.length - i) % 3 === 0) out += ','; out += s[i]; }
-    return out;
-}
-
-function formatZatForAxis(zat, stepZat, isNarrow, useMSuffix) {
-    const M_ZAT = 1_000_000n * ZATOSHI;
-    if (useMSuffix) {
-        let dec = 0; let t = stepZat;
-        while (t < M_ZAT && dec < 4) { t *= 10n; dec++; }
-        if (dec === 0) return String(zat / M_ZAT) + " M";
-        const p = bigPow10(dec);
-        const units = zat * p / M_ZAT;
-        const w = units / p; let f = units % p; if (f < 0n) f = -f;
-        return String(w) + "." + String(f).padStart(dec, '0') + " M";
-    }
-    const wholeZec = zat / ZATOSHI, fracZat = zat % ZATOSHI;
-    let dec = 0; let t = stepZat;
-    while (t < ZATOSHI && dec < 8) { t *= 10n; dec++; }
-    if (dec === 0) {
-        if (isNarrow && wholeZec >= 1000n && wholeZec % 1000n === 0n) return String(wholeZec / 1000n) + "k";
-        return commaFormatBig(wholeZec);
-    }
-    const p = bigPow10(dec);
-    let f = fracZat * p / ZATOSHI; if (f < 0n) f = -f;
-    return commaFormatBig(wholeZec) + "." + String(f).padStart(dec, '0');
-}
-
-const FIXED_SUP_MIN_ZAT = 0n;
-const FIXED_SUP_MAX_ZAT = 22_000_000n * ZATOSHI;
-const FIXED_SUP_STEP_ZAT = 3_000_000n * ZATOSHI;
-const FIXED_ISS_MAX_ZAT = 8_000n * ZATOSHI;
-const FIXED_ISS_STEP_ZAT = 2_000n * ZATOSHI;
-const FIXED_ANN_MAX = 30;
-const FIXED_ANN_STEP = 5;
-
-/* Y-axis animation state */
-const yTarget = {
-    supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT, supStepZat: FIXED_SUP_STEP_ZAT,
-    issMaxZat: FIXED_ISS_MAX_ZAT, issStepZat: FIXED_ISS_STEP_ZAT,
-    annMax: FIXED_ANN_MAX, annStep: FIXED_ANN_STEP,
-};
-const yDisp = {
-    supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT,
-    issMaxZat: FIXED_ISS_MAX_ZAT, annMax: FIXED_ANN_MAX,
-};
-let yInitialized = false;
-let yDirty = true;
- let ySnapOnFirstData = false;
- let yLockedFromURL = false;
-
- function lerpZat(cur, tgt) {
-   if (cur === tgt) return cur;
-    const step = (tgt - cur) * 3n / 20n;
-    return step === 0n ? tgt : cur + step;
-}
-
-function animateYAxes() {
-    let changed = false;
-    const ns = lerpZat(yDisp.supMinZat, yTarget.supMinZat);
-    const nx = lerpZat(yDisp.supMaxZat, yTarget.supMaxZat);
-    const ni = lerpZat(yDisp.issMaxZat, yTarget.issMaxZat);
-    if (ns !== yDisp.supMinZat || nx !== yDisp.supMaxZat || ni !== yDisp.issMaxZat) changed = true;
-    yDisp.supMinZat = ns; yDisp.supMaxZat = nx; yDisp.issMaxZat = ni;
-    const ad = yTarget.annMax - yDisp.annMax;
-    if (Math.abs(ad) > 0.01) { yDisp.annMax += ad * 0.15; changed = true; }
-    else if (yDisp.annMax !== yTarget.annMax) { yDisp.annMax = yTarget.annMax; changed = true; }
-    return changed;
-}
-
-function updateYTargets() {
-    const cutH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
-    let sMin = MAX_MONEY_ZAT, sMax = 0n, iMax = 0n, aMax = 0n;
-    for (const p of scenarios.default.data) {
-        if (p.time < view.tMin || p.time > view.tMax || p.h > cutH) continue;
-        if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
-        if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
-        if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
-    }
-    if (showZip234()) for (const p of scenarios.zip234.data) {
-        if (p.time < view.tMin || p.time > view.tMax || p.h < zip234ActivationHeight) continue;
-        if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
-        if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
-        if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
-    }
-    if (show.supply && sMax > 0n && MAX_MONEY_ZAT * 10n <= sMax * 12n) sMax = max(sMax, MAX_MONEY_ZAT);
-
-    if (show.supply && sMax > sMin && (sMax - sMin) * 100n < FIXED_SUP_MAX_ZAT * 40n) {
-        const sc = niceScaleZat(sMin, sMax, false);
-        yTarget.supMinZat = sc.minZat; yTarget.supMaxZat = sc.maxZat; yTarget.supStepZat = sc.stepZat;
-    } else { yTarget.supMinZat = FIXED_SUP_MIN_ZAT; yTarget.supMaxZat = FIXED_SUP_MAX_ZAT; yTarget.supStepZat = FIXED_SUP_STEP_ZAT; }
-
-    if (show.issDay && iMax > 0n && iMax * 100n < FIXED_ISS_MAX_ZAT * 40n) {
-        const sc = niceScaleZat(0n, iMax, true);
-        yTarget.issMaxZat = sc.maxZat; yTarget.issStepZat = sc.stepZat;
-    } else { yTarget.issMaxZat = FIXED_ISS_MAX_ZAT; yTarget.issStepZat = FIXED_ISS_STEP_ZAT; }
-
-    const aPct = Number(aMax) / 1_000_000, eff = Math.min(aPct, FIXED_ANN_MAX);
-    if (show.annPct && eff > 0 && eff / FIXED_ANN_MAX < 0.4) {
-        const r = eff * 1.05, st = niceStepNum(r, 5);
-        yTarget.annMax = Math.ceil(r / st) * st; yTarget.annStep = st;
-    } else { yTarget.annMax = FIXED_ANN_MAX; yTarget.annStep = FIXED_ANN_STEP; }
-
-    requestDraw();
- }
-
- /* ================================================================
-    Drawing
-    ================================================================ */
- let drawRAF=null;const layout={};
-
- function requestDraw(){if(!drawRAF)drawRAF=requestAnimationFrame(()=>{drawRAF=null;draw();});}
-
-function draw(){
-  if(!scenarios.default.data.length&&!scenarios.zip234.data.length)return;
-
-  const canvas=document.getElementById("chart");
-  const dpr=window.devicePixelRatio||1;
-  const isNarrow=window.innerWidth<600;
-  const CSS_W=min(960,window.innerWidth-20);
-  const CSS_H=isNarrow?Math.round(CSS_W*0.62):Math.round(CSS_W*0.54);
-  canvas.width=CSS_W*dpr;canvas.height=CSS_H*dpr;
-  canvas.style.width=CSS_W+"px";canvas.style.height=CSS_H+"px";
-  const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);
-
-  const rightMar=computeRightMargin(isNarrow);
-  const leftMar=computeLeftMargin(isNarrow);
-  const MG={top:28,right:rightMar,bottom:52,left:leftMar};
-  const PW=CSS_W-MG.left-MG.right,PH=CSS_H-MG.top-MG.bottom;
-  Object.assign(layout,{CSS_W,CSS_H,MG,PW,PH});
-
-  const axR=rightAxisLayout(isNarrow);
-  const axL=leftAxisLayout(isNarrow);
-
-  const T={bg:cv("--bg"),fg:cv("--fg"),muted:cv("--muted"),panel:cv("--panel"),
-    supplyObs:cv("--supplyObs"),issObs:cv("--issObs"),supplyExp:cv("--supplyExp"),issExp:cv("--issExp"),
-    annualObs:cv("--annualObs"),annualExp:cv("--annualExp"),
-    eventObs:cv("--eventObs"),eventHalv:cv("--eventHalv"),written:cv("--written"),
-    gridLine:cv("--gridLine"),capLine:cv("--capLine"),frameBorder:cv("--frameBorder"),
-    zip234Supply:cv("--zip234Supply"),zip234Iss:cv("--zip234Iss"),zip234Ann:cv("--zip234Ann"),
-    zip234Act:cv("--zip234Act"),
-    burnEvent:cv("--burnEvent"),
-    supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
-    supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)",
-    zip234FillObs: getTheme()==="dark" ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)",
-    zip234FillExp: getTheme()==="dark" ? "rgba(56,189,248,0.06)" : "rgba(2,132,199,0.04)",
-  };
-
-  ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
-
-  const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
-
-  // Determine how much default data to show
-  const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
-  const D = scenarios.default.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h <= defaultCutoffH);
-  const Z = (showZip234() && scenarios.zip234.data.length >= 1)
-      ? scenarios.zip234.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
-      : [];
-
-   if (yDirty && (D.length >= 2 || Z.length >= 1)) {
-       updateYTargets(); yDirty = false;
-       if (ySnapOnFirstData) {
+    <div class="legend" id="legend">
+      <span class="seg-label">Future:</span>
+      <span class="seg-group" id="futureModeGroup">
+        <button class="seg active" data-mode="both">Both</button>
+        <button class="seg" data-mode="default">Default</button>
+        <button class="seg" data-mode="zip234">ZIP 234</button>
+      </span>
+      <span>|</span>
+      <span style="color:var(--muted)">│</span>
+      <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
+      <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
+      <span class="ltoggle" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
+      <span><span class="dash"></span> Dashed = <b>Expected</b></span>
+    </div>
+    <div id="tooltip"></div>
+    <div class="controls">
+      <button id="btnReset">Reset view</button>
+      <button id="btnShare">📋 Share view</button>
+      <button id="btnTheme">☀/🌙</button>
+    </div>
+    <script>
+     /* ================================================================
+        Toggle state
+        ================================================================ */
+     const show = {supply:true, issDay:true, annPct:false};
+     let futureMode = 'both'; // 'default' | 'zip234' | 'both'
+     function showDefaultFuture() { return futureMode !== 'zip234'; }
+     function showZip234() { return futureMode !== 'default'; }
+
+     // For display: BigInt zats → formatted string (no floats involved)
+     // Extended zatToZecString with precision control
+     function zatToZecString(zat, maxDec = 8, minDec = 0) {
+       if (zat < 0n) return "-" + zatToZecString(-zat, maxDec, minDec);
+       const w = zat / 100_000_000n, f = zat % 100_000_000n;
+       let ws = String(w), out = '';
+       for (let i = 0; i < ws.length; i++) {
+         if (i > 0 && (ws.length - i) % 3 === 0) out += ',';
+         out += ws[i];
+       }
+       if (maxDec <= 0) return out;
+       let fs = String(f).padStart(8, '0').substring(0, maxDec);
+       while (fs.length > minDec && fs.endsWith('0')) fs = fs.slice(0, -1);
+       return fs ? out + '.' + fs : out;
+     }
+
+     // For "% of 21M cap": BigInt zats → string like "83.77"
+     function pctOfCapStr(zat) {
+       const scaled = zat * 10000n / MAX_MONEY_ZAT;
+       const whole = scaled / 100n;
+       const frac = (scaled % 100n < 0n ? -(scaled % 100n) : scaled % 100n);
+       return String(whole) + '.' + String(frac).padStart(2, '0');
+     }
+     function annPctVal(p) { return p.annualPctX1M < 0n ? NaN : Number(p.annualPctX1M) / 1e6; }
+
+     function parseZecToZat(str) {
+       str = str.replace(/,/g, '').trim();
+       if (!str) return null;
+       const neg = str.startsWith('-');
+       if (neg) str = str.substring(1);
+       const dot = str.indexOf('.');
+       let whole = dot >= 0 ? str.substring(0, dot) : str;
+       let frac  = dot >= 0 ? str.substring(dot + 1) : '';
+       whole = whole.replace(/[^0-9]/g, '') || '0';
+       frac = (frac.replace(/[^0-9]/g, '') + '00000000').substring(0, 8);
+       try { const v = BigInt(whole) * 100_000_000n + BigInt(frac); return neg ? -v : v; }
+       catch(e) { return null; }
+     }
+
+     /* ================================================================
+        Theme
+        ================================================================ */
+     function getTheme(){return document.documentElement.getAttribute("data-theme")||"dark";}
+     function setTheme(t){if(t==="light")document.documentElement.setAttribute("data-theme","light");
+       else document.documentElement.removeAttribute("data-theme");try{localStorage.setItem("zec-theme",t)}catch(e){}}
+     function toggleTheme(){setTheme(getTheme()==="dark"?"light":"dark");requestDraw();}
+     function initTheme(){try{const s=localStorage.getItem("zec-theme");if(s){setTheme(s);return;}}catch(e){}
+       if(window.matchMedia&&window.matchMedia("(prefers-color-scheme:light)").matches)setTheme("light");}
+     function cv(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
+
+     /* ================================================================
+        Time anchors
+        ================================================================ */
+     const TIME_ANCHORS=[
+       {h:0n,time:Date.UTC(2016,9,28,7,56),label:"Genesis"},
+       {h:653_600n,time:Date.UTC(2019,11,11,21,50),label:"Blossom"},
+       {h:1_046_400n,time:Date.UTC(2020,10,18,12,34),label:"Halving 1"},
+       {h:2_726_400n,time:Date.UTC(2024,10,23,1,51),label:"Halving 2"},
+     ];
+
+     const BLOSSOM_ACTIVATION_HEIGHT=653_600n;
+     const WRITTEN_HEIGHT=3_234_946n;
+     const BURN_EVENTS = [{ h: 4_500_000n, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ", mode: 'once'}];
+     BURN_EVENTS[0].label = formatBurnLabel(BURN_EVENTS[0].zat, BURN_EVENTS[0].mode);
+
+     const ONE_YEAR_NUM = 365.25*86400*1000;          // Number, for timestamp math
+     const ONE_YEAR_MS  = BigInt(Math.round(ONE_YEAR_NUM)); // BigInt, for block math
+
+     const SEGMENTS=[];
+     for(let i=0;i<TIME_ANCHORS.length-1;i++){
+       const a=TIME_ANCHORS[i],b=TIME_ANCHORS[i+1];
+       SEGMENTS.push({startH:a.h,endH:b.h,startTime:a.time,
+                      secPerBlock:BigInt(b.time-a.time)/1000n/(b.h-a.h)});
+     }
+
+     function segmentForHeight(h){for(let i=0;i<SEGMENTS.length;i++)if(h<=SEGMENTS[i].endH)return SEGMENTS[i];return SEGMENTS[SEGMENTS.length-1];}
+     function blockToTime(h){
+       const s=segmentForHeight(h);
+       const hB = typeof h === 'bigint' ? h : BigInt(h);
+       return s.startTime + Number((hB - s.startH) * s.secPerBlock) * 1000;
+     }
+     function secsPerBlock(h){return segmentForHeight(h).secPerBlock;}
+     function timeToHeight(t){
+       for(let i=SEGMENTS.length-1;i>=0;i--){
+         const s=SEGMENTS[i];
+         if(t>=s.startTime)
+           return s.startH + BigInt(Math.trunc(t-s.startTime)) / (s.secPerBlock*1000n);
+       }
+       const s=SEGMENTS[0];
+       return s.startH + BigInt(Math.trunc(t-s.startTime)) / (s.secPerBlock*1000n);
+     }
+     function heightAfterDuration(h,durationMs){
+       let remaining=durationMs/1000n,cur=h;
+       for(let i=0;i<SEGMENTS.length;i++){const s=SEGMENTS[i];if(cur>s.endH)continue;
+         const hStart=max(cur,s.startH),secsToEnd=(s.endH-hStart)*s.secPerBlock;
+         if(remaining<=secsToEnd)return hStart+remaining/s.secPerBlock;remaining-=secsToEnd;cur=s.endH;}
+       const last=SEGMENTS[SEGMENTS.length-1];return max(cur,last.endH)+remaining/last.secPerBlock;
+     }
+
+     const genTime=blockToTime(0);
+     const writtenTime=blockToTime(WRITTEN_HEIGHT);
+     function fmtDate(ms){const d=new Date(ms);const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return mo[d.getUTCMonth()]+" "+d.getUTCDate()+", "+d.getUTCFullYear();}
+
+     /* ================================================================
+        Halving heights generator
+        ================================================================ */
+     function halvingHeights(maxH){
+       const result=[];
+       let h=1_046_400n;
+       while(h<=maxH){result.push(h);h+=1_680_000n;}
+       return result;
+     }
+
+     /* ================================================================
+        issuance_per_block() — zcash consensus
+        ================================================================ */
+     function issuance_per_block(blockheight){
+       const MAX_BLOCK_SUBSIDY=1250000000n,SLOW_START_INTERVAL=20000n,SLOW_START_SHIFT=10000n,
+             SLOW_START_RATE=62500n,BLOSSOM_ACT=653600n,BLOSSOM_RATIO=2n,
+             PRE_HALVING=840000n,POST_HALVING=1680000n;
+       const h=BigInt(blockheight);
+       if(blockheight<SLOW_START_SHIFT)return SLOW_START_RATE*h;
+       if(blockheight<SLOW_START_INTERVAL)return SLOW_START_RATE*(h+1n);
+       let halvings;
+       if(blockheight>=BLOSSOM_ACT){const sc=BigInt(BLOSSOM_ACT-SLOW_START_SHIFT)*BLOSSOM_RATIO+(h-BigInt(BLOSSOM_ACT));halvings=Number(sc/POST_HALVING);}
+       else halvings=Number((h-SLOW_START_SHIFT)/PRE_HALVING);
+       if(halvings>=64n)return 0n;
+       if(blockheight>=BLOSSOM_ACT)return(MAX_BLOCK_SUBSIDY/BLOSSOM_RATIO)>>BigInt(halvings);
+       return MAX_BLOCK_SUBSIDY>>BigInt(halvings);
+     }
+
+     const G_MAX_SUB=1250000000n,G_SLOW_INT=20000n,G_SLOW_SHIFT=10000n,
+           G_SLOW_RATE=62500n,G_BLOSSOM_H=653600n,G_RATIO=2n,G_POST_HALV=1680000n,G_HALV_OFF=633600n;
+
+     function sumArith(a,b){if(b<a)return 0n;const A=BigInt(a),B=BigInt(b),n=B-A+1n;return(A+B)*n/2n;}
+     function halvIdxPost(h){return (h+G_HALV_OFF)/G_POST_HALV;}  // BigInt division = floor
+     function nextHalvPost(h){return(halvIdxPost(h)+1n)*G_POST_HALV - G_HALV_OFF;}
+
+     function sumIssuanceRangeClean(startInc,endExc){
+       if(endExc<=startInc)return 0n;let h=startInc,total=0n;
+       while(h<endExc){
+         if(h<G_SLOW_SHIFT){const e=min(endExc,G_SLOW_SHIFT);total+=G_SLOW_RATE*sumArith(h,e-1n);h=e;continue;}
+         if(h<G_SLOW_INT){const e=min(endExc,G_SLOW_INT);total+=G_SLOW_RATE*sumArith(h+1n,e);h=e;continue;}
+         if(h<G_BLOSSOM_H){const e=min(endExc,G_BLOSSOM_H);total+=G_MAX_SUB*BigInt(e-h);h=e;continue;}
+         const k=halvIdxPost(h);if(k>=64n)break;
+         const nxt=nextHalvPost(h),e=min(endExc,nxt);
+         total+=(G_MAX_SUB/G_RATIO>>BigInt(k))*BigInt(e-h);h=e;
+       }return total;
+     }
+
+     /* ================================================================
+        Simulation engine
+        ================================================================ */
+     const ZATOSHI=100_000_000n,SAMPLE_EVERY=1000n,SIM_BATCH=80_000n;
+     const MAX_MONEY_ZEC=21_000_000n;
+     const MAX_MONEY_ZAT = 2_100_000_000_000_000n;
+     const _kFloat = 1 - Math.pow(2, -1/1680000);
+     const ZIP234_K = _kFloat; // kept for test compat
+     const ZIP234_K_NUM = BigInt(Math.round(_kFloat * (2**32))) * (1n << 32n);
+     const ZIP234_K_SHIFT = 64n;
+     let zip234ActivationHeight=3_687_123n;
+
+     function defaultIssuanceZat(h, supZat, remZat) { return issuance_per_block(h); }
+     function zip234IssuanceZat(h, supZat, remZat) {
+       if (h < zip234ActivationHeight) return issuance_per_block(h);
+       return (remZat * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
+     }
+
+     const scenarios={
+       default:{fn:defaultIssuanceZat,data:[]},
+       zip234:{fn:zip234IssuanceZat,data:[]}
+     };
+     let simVersion=0n,simRunning=false,simComputedVer=-1n,simComputedMaxH=-1n;
+
+     function fillAnnualPct(arr) {
+       for (let i = 0; i < arr.length; i++) {
+         const p = arr[i];
+         if (p.supplyZat <= 0n || p.h < 20000n) continue;
+         const targetH = heightAfterDuration(p.h, ONE_YEAR_MS);
+         let lo = i + 1, hi = arr.length - 1;
+         while (lo < hi) { const mid = (lo + hi) >> 1; arr[mid].h < targetH ? lo = mid + 1 : hi = mid; }
+         if (lo >= arr.length) continue;
+         const annIssZat = arr[lo].cumIssZat - p.cumIssZat;
+         if (annIssZat >= 0n && p.supplyZat > 0n) {
+           p.annualPctX1M = (annIssZat * 100_000_000n) / p.supplyZat;
+           p.annualPctIsExpected = (arr[lo].h > WRITTEN_HEIGHT);
+         }
+       }
+     }
+
+     function lookupScenario(arr,h){
+       if(!arr.length)return null;
+       let lo=0,hi=arr.length-1;
+       while(lo<hi){const mid=(lo+hi)>>1;arr[mid].h<h?lo=mid+1:hi=mid;}
+       if(lo>0 && (h - arr[lo-1].h) < (arr[lo].h - h)) lo--;
+
+       return arr[lo];
+     }
+
+     function invalidateSimulation(){
+       simVersion++;simComputedVer=-1n;computeAllScenarios();
+     }
+
+     function truncateScenarioData(name, fromH) {
+       const d = scenarios[name].data;
+       let keep = d.length;
+       while (keep > 0 && d[keep - 1].h >= fromH) keep--;
+       d.length = keep;
+     }
+
+     function invalidateScenarioFrom(name, fromH) {
+       truncateScenarioData(name, fromH);
+       invalidateSimulation();
+     }
+
+     function invalidateAllFrom(fromH) {
+       for (const n of ['default', 'zip234']) truncateScenarioData(n, fromH);
+       invalidateSimulation();
+     }
+
+     async function computeAllScenarios(){
+       const neededH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
+       if(!simRunning&&simVersion===simComputedVer&&neededH<=simComputedMaxH)return;
+       if(simRunning)return;
+       simRunning=true;
+       const isFirstRun = simComputedMaxH < 0n;
+
+       while(true){
+         const myVer=simVersion;
+         const maxH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
+         let cancelled=false;
+
+         // Initialize per-scenario running state
+         const names=['default','zip234'];
+         const st={};
+         for(const name of names){
+           const result=scenarios[name].data,fn=scenarios[name].fn;
+           let startH,supZat,cumIssZat,remZat;
+           if(result.length>0){
+             const last=result[result.length-1];
+             startH=last.h+1n;
+             supZat=last.supplyZat;
+             cumIssZat=last.cumIssZat;
+             remZat=MAX_MONEY_ZAT-supZat;
+           }else{
+             startH=0n;supZat=0n;cumIssZat=0n;remZat=MAX_MONEY_ZAT;
+           }
+           st[name]={result,fn,h:startH,supZat,cumIssZat,remZat};
+         }
+
+         // Advance both scenarios in lockstep batches
+         while(!cancelled){
+           let anyAdvanced=false;
+           for(const name of names){
+             const s=st[name];
+             if(s.h>maxH)continue;
+             anyAdvanced=true;
+             const batchEnd=min(s.h+SIM_BATCH,maxH+1n);
+             for(let h=s.h;h<batchEnd;h++){
+               for(const b of BURN_EVENTS){
+                 const shouldBurn = (b.mode==='once' && b.h===h) || (b.mode==='perblock' && h>=b.h);
+                 if(shouldBurn){
+                   const amt=b.zat<s.supZat?b.zat:s.supZat;
+                   s.supZat-=amt;s.remZat+=amt;
+                 }
+               }
+               const issZat=s.fn(h,s.supZat,s.remZat);
+               s.supZat+=issZat;s.cumIssZat+=issZat;s.remZat-=issZat;
+               if(h%SAMPLE_EVERY===0n){
+                 const spb=BigInt(h<BLOSSOM_ACTIVATION_HEIGHT?150n:75n);
+                 s.result.push({
+                   h,time:blockToTime(h),
+                   supplyZat:s.supZat,
+                   cumIssZat:s.cumIssZat,
+                   issBlockZat:issZat,
+                   issDayZat:issZat*86400n/spb,
+                   annualPctX1M:-1n,
+                   annualPctIsExpected:false
+                 });
+               }
+             }
+             s.h=batchEnd;
+           }
+           if(!anyAdvanced)break;
+           if(isFirstRun && !yLockedFromURL) yDirty = true;
+           requestDraw();
+           await new Promise(r=>setTimeout(r,0));
+           if(simVersion!==myVer){cancelled=true;}
+         }
+
+         if(!cancelled&&simVersion===myVer){
+           for(const name of names)fillAnnualPct(scenarios[name].data);
+           simComputedVer=myVer;simComputedMaxH=maxH;break;
+         }
+       }
+       simRunning=false;if(isFirstRun && !yLockedFromURL) yDirty=true;yLockedFromURL=false;requestDraw();
+     }
+
+     /* ================================================================
+        Burn event helpers
+        ================================================================ */
+     function formatBurnLabel(zat, mode){
+       const w=zat/100_000_000n,f=zat%100_000_000n;
+       const u=mode==='perblock'?'ⓩ/blk':'ⓩ';
+       if(f===0n){
+         if(w>=1_000_000n&&w%1_000_000n===0n)return"Burn "+w/1_000_000n+"M "+u;
+         if(w>=1_000n&&w%1_000n===0n)return"Burn "+w/1_000n+"K "+u;
+       }
+       return"Burn "+zatToZecString(zat)+" "+u;
+     }
+
+     function supplyAtHeightZat(h) { return sumIssuanceRangeClean(0n, h); }
+
+     function changeBurn(newH=undefined, newZats=undefined, newMode=undefined){
+       const b = BURN_EVENTS[0];
+       const oldH = b.h;
+       const oldZat = b.zat;
+       const oldMode = b.mode;
+
+       // Use current value if arg not provided
+       const h = newH !== undefined ? clampBurnHeight(newH) : oldH;
+       const mode = newMode !== undefined ? newMode : oldMode;
+       const zat = newZats !== undefined ? newZats : oldZat;
+
+       // Clamp: one-time burn can't exceed supply at that height
+       const clampedZat = (mode === 'once')
+                        ? min(supplyAtHeightZat(h), zat)
+                        : zat;  // per-block is clamped each block in the sim loop
+
+       // Skip if nothing changed
+       if(h === oldH && clampedZat === oldZat && mode === oldMode) return;
+
+       // Apply
+       b.h = h;
+       b.zat = clampedZat;
+       b.mode = mode;
+       b.label = formatBurnLabel(clampedZat, mode);
+
+       // Invalidate from the earliest affected height
+       const fromH = min(oldH, h);
+       invalidateAllFrom(fromH);
+       requestDraw();
+     }
+
+     /* ================================================================
+        View state
+        ================================================================ */
+     const MAX_TIME=Date.UTC(2100,0,1),MIN_SPAN=30*86400_000;
+     const view={tMin: genTime,tMax: blockToTime(6_000_000)};
+
+     function clampView(){
+       let span=view.tMax-view.tMin;
+       if(span<MIN_SPAN){const mid=(view.tMin+view.tMax)/2;view.tMin=mid-MIN_SPAN/2;view.tMax=mid+MIN_SPAN/2;span=MIN_SPAN;}
+       if(view.tMin<genTime-2*ONE_YEAR_NUM){view.tMax+=(genTime-2*ONE_YEAR_NUM-view.tMin);view.tMin=genTime-2*ONE_YEAR_NUM;}
+       if(view.tMax>MAX_TIME){view.tMin-=(view.tMax-MAX_TIME);view.tMax=MAX_TIME;}
+       if(view.tMin<genTime-2*ONE_YEAR_NUM)view.tMin=genTime-2*ONE_YEAR_NUM;
+     }
+
+     function resetView(){yDirty=true;view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();}
+
+     function zoomToActivation(h){
+       yDirty=true;
+       view.tMin=genTime;
+       const endH=max(h*2n,h+100_000n);
+       view.tMax=blockToTime(endH);
+       clampView();requestDraw();computeAllScenarios();
+     }
+
+     /* ================================================================
+        Right margin layout
+        ================================================================ */
+     function computeRightMargin(isNarrow){
+       if(isNarrow){if(show.supply)return 52;return 16;}
+       return show.supply?70:20;
+     }
+
+     function rightAxisLayout(isNarrow){
+       const r={supply:null};
+       if(!show.supply)return r;
+       if(isNarrow){r.supply={tickX:6,titleX:null};return r;}
+       r.supply={tickX:6,titleX:50};
+       return r;
+     }
+
+     function computeLeftMargin(isNarrow){
+       if(isNarrow){if(show.issDay||show.annPct)return 52;return 16;}
+       const AXIS_W=62;let count=0;if(show.issDay)count++;if(show.annPct)count++;
+       return count===0?20:8+count*AXIS_W;
+     }
+
+     function leftAxisLayout(isNarrow){
+       const r={issDay:null,annPct:null};
+       if(isNarrow){if(show.issDay)r.issDay={tickX:6,titleX:null};else if(show.annPct)r.annPct={tickX:6,titleX:null};return r;}
+       let off=6;
+       if(show.issDay){r.issDay={tickX:off,titleX:off+44};off+=62;}
+       if(show.annPct){r.annPct={tickX:off,titleX:off+44};off+=62;}
+       return r;
+     }
+
+     /* ================================================================
+        Y-axis helpers (all monetary math in BigInt zats)
+        ================================================================ */
+     function bigPow10(n) { const bn = BigInt(n); let r = 1n; for (let i = 0n; i < bn; i++) r *= 10n; return r; }
+     function ceilDivBig(a, b) { return (a + b - 1n) / b; }
+
+     function niceStepZat(rangeZat, targetTicks) {
+       if (rangeZat <= 0n) return ZATOSHI;
+       const rough = rangeZat / BigInt(targetTicks);
+       if (rough <= 0n) return 1n;
+       let mag = 1n; while (mag * 10n <= rough) mag *= 10n;
+       if (rough * 2n < mag * 3n) return mag;
+       if (rough < mag * 3n) return mag * 2n;
+       if (rough < mag * 7n) return mag * 5n;
+       return mag * 10n;
+     }
+
+     function niceScaleZat(dataMinZat, dataMaxZat, startFromZero) {
+       if (dataMaxZat <= dataMinZat) dataMaxZat = dataMinZat + ZATOSHI;
+       if (!startFromZero && dataMinZat >= 0n && dataMinZat * 10n < dataMaxZat * 3n) startFromZero = true;
+       if (startFromZero) {
+         const raw = dataMaxZat + dataMaxZat / 20n;
+         const step = niceStepZat(raw, 5);
+         return { minZat: 0n, maxZat: ceilDivBig(raw, step) * step, stepZat: step };
+       }
+       const range = dataMaxZat - dataMinZat;
+       const pad = range / 10n > 0n ? range / 10n : ZATOSHI;
+       const step = niceStepZat(range + pad * 2n, 5);
+       const rawMin = dataMinZat - pad;
+       const scMin = rawMin >= 0n ? rawMin / step * step : 0n;
+       return { minZat: scMin, maxZat: ceilDivBig(dataMaxZat + pad, step) * step, stepZat: step };
+     }
+
+     function niceStepNum(range, targetTicks) {
+       if (range <= 0) return 1;
+       const rough = range / targetTicks, mag = Math.pow(10, Math.floor(Math.log10(rough)));
+       const f = rough / mag;
+       if (f < 1.5) return mag; if (f < 3) return 2 * mag; if (f < 7) return 5 * mag; return 10 * mag;
+     }
+
+     function commaFormatBig(n) {
+       if (n < 0n) return "-" + commaFormatBig(-n);
+       const s = String(n); let out = '';
+       for (let i = 0; i < s.length; i++) { if (i > 0 && (s.length - i) % 3 === 0) out += ','; out += s[i]; }
+       return out;
+     }
+
+     function formatZatForAxis(zat, stepZat, isNarrow, useMSuffix) {
+       const M_ZAT = 1_000_000n * ZATOSHI;
+       if (useMSuffix) {
+         let dec = 0; let t = stepZat;
+         while (t < M_ZAT && dec < 4) { t *= 10n; dec++; }
+         if (dec === 0) return String(zat / M_ZAT) + " M";
+         const p = bigPow10(dec);
+         const units = zat * p / M_ZAT;
+         const w = units / p; let f = units % p; if (f < 0n) f = -f;
+         return String(w) + "." + String(f).padStart(dec, '0') + " M";
+       }
+       const wholeZec = zat / ZATOSHI, fracZat = zat % ZATOSHI;
+       let dec = 0; let t = stepZat;
+       while (t < ZATOSHI && dec < 8) { t *= 10n; dec++; }
+       if (dec === 0) {
+         if (isNarrow && wholeZec >= 1000n && wholeZec % 1000n === 0n) return String(wholeZec / 1000n) + "k";
+         return commaFormatBig(wholeZec);
+       }
+       const p = bigPow10(dec);
+       let f = fracZat * p / ZATOSHI; if (f < 0n) f = -f;
+       return commaFormatBig(wholeZec) + "." + String(f).padStart(dec, '0');
+     }
+
+     const FIXED_SUP_MIN_ZAT = 0n;
+     const FIXED_SUP_MAX_ZAT = 22_000_000n * ZATOSHI;
+     const FIXED_SUP_STEP_ZAT = 3_000_000n * ZATOSHI;
+     const FIXED_ISS_MAX_ZAT = 8_000n * ZATOSHI;
+     const FIXED_ISS_STEP_ZAT = 2_000n * ZATOSHI;
+     const FIXED_ANN_MAX = 30;
+     const FIXED_ANN_STEP = 5;
+
+     /* Y-axis animation state */
+     const yTarget = {
+       supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT, supStepZat: FIXED_SUP_STEP_ZAT,
+       issMaxZat: FIXED_ISS_MAX_ZAT, issStepZat: FIXED_ISS_STEP_ZAT,
+       annMax: FIXED_ANN_MAX, annStep: FIXED_ANN_STEP,
+     };
+     const yDisp = {
+       supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT,
+       issMaxZat: FIXED_ISS_MAX_ZAT, annMax: FIXED_ANN_MAX,
+     };
+     let yInitialized = false;
+     let yDirty = true;
+     let ySnapOnFirstData = false;
+     let yLockedFromURL = false;
+
+     function lerpZat(cur, tgt) {
+       if (cur === tgt) return cur;
+       const step = (tgt - cur) * 3n / 20n;
+       return step === 0n ? tgt : cur + step;
+     }
+
+     function animateYAxes() {
+       let changed = false;
+       const ns = lerpZat(yDisp.supMinZat, yTarget.supMinZat);
+       const nx = lerpZat(yDisp.supMaxZat, yTarget.supMaxZat);
+       const ni = lerpZat(yDisp.issMaxZat, yTarget.issMaxZat);
+       if (ns !== yDisp.supMinZat || nx !== yDisp.supMaxZat || ni !== yDisp.issMaxZat) changed = true;
+       yDisp.supMinZat = ns; yDisp.supMaxZat = nx; yDisp.issMaxZat = ni;
+       const ad = yTarget.annMax - yDisp.annMax;
+       if (Math.abs(ad) > 0.01) { yDisp.annMax += ad * 0.15; changed = true; }
+       else if (yDisp.annMax !== yTarget.annMax) { yDisp.annMax = yTarget.annMax; changed = true; }
+       return changed;
+     }
+
+     function updateYTargets() {
+       const cutH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
+       let sMin = MAX_MONEY_ZAT, sMax = 0n, iMax = 0n, aMax = 0n;
+       for (const p of scenarios.default.data) {
+         if (p.time < view.tMin || p.time > view.tMax || p.h > cutH) continue;
+         if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
+         if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
+         if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
+       }
+       if (showZip234()) for (const p of scenarios.zip234.data) {
+         if (p.time < view.tMin || p.time > view.tMax || p.h < zip234ActivationHeight) continue;
+         if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
+         if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
+         if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
+       }
+       if (show.supply && sMax > 0n && MAX_MONEY_ZAT * 10n <= sMax * 12n) sMax = max(sMax, MAX_MONEY_ZAT);
+
+       if (show.supply && sMax > sMin && (sMax - sMin) * 100n < FIXED_SUP_MAX_ZAT * 40n) {
+         const sc = niceScaleZat(sMin, sMax, false);
+         yTarget.supMinZat = sc.minZat; yTarget.supMaxZat = sc.maxZat; yTarget.supStepZat = sc.stepZat;
+       } else { yTarget.supMinZat = FIXED_SUP_MIN_ZAT; yTarget.supMaxZat = FIXED_SUP_MAX_ZAT; yTarget.supStepZat = FIXED_SUP_STEP_ZAT; }
+
+       if (show.issDay && iMax > 0n && iMax * 100n < FIXED_ISS_MAX_ZAT * 40n) {
+         const sc = niceScaleZat(0n, iMax, true);
+         yTarget.issMaxZat = sc.maxZat; yTarget.issStepZat = sc.stepZat;
+       } else { yTarget.issMaxZat = FIXED_ISS_MAX_ZAT; yTarget.issStepZat = FIXED_ISS_STEP_ZAT; }
+
+       const aPct = Number(aMax) / 1_000_000, eff = Math.min(aPct, FIXED_ANN_MAX);
+       if (show.annPct && eff > 0 && eff / FIXED_ANN_MAX < 0.4) {
+         const r = eff * 1.05, st = niceStepNum(r, 5);
+         yTarget.annMax = Math.ceil(r / st) * st; yTarget.annStep = st;
+       } else { yTarget.annMax = FIXED_ANN_MAX; yTarget.annStep = FIXED_ANN_STEP; }
+
+       requestDraw();
+     }
+
+     /* ================================================================
+        Drawing
+        ================================================================ */
+     let drawRAF=null;const layout={};
+
+     function requestDraw(){if(!drawRAF)drawRAF=requestAnimationFrame(()=>{drawRAF=null;draw();});}
+
+     function draw(){
+       if(!scenarios.default.data.length&&!scenarios.zip234.data.length)return;
+
+       const canvas=document.getElementById("chart");
+       const dpr=window.devicePixelRatio||1;
+       const isNarrow=window.innerWidth<600;
+       const CSS_W=min(960,window.innerWidth-20);
+       const CSS_H=isNarrow?Math.round(CSS_W*0.62):Math.round(CSS_W*0.54);
+       canvas.width=CSS_W*dpr;canvas.height=CSS_H*dpr;
+       canvas.style.width=CSS_W+"px";canvas.style.height=CSS_H+"px";
+       const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);
+
+       const rightMar=computeRightMargin(isNarrow);
+       const leftMar=computeLeftMargin(isNarrow);
+       const MG={top:28,right:rightMar,bottom:52,left:leftMar};
+       const PW=CSS_W-MG.left-MG.right,PH=CSS_H-MG.top-MG.bottom;
+       Object.assign(layout,{CSS_W,CSS_H,MG,PW,PH});
+
+       const axR=rightAxisLayout(isNarrow);
+       const axL=leftAxisLayout(isNarrow);
+
+       const T={bg:cv("--bg"),fg:cv("--fg"),muted:cv("--muted"),panel:cv("--panel"),
+                supplyObs:cv("--supplyObs"),issObs:cv("--issObs"),supplyExp:cv("--supplyExp"),issExp:cv("--issExp"),
+                annualObs:cv("--annualObs"),annualExp:cv("--annualExp"),
+                eventObs:cv("--eventObs"),eventHalv:cv("--eventHalv"),written:cv("--written"),
+                gridLine:cv("--gridLine"),capLine:cv("--capLine"),frameBorder:cv("--frameBorder"),
+                zip234Supply:cv("--zip234Supply"),zip234Iss:cv("--zip234Iss"),zip234Ann:cv("--zip234Ann"),
+                zip234Act:cv("--zip234Act"),
+                burnEvent:cv("--burnEvent"),
+                supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
+                supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)",
+                zip234FillObs: getTheme()==="dark" ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)",
+                zip234FillExp: getTheme()==="dark" ? "rgba(56,189,248,0.06)" : "rgba(2,132,199,0.04)",
+       };
+
+       ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
+
+       const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
+
+       // Determine how much default data to show
+       const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
+       const D = scenarios.default.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h <= defaultCutoffH);
+       const Z = (showZip234() && scenarios.zip234.data.length >= 1)
+               ? scenarios.zip234.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
+               : [];
+
+       if (yDirty && (D.length >= 2 || Z.length >= 1)) {
+         updateYTargets(); yDirty = false;
+         if (ySnapOnFirstData) {
            yDisp.supMinZat = yTarget.supMinZat;
            yDisp.supMaxZat = yTarget.supMaxZat;
            yDisp.issMaxZat = yTarget.issMaxZat;
            yDisp.annMax = yTarget.annMax;
            if (!simRunning) ySnapOnFirstData = false;
+         }
        }
-   }
-
-   // Animate Y axes toward targets
-   const yAnimating = animateYAxes();
-
-   // Pixel mapping from animated display values
-   const ySupRange = yDisp.supMaxZat - yDisp.supMinZat;
-  const ySP = zat => {
-      if (ySupRange <= 0n) return MG.top + PH / 2;
-      return MG.top + PH - Number((zat - yDisp.supMinZat) * BigInt(PH) * 1000n / ySupRange) / 1000;
-  };
-  const yIP = zat => {
-      if (yDisp.issMaxZat <= 0n) return MG.top + PH;
-      return MG.top + PH - Number(zat * BigInt(PH) * 1000n / yDisp.issMaxZat) / 1000;
-  };
-  const yAP = p => MG.top + PH - (p / yDisp.annMax) * PH;
-
-  // Compute display steps for grid/ticks
-  const dispSupStep = niceStepZat(ySupRange, 6);
-  const dispIssStep = niceStepZat(yDisp.issMaxZat, 5);
-  const dispAnnStep = niceStepNum(yDisp.annMax, 5);
-  const supUseMSuffix = yDisp.supMaxZat >= 1_000_000n * ZATOSHI;
-
-  // Grid
-  if(show.supply){
-      ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
-      const gridStart = yDisp.supMinZat <= 0n ? 0n : (yDisp.supMinZat / dispSupStep) * dispSupStep;
-      for(let s=gridStart;s<=yDisp.supMaxZat;s+=dispSupStep){
-          ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();
-      }
-  }
-
-  // 21M cap (only draw if within visible Y range)
-  if(show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat){
-      ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(MG.left,ySP(MAX_MONEY_ZAT));ctx.lineTo(MG.left+PW,ySP(MAX_MONEY_ZAT));ctx.stroke();ctx.setLineDash([]);
-      ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(MAX_MONEY_ZAT)-4);ctx.restore();
-  }
-
-  // Event verticals
-  ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1;
-
-  // Blossom
-  {const t=blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
-    if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventObs;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
-
-  // Halvings (only up to defaultCutoffH)
-  {const halvMax = min(defaultCutoffH, timeToHeight(view.tMax) + 200_000n);
-    for(const hh of halvingHeights(halvMax)){
-      const t=blockToTime(hh);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventHalv;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}}
-
-  // Written ("Sim written")
-  {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.written;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
-
-  // Burn events
-  for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.burnEvent;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
-
-  // ZIP 234 activation
-  if(showZip234()){
-    const t=blockToTime(zip234ActivationHeight);
-    if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.zip234Act;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
-      ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}
-  }
-
-  ctx.setLineDash([]);ctx.restore();
-
-  // Clip to plot area
-  ctx.save();ctx.beginPath();ctx.rect(MG.left,MG.top,PW,PH);ctx.clip();
-
-  // Helper: draw split line (observed solid / expected dashed)
-  function drawSplit(pts,splitH,yFn,obsC,expC,lw){
-    ctx.beginPath();ctx.strokeStyle=obsC;ctx.lineWidth=lw;ctx.setLineDash([]);
-    let started=false;
-    for(const p of pts){if(p.h>splitH)break;const py=yFn(p);if(!isFinite(py))continue;
-      const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
-    ctx.stroke();
-    ctx.beginPath();ctx.strokeStyle=expC;ctx.lineWidth=lw;ctx.setLineDash([6,4]);started=false;
-    for(const p of pts){if(p.h<splitH){const py=yFn(p);if(!isFinite(py))continue;ctx.moveTo(xP(p.time),py);started=true;continue;}
-      const py=yFn(p);if(!isFinite(py))continue;const px=xP(p.time);
-      if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
-    ctx.stroke();ctx.setLineDash([]);
-  }
-
-  function fillAreaAlways(pts,yFn,color){
-    if(pts.length<2)return;
-    const baseline=MG.top+PH;
-    ctx.beginPath();
-    ctx.moveTo(xP(pts[0].time),baseline);
-    for(const p of pts){const py=yFn(p);if(isFinite(py))ctx.lineTo(xP(p.time),py);}
-    ctx.lineTo(xP(pts[pts.length-1].time),baseline);
-    ctx.closePath();ctx.fillStyle=color;ctx.fill();
-  }
-
-  const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT - ONE_YEAR_MS / 1000n / (WRITTEN_HEIGHT < 653600n ? 150n : 75n);
-
-  // Default model curves
-  if(D.length>=2){
-    if(show.supply){
-        fillAreaAlways(D,p=>ySP(p.supplyZat),T.supplyFillObs);
-        drawSplit(D,WRITTEN_HEIGHT,p=>ySP(p.supplyZat),T.supplyObs,T.supplyExp,2);
-    }
-    if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(p.issDayZat),T.issObs,T.issExp,2);
-    if(show.annPct)drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
-  }
-
-  // ZIP 234 curves
-  if(showZip234()&&Z.length>=1){
-    if(show.supply&&Z.length>=2){
-      fillAreaAlways(Z,p=>ySP(p.supplyZat),T.zip234FillObs);
-    }
-
-    function drawZ234Line(yFn,color,lw){
-      if(Z.length<1)return;ctx.beginPath();ctx.setLineDash([6,4]);ctx.strokeStyle=color;ctx.lineWidth=lw;
-      let started=false;for(const p of Z){const py=yFn(p);if(!isFinite(py))continue;
-        const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
-      ctx.stroke();ctx.setLineDash([]);
-    }
-
-    if(show.supply)drawZ234Line(p=>ySP(p.supplyZat),T.zip234Supply,2.5);
-      if(show.issDay)drawZ234Line(p=>yIP(p.issDayZat),T.zip234Iss,2.5);
-    if(show.annPct)drawZ234Line(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.zip234Ann,1.8);
-  }
-
-  ctx.restore();// end clip
-
-  // Event labels
-  ctx.font="9px system-ui";
-  const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function eventLabel(h,label,color){
-    const t=blockToTime(h);if(t<view.tMin||t>view.tMax)return;
-    ctx.fillStyle=color;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
-    ctx.textAlign="left";ctx.fillText(label+" — "+mo[new Date(t).getUTCMonth()]+" "+new Date(t).getUTCFullYear(),0,0);ctx.restore();
-  }
-
-  eventLabel(BLOSSOM_ACTIVATION_HEIGHT,"Blossom",T.eventObs);
-  {const halvMax = min(defaultCutoffH, timeToHeight(view.tMax) + 200_000n);
-    for(const hh of halvingHeights(halvMax)){
-      const idx=Number((hh-1_046_400n)/1_680_000n)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
-
-  // "Sim written" label
-  {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Sim written",0,0);ctx.restore();}}
-
-  // Burn event labels
-  for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=cv("--burnEvent");ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(b.label,0,0);ctx.restore();}}
-
-  // ZIP 234 activation label
-    if(showZip234()){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
-    ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
-    ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
-
-  // Left axis 1 (Issuance/Day)
-  if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left-ax.tickX;
-    ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="right";
-    for(let v=0n;v<=yDisp.issMaxZat;v+=dispIssStep){
-        const py = yIP(v);
-        if (py >= MG.top - 5 && py <= MG.top + PH + 5)
-            ctx.fillText(formatZatForAxis(v, dispIssStep, isNarrow, false),bx,py+4);
-    }
-
-    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ⓩ)",0,0);ctx.restore();}}
-
-  // Left axis 2 (Annual %)
-  if(show.annPct&&axL.annPct){const ax=axL.annPct,bx=MG.left-ax.tickX;
-    ctx.fillStyle=T.annualObs;ctx.font="10px system-ui";ctx.textAlign="right";
-    for(let p=0;p<=yDisp.annMax;p+=dispAnnStep){
-        const py = yAP(p);
-        if (py >= MG.top - 5 && py <= MG.top + PH + 5) {
-            const dec = dispAnnStep < 1 ? (dispAnnStep < 0.1 ? 2 : 1) : 0;
-            ctx.fillText(p.toFixed(dec)+"%",bx,py+3);
-        }
-    }
-    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
-      ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Issuance %",0,0);ctx.restore();}}
-
-  // Right axis (Supply)
-  if(show.supply&&axR.supply){const ax=axR.supply,bx=MG.left+PW+ax.tickX;
-    ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="left";
-    const supTickStart = yDisp.supMinZat <= 0n ? 0n : (yDisp.supMinZat / dispSupStep) * dispSupStep;
-    for(let s=supTickStart;s<=yDisp.supMaxZat;s+=dispSupStep){
-        const py = ySP(s);
-        if (py >= MG.top - 5 && py <= MG.top + PH + 5)
-            ctx.fillText(formatZatForAxis(s, dispSupStep, isNarrow, supUseMSuffix),bx,py+4);
-    }
-
-    if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
-      ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ⓩ)",0,0);ctx.restore();}}
-
-  // X axis
-  ctx.fillStyle=T.muted;ctx.font="10px system-ui";ctx.textAlign="center";
-  const maxViewH=timeToHeight(view.tMax)+200_000n;
-  const allHalvings=halvingHeights(maxViewH);
-  for(const hh of allHalvings){
-    const t=blockToTime(hh);
-    if(t<view.tMin||t>view.tMax)continue;
-    const d=new Date(t);
-    const label=mo[d.getUTCMonth()]+" "+d.getUTCFullYear();
-    ctx.fillText(label,xP(t),MG.top+PH+20);
-    ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(xP(t),MG.top+PH);ctx.lineTo(xP(t),MG.top+PH+4);ctx.stroke();
-  }
-  ctx.font="12px system-ui";ctx.fillText("Date (UTC)",MG.left+PW/2,MG.top+PH+42);
-
-  // Frame
-  ctx.strokeStyle=T.frameBorder;ctx.lineWidth=1;ctx.strokeRect(MG.left,MG.top,PW,PH);
-
-   // Stem target for handles: cap line if visible, else plot top
-   layout.stemTargetY = (show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat)
-                      ? ySP(MAX_MONEY_ZAT) : MG.top;
-
-   // Position activation handle
-   updateActHandle();
-   // Position burn handle
-   updateBurnHandle();
-   // Continue animating if Y axes haven't converged
-   if (yAnimating) requestDraw();
-
-   // Keep URL in sync with current state
-   syncURL();
- }
-
- /* ================================================================
-    Activation handle geometry helpers
-    ================================================================ */
- function computeStemHeightFromBottom(visibleBottomInWrap, plotTop, minHeight=4){
-  return max(minHeight, plotTop - visibleBottomInWrap);
-}
-
-function measureActHandleGeometry({ actHandle, wrapEl, actCollapsed, MG }){
-  // Apply state before measuring so we measure the actual visible element
-  actHandle.classList.toggle("collapsed", actCollapsed);
-  actHandle.offsetHeight; // force layout
-
-  const visibleEl = actCollapsed
-    ? actHandle.querySelector(".act-nub")
-    : actHandle.querySelector(".act-pill");
-
-  const visibleRect = visibleEl.getBoundingClientRect();
-  const wrapRect = wrapEl.getBoundingClientRect();
-
-  const visibleBottomInWrap = visibleRect.bottom - wrapRect.top;
-  const stemHeight = computeStemHeightFromBottom(visibleBottomInWrap, MG.top);
-
-  return { visibleBottomInWrap, stemHeight };
-}
- 
-/* ================================================================
-   Activation handle positioning
-   ================================================================ */
-const actHandle=document.getElementById("actHandle");
-const actBlockInput=document.getElementById("actBlockInput");
-const actDateInput=document.getElementById("actDateInput");
-
-function updateActHandle(){
-    if(!showZip234()){actHandle.style.display="none";return null;}
-    const{CSS_W,CSS_H,MG,PW,PH}=layout;
-    if(!PW){actHandle.style.display="none";return null;}
-    const t=blockToTime(zip234ActivationHeight);
-    if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return null;}
-    const frac=(t-view.tMin)/(view.tMax-view.tMin);
-    const xPx=MG.left+frac*PW;
-    actHandle.style.display="block";
-    actHandle.style.left=xPx+"px";
-    // Apply collapsed state
-    actHandle.classList.toggle("collapsed", actCollapsed);
-    // Zero out stem and reset top before measuring
-    const stem=actHandle.querySelector('.act-stem');
-    stem.style.height="0px";
-    actHandle.style.top="0px";
-    actHandle.offsetHeight;
-    // Center the visible element at y=0 (top of chart-wrap)
-    const visibleEl=actCollapsed
-      ? actHandle.querySelector('.act-nub')
-      : actHandle.querySelector('.act-pill');
-    const visH=visibleEl.offsetHeight;
-    actHandle.style.top=(-visH/2)+"px";
-    actHandle.offsetHeight;
-    // Measure where content ends
-    const wrapEl=document.getElementById("chartWrap");
-    const wrapRect=wrapEl.getBoundingClientRect();
-    const handleRect=actHandle.getBoundingClientRect();
-    const handleBottom=handleRect.bottom-wrapRect.top;
-    // Stem reaches the 21M cap line (ySupMax is 22M, so capY = MG.top + PH/22)
-    const stemTargetY=layout.stemTargetY||MG.top;
-    const stemHeight=max(0, stemTargetY-handleBottom);
-    stem.style.height=stemHeight+"px";
-    actBlockInput.value=zip234ActivationHeight.toLocaleString();
-    actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
-    return {stemHeight};
-}
-
-/* ================================================================
-   Burn handle state & positioning
-   ================================================================ */
-const burnHandle=document.getElementById("burnHandle");
-const burnBlockInput=document.getElementById("burnBlockInput");
-const burnDateInput=document.getElementById("burnDateInput");
-const burnAmtInput=document.getElementById("burnAmtInput");
-let burnCollapsed=false;
-
-function clampBurnHeight(h){
-    return max(WRITTEN_HEIGHT, h);
-}
-
-function updateBurnHandle(){
-    if(!burnHandle)return null;
-    const{CSS_W,CSS_H,MG,PW,PH}=layout;
-    if(!PW){burnHandle.style.display="none";return null;}
-    const b=BURN_EVENTS[0];
-    if(!b){burnHandle.style.display="none";return null;}
-    const t=blockToTime(b.h);
-    if(t<view.tMin||t>view.tMax){burnHandle.style.display="none";return null;}
-    const frac=(t-view.tMin)/(view.tMax-view.tMin);
-    const xPx=MG.left+frac*PW;
-    burnHandle.style.display="block";
-    burnHandle.style.left=xPx+"px";
-    burnHandle.classList.toggle("collapsed",burnCollapsed);
-    const stem=burnHandle.querySelector('.burn-stem');
-    stem.style.height="0px";
-    burnHandle.style.top="0px";
-    burnHandle.offsetHeight;
-    const visibleEl=burnCollapsed
-      ? burnHandle.querySelector('.burn-nub')
-      : burnHandle.querySelector('.burn-pill');
-    const visH=visibleEl.offsetHeight;
-    burnHandle.style.top=(-visH/2)+"px";
-    burnHandle.offsetHeight;
-    const wrapEl=document.getElementById("chartWrap");
-    const wrapRect=wrapEl.getBoundingClientRect();
-    const handleRect=burnHandle.getBoundingClientRect();
-    const handleBottom=handleRect.bottom-wrapRect.top;
-    const stemTargetY=layout.stemTargetY||MG.top;
-    const stemHeight=max(0,stemTargetY-handleBottom);
-    stem.style.height=stemHeight+"px";
-    burnBlockInput.value=b.h.toLocaleString();
-    burnDateInput.value=fmtDate(blockToTime(b.h));
-    burnAmtInput.value = zatToZecString(b.zat);
-
-    document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(b=>
-        b.classList.toggle('active', b.dataset.burnMode === BURN_EVENTS[0].mode));
-
-    return {stemHeight};
-}
-    
-/* ================================================================
-   Extracted handler: activation drag (shared by mouse & touch)
-   ================================================================ */
-function handleActDrag(clientX){
-  const adjustedX=clientX-actDragOffsetX;
-  const canvasEl=document.getElementById("chart");
-  const rect=canvasEl.getBoundingClientRect();
-  const{MG,PW}=layout;
-  const cssW=parseInt(canvasEl.style.width);
-  const mx=(adjustedX-rect.left)*(cssW/rect.width);
-  const frac=max(0,min(1,(mx-MG.left)/PW));
-  const t=view.tMin+frac*(view.tMax-view.tMin);
-  changeZIP234ActivationHeight(timeToHeight(t));
-}
-
-function changeZIP234ActivationHeight(newH) {
-    const clampedH = max(newH, WRITTEN_HEIGHT);
-    const oldH = zip234ActivationHeight;
-    if (oldH !== clampedH) {
-        zip234ActivationHeight = clampedH;
-        invalidateScenarioFrom('zip234', min(oldH, clampedH));
-        requestDraw();
-    }
-}
-
-/* ================================================================
-   Extracted handler: activation block input
-   ================================================================ */
-function handleActBlockInput(){
-  const raw=actBlockInput.value.replace(/,/g,"").trim();
-  try {
-    const v=BigInt(raw);
-    if(v>=0n){
-        changeZIP234ActivationHeight(v);
-        zoomToActivation(zip234ActivationHeight);
-    }
-  } catch(e) {}
-  actBlockInput.blur();
-}
-
-/* ================================================================
-   Extracted handler: activation date input
-   ================================================================ */
-function handleActDateInput(){
-  const raw=actDateInput.value.trim();
-  const parsed=Date.parse(raw);
-  if(!isNaN(parsed)){
-      changeZIP234ActivationHeight(timeToHeight(parsed));
-      zoomToActivation(zip234ActivationHeight);
-  }
-  actDateInput.blur();
-}
-
-/* ================================================================
-   Extracted handler: burn drag (shared by mouse & touch)
-   ================================================================ */
-let burnDragging=false,burnDragOffsetX=0;
-
-function handleBurnDrag(clientX) {
-    const adjustedX = clientX - burnDragOffsetX;
-    const canvasEl = document.getElementById("chart");
-    const rect = canvasEl.getBoundingClientRect();
-    const {MG, PW} = layout;
-    const cssW = parseInt(canvasEl.style.width);
-    const mx = (adjustedX - rect.left) * (cssW / rect.width);
-    const frac = max(0, min(1, (mx - MG.left) / PW));
-    const t = view.tMin + frac * (view.tMax - view.tMin);
-    changeBurn(timeToHeight(t));
-}
-
-/* ================================================================
-   Extracted handler: burn block input
-   ================================================================ */
-function handleBurnBlockInput() {
-    const raw = burnBlockInput.value.replace(/,/g, "").trim();
-    try { changeBurn(BigInt(raw)); } catch(e) {}
-    burnBlockInput.blur();
-}
-
-function min(a, b) { return a < b ? a : b; }
-function max(a, b) { return a > b ? a : b; }
-function abs(a) { return a < 0 ? - a : a; }
-
-/* ================================================================
-   Extracted handler: burn date input
-   ================================================================ */
-function handleBurnDateInput() {
-    const raw = burnDateInput.value.trim();
-    const parsed = Date.parse(raw);
-    if (!isNaN(parsed)) {
-        changeBurn(timeToHeight(parsed));
-    }
-    burnDateInput.blur();
-}
-
-/* ================================================================
-   Extracted handler: burn amount input
-   ================================================================ */
-function handleBurnAmtInput() {
-    changeBurn(undefined, parseZecToZat(burnAmtInput.value));
-    burnAmtInput.blur();
-}
-
-/* ================================================================
-   Extracted handler: chart drag
-   ================================================================ */
-let dragging=false,dragStartX=0,dragStartTMin=0,dragStartTMax=0;
-
-function handleChartDragStart(clientX){
-  dragging=true;dragStartX=clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;
-  document.getElementById("chart").style.cursor="grabbing";
-}
-
-function handleChartDragMove(clientX){
-  const rect=document.getElementById("chart").getBoundingClientRect();
-  const dx=clientX-dragStartX;
-  const pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;
-  view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;
-   clampView();requestDraw();computeAllScenarios();
- }
-
-/* ================================================================
-   Extracted handler: chart wheel (zoom/pan)
-   ================================================================ */
-function handleChartWheel(e){
-  e.preventDefault();
-  const rect=document.getElementById("chart").getBoundingClientRect();
-  const frac=(e.clientX-rect.left)/rect.width;
-  if(e.ctrlKey||e.metaKey||abs(e.deltaY)>50&&abs(e.deltaX)<5){
-    yDirty=true;
-    const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
-    view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
-  }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
-   clampView();requestDraw();computeAllScenarios();
-}
-
-/* ================================================================
-   Extracted handler: legend toggle
-   ================================================================ */
-function handleLegendToggle(el) {
-   const key = el.dataset.series;
-   show[key] = !show[key];
-   el.classList.toggle('active', show[key]);
-   yDirty=true;
-   requestDraw();
-}
-
-/* ================================================================
-   Extracted handler: chart hover (tooltip)
-   ================================================================ */
-function handleChartHover(e){
-  const tooltip=document.getElementById("tooltip");
-  const writtenTipEl=document.getElementById("writtenTip");
-  const tooltipData=scenarios.default.data.length>=2?scenarios.default.data:scenarios.zip234.data;
-  if(dragging||actDragging||burnDragging||tooltipData.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
-  const canvasEl=document.getElementById("chart");
-  const rect=canvasEl.getBoundingClientRect();
-  const cssW=parseInt(canvasEl.style.width),cssH=parseInt(canvasEl.style.height);
-  const{MG,PW,PH}=layout;if(!PW){tooltip.style.display="none";return;}
-  const mx=(e.clientX-rect.left)*(cssW/rect.width),my=(e.clientY-rect.top)*(cssH/rect.height);
-
-  // Written tooltip + Burn event tooltips
-  let specialTipShown=false;
-  const wt=writtenTime;
-  if(wt>=view.tMin&&wt<=view.tMax){
-    const wx=MG.left+((wt-view.tMin)/(view.tMax-view.tMin))*PW;
-    if(abs(mx-wx)<12&&my>=MG.top&&my<=MG.top+PH){
-      writtenTipEl.innerHTML='This is when this simulation was written.<br>Data before this line is <b>observed</b>; after is <b>expected</b>.';
-      writtenTipEl.style.display="block";
-      const tipScreenX=rect.left+(wx/cssW)*rect.width;
-      const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
-      writtenTipEl.style.left=tipScreenX+"px";
-      writtenTipEl.style.top=tipScreenY+"px";
-      specialTipShown=true;
-    }
-  }
-  if(!specialTipShown){
-    for(const b of BURN_EVENTS){
-      const bt=blockToTime(b.h);
-      if(bt>=view.tMin&&bt<=view.tMax){
-        const bx=MG.left+((bt-view.tMin)/(view.tMax-view.tMin))*PW;
-        if(abs(mx-bx)<12&&my>=MG.top&&my<=MG.top+PH){
-          writtenTipEl.innerHTML=`<b style="color:var(--burnEvent)">${b.label}</b><br>Block ${b.h.toLocaleString()}<br>${fmtDate(bt)} (UTC)<br>${zatToZecString(b.zat).toLocaleString()} ⓩ burned`;
-          writtenTipEl.style.display="block";
-          const tipScreenX=rect.left+(bx/cssW)*rect.width;
-          const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
-          writtenTipEl.style.left=tipScreenX+"px";
-          writtenTipEl.style.top=tipScreenY+"px";
-          specialTipShown=true;
-          break;
-        }
-      }
-    }
-  }
-  if(!specialTipShown)writtenTipEl.style.display="none";
-
-  if(mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH){tooltip.style.display="none";return;}
-  const mouseTime=view.tMin+((mx-MG.left)/PW)*(view.tMax-view.tMin);
-
-  let lo=0,hi=tooltipData.length-1;
-  while(lo<hi){const mid=(lo+hi)>>1;tooltipData[mid].time<mouseTime?lo=mid+1:hi=mid;}
-  if(lo>0&&abs(tooltipData[lo-1].time-mouseTime)<abs(tooltipData[lo].time-mouseTime))lo--;
-  const d=tooltipData[lo];
-
-  const isExp=d.h>WRITTEN_HEIGHT,status=isExp?"Expected":"Observed",sc=isExp?"tt-exp":"tt-obs";
-    const pct = pctOfCapStr(d.supplyZat);
-  const annStatus=d.annualPctIsExpected?"expected":"observed";
-    const annVal=isFinite(annPctVal(d))?annPctVal(d).toFixed(2)+"%":"—";
-  const annColor=d.annualPctIsExpected?"var(--annualExp)":"var(--annualObs)";
-
-  let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
-    `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
-
-    const defaultCutoffH2=showDefaultFuture()?0x7FFFFFFFFFFFFFn:(showZip234()?zip234ActivationHeight:-1n);
-  const showDefHere=d.h<=defaultCutoffH2;
-
-  if(showDefHere){
-    if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${zatToZecString(d.supplyZat, 2)} ⓩ <span class="tt-muted">(${pct}% of cap)</span></div>`;
-    if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${zatToZecString(d.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(d.issBlockZat, 8, 8)} ⓩ</div>`;
-    if(show.annPct)html+=`<div><span style="color:${annColor}">Annual:</span> ${annVal} <span class="tt-muted">(${annStatus})</span></div>`;
-  }
-
-  if(showZip234()&&d.h>=zip234ActivationHeight){
-    const z=lookupScenario(scenarios.zip234.data,d.h);
-    if(z){
-      html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
-        if(show.supply){const zp=pctOfCapStr(z.supplyZat);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${zatToZecString(z.supplyZat, 2)} ⓩ <span class="tt-muted">(${zp}%)</span></div>`;}
-        if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${zatToZecString(z.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(z.issBlockZat, 8, 8)} ⓩ</div>`;
-        if(show.annPct){const av=isFinite(annPctVal(z))?annPctVal(z).toFixed(2)+"%":"—";html+=`<div><span style="color:var(--zip234Ann)">Annual:</span> ${av}</div>`;}
-    }
-  }else if(showZip234()&&d.h<zip234ActivationHeight){
-    html+=`<div style="margin-top:4px" class="tt-muted"><i>ZIP 234 activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
-  }
-
-  tooltip.innerHTML=html;tooltip.style.display="block";
-  const tipW=min(400,window.innerWidth-20);
-  tooltip.style.left=min(e.clientX+14,window.innerWidth-tipW-10)+"px";
-  tooltip.style.top=max(10,e.clientY-130)+"px";
-}
-
-/* ================================================================
-   Wire up event listeners (thin wrappers calling named functions)
-   ================================================================ */
-const canvas=document.getElementById("chart");
-const tooltip=document.getElementById("tooltip");
-const writtenTip=document.getElementById("writtenTip");
-let actDragging=false, actDragOffsetX=0;
-
-// --- Activation handle: mouse drag ---
-let actPointerStart = { x: 0, y: 0, time: 0 };
-
-actHandle.addEventListener("mousedown",e=>{
-    if(e.target.tagName==="INPUT")return;
-    actDragging=true;
-    const hr=actHandle.getBoundingClientRect();
-    actDragOffsetX=e.clientX-(hr.left+hr.right)/2;
-    actPointerStart={x: e.clientX,y: e.clientY,time: Date.now()};
-    e.preventDefault();
-    e.stopPropagation();
-});
-
-window.addEventListener("mouseup", e => {
-  if (actDragging) {
-    const dx = abs(e.clientX - actPointerStart.x);
-    const dt = Date.now() - actPointerStart.time;
-    // If barely moved and quick, it's a click → toggle collapsed
-    if (dx < 4 && dt < 300) {
-      actCollapsed = !actCollapsed;
-      requestDraw();
-    }
-    actDragging = false;
-  }
-});
-
-window.addEventListener("mousemove",e=>{
-  if(!actDragging)return;
-  handleActDrag(e.clientX);
-});
-
-// --- Activation handle: touch drag ---
-actHandle.addEventListener("touchstart",e=>{
-    if(e.target.tagName==="INPUT")return;
-    actDragging=true;
-    const t=e.touches[0];
-    const hr=actHandle.getBoundingClientRect();
-    actDragOffsetX=t.clientX-(hr.left+hr.right)/2;
-    actPointerStart={x: t.clientX,y: t.clientY,time: Date.now()};
-    e.stopPropagation();
-},{passive: true});
-
-window.addEventListener("touchend", e => {
-  if (actDragging) {
-    const cx = e.changedTouches?.[0]?.clientX ?? actPointerStart.x;
-    const dx = abs(cx - actPointerStart.x);
-    const dt = Date.now() - actPointerStart.time;
-    if (dx < 4 && dt < 300) {
-      actCollapsed = !actCollapsed;
-      requestDraw();
-    }
-    actDragging = false;
-  }
-});
-
-window.addEventListener("touchmove",e=>{
-  if(!actDragging)return;
-  handleActDrag(e.touches[0].clientX);
-},{passive:true});
-
-// --- Activation handle: block input ---
-actBlockInput.addEventListener("keydown",e=>{
-  if(e.key==="Enter"){handleActBlockInput();}
-  e.stopPropagation();
-});
-actBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
-actBlockInput.addEventListener("click",e=>e.stopPropagation());
-
-// --- Activation handle: date input ---
-actDateInput.addEventListener("keydown",e=>{
-  if(e.key==="Enter"){handleActDateInput();}
-  e.stopPropagation();
-});
-actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
-actDateInput.addEventListener("click",e=>e.stopPropagation());
-
-// --- Burn handle: mouse drag ---
-let burnPointerStart={x:0,y:0,time:0};
-burnHandle.addEventListener("mousedown",e=>{
-    if(e.target.tagName==="INPUT")return;
-    burnDragging=true;
-    const hr=burnHandle.getBoundingClientRect();
-    burnDragOffsetX=e.clientX-(hr.left+hr.right)/2;
-    burnPointerStart={x:e.clientX,y:e.clientY,time:Date.now()};
-    e.preventDefault();
-    e.stopPropagation();
-});
-window.addEventListener("mouseup",e=>{
-    if(burnDragging){
-        const dx=abs(e.clientX-burnPointerStart.x);
-        const dt=Date.now()-burnPointerStart.time;
-        if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
-        burnDragging=false;
-    }
-});
-window.addEventListener("mousemove",e=>{
-    if(!burnDragging)return;
-    handleBurnDrag(e.clientX);
-});
-// --- Burn handle: touch drag ---
-burnHandle.addEventListener("touchstart",e=>{
-    if(e.target.tagName==="INPUT")return;
-    burnDragging=true;
-    const t=e.touches[0];
-    const hr=burnHandle.getBoundingClientRect();
-    burnDragOffsetX=t.clientX-(hr.left+hr.right)/2;
-    burnPointerStart={x:t.clientX,y:t.clientY,time:Date.now()};
-    e.stopPropagation();
-},{passive:true});
-window.addEventListener("touchend",e=>{
-    if(burnDragging){
-        const cx=e.changedTouches?.[0]?.clientX??burnPointerStart.x;
-        const dx=abs(cx-burnPointerStart.x);
-        const dt=Date.now()-burnPointerStart.time;
-        if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
-        burnDragging=false;
-    }
-});
-window.addEventListener("touchmove",e=>{
-    if(!burnDragging)return;
-    handleBurnDrag(e.touches[0].clientX);
-},{passive:true});
-// --- Burn handle: block input ---
-burnBlockInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){handleBurnBlockInput();}
-    e.stopPropagation();
-});
-burnBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
-burnBlockInput.addEventListener("click",e=>e.stopPropagation());
-// --- Burn handle: date input ---
-burnDateInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){handleBurnDateInput();}
-    e.stopPropagation();
-});
-burnDateInput.addEventListener("mousedown",e=>e.stopPropagation());
-burnDateInput.addEventListener("click",e=>e.stopPropagation());
-// --- Burn handle: amount input ---
-burnAmtInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){handleBurnAmtInput();}
-    e.stopPropagation();
-});
-burnAmtInput.addEventListener("mousedown",e=>e.stopPropagation());
-burnAmtInput.addEventListener("click",e=>e.stopPropagation());
-
-// --- Chart: mouse drag ---
-canvas.addEventListener("mousedown",e=>{if(actDragging||burnDragging)return;handleChartDragStart(e.clientX);});
-window.addEventListener("mousemove",e=>{if(!dragging||actDragging||burnDragging)return;handleChartDragMove(e.clientX);});
-window.addEventListener("mouseup",()=>{dragging=false;canvas.style.cursor="crosshair";});
-
-// --- Chart: wheel ---
-canvas.addEventListener("wheel",handleChartWheel,{passive:false});
-
-// --- Chart: double-click ---
-canvas.addEventListener("dblclick",()=>resetView());
-
-// --- Chart: touch pan/zoom ---
-let lastTouchDist=0;
-canvas.addEventListener("touchstart",e=>{if(e.touches.length===1){handleChartDragStart(e.touches[0].clientX);}
-  else if(e.touches.length===2){dragging=false;lastTouchDist=abs(e.touches[0].clientX-e.touches[1].clientX);}},{passive:true});
-canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging&&!actDragging){handleChartDragMove(e.touches[0].clientX);}
-  else if(e.touches.length===2){const dist=abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
-    if(lastTouchDist>0){yDirty=true;const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),
-                                          span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
-      clampView();requestDraw();computeAllScenarios();}lastTouchDist=dist;}},{passive:true});
- canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
-
-// --- Chart: hover (tooltip) ---
-canvas.addEventListener("mousemove",handleChartHover);
-canvas.addEventListener("mouseleave",()=>{tooltip.style.display="none";writtenTip.style.display="none";});
-
-/* ================================================================
-   Buttons
-   ================================================================ */
-document.getElementById("btnReset").addEventListener("click",()=>resetView());
- document.getElementById("btnShare").addEventListener("click",()=>handleShare());
- document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
-
- document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-        e.stopPropagation();
-        const newMode = btn.dataset.burnMode;
-        if(newMode === BURN_EVENTS[0].mode) return;
-        const currentZat = parseZecToZat(burnAmtInput.value);
-        const currentBlock = (() => { try { return BigInt(burnBlockInput.value.replace(/,/g,"")); } catch(e) { return undefined; } })();
-        changeBurn(currentBlock, currentZat !== null ? currentZat : undefined, newMode);
-    });
-    btn.addEventListener('mousedown',e=>e.stopPropagation());
-    btn.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
-});
-
-// --- Legend toggles ---
-document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (btn.dataset.mode === futureMode) return; // no change
-        futureMode = btn.dataset.mode;
-      yDirty=true;
-        document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
-        requestDraw();
-        computeAllScenarios();
-    });
-});
-document.querySelectorAll('.ltoggle').forEach(el=>{
-  el.addEventListener('click',()=>handleLegendToggle(el));
-});
-
-canvas.style.cursor="crosshair";
-
-/* ================================================================
-   URL state sharing
-   ================================================================ */
-let urlSyncEnabled = false;
- let lastUrlSyncTime = 0;
-
-function stateToHash() {
-    const p = new URLSearchParams();
-   p.set('v', Math.round(view.tMin) + '_' + Math.round(view.tMax));
-   p.set('f', futureMode);
-   p.set('s', (show.supply?1:0) + '' + (show.issDay?1:0) + '' + (show.annPct?1:0));
-    p.set('a', String(zip234ActivationHeight));
-    const b = BURN_EVENTS[0];
-    p.set('bh', String(b.h));
-    p.set('bz', String(b.zat));
-    p.set('bm', b.mode);
-    p.set('t', getTheme());
-    p.set('ys', String(yTarget.supMinZat) + '_' + String(yTarget.supMaxZat));
-    p.set('yi', String(yTarget.issMaxZat));
-   p.set('ya', String(yTarget.annMax));
-   return '#' + p.toString();
- }
-
-function loadStateFromHash() {
-    const hash = location.hash.slice(1);
-    if (!hash) return false;
-    try {
-        const p = new URLSearchParams(hash);
-        if (p.has('v')) {
-          const parts = p.get('v').split(/[_,]/);
-          if (parts.length === 2) {
-            const tMin = Number(parts[0]), tMax = Number(parts[1]);
-                if (isFinite(tMin) && isFinite(tMax) && tMax > tMin) {
-                    view.tMin = tMin; view.tMax = tMax;
-                }
-            }
-        }
-        if (p.has('f') && ['both','default','zip234'].includes(p.get('f')))
-            futureMode = p.get('f');
-        if (p.has('s') && p.get('s').length === 3) {
-            const s = p.get('s');
-            show.supply = s[0]==='1'; show.issDay = s[1]==='1'; show.annPct = s[2]==='1';
-        }
-        if (p.has('a')) {
-            try { const ah = BigInt(p.get('a'));
-                if (ah >= WRITTEN_HEIGHT) zip234ActivationHeight = ah;
-            } catch(e) {}
-        }
-        if (p.has('bh') && p.has('bz') && p.has('bm')) {
-            try {
-                const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
-                if (['once','perblock'].includes(bm) && bh >= WRITTEN_HEIGHT && bz >= 0n) {
-                    BURN_EVENTS[0].h = bh; BURN_EVENTS[0].zat = bz;
-                    BURN_EVENTS[0].mode = bm;
-                    BURN_EVENTS[0].label = formatBurnLabel(bz, bm);
-                }
-            } catch(e) {}
-        }
-        if (p.has('t') && ['light','dark'].includes(p.get('t')))
-            setTheme(p.get('t'));
-        if (p.has('ys') && p.has('yi')) {
-            try {
-                const yp = p.get('ys').split('_');
-                if (yp.length === 2) {
-                    const smin = BigInt(yp[0]), smax = BigInt(yp[1]);
-                    const imax = BigInt(p.get('yi'));
-                    const amax = p.has('ya') ? Number(p.get('ya')) : FIXED_ANN_MAX;
-                    yTarget.supMinZat = smin; yTarget.supMaxZat = smax;
-                    yTarget.issMaxZat = imax; yTarget.annMax = amax;
-                    yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
-                    yDisp.issMaxZat = imax; yDisp.annMax = amax;
-                    yLockedFromURL = true;
-                }
-            } catch(e) {}
-        }
-      return true;
-    } catch(e) { return false; }
-}
-
-function syncURL(force) {
-    if (!urlSyncEnabled) return;
-    const now = Date.now();
-    if (!force && now - lastUrlSyncTime < 250) return;
-    lastUrlSyncTime = now;
-    const newHash = stateToHash();
-    if (location.hash !== newHash) {
-        try { history.replaceState(null, '', newHash); }
-        catch(e) { try { location.hash = newHash.slice(1); } catch(e2) {} }
-    }
- }
-
-async function handleShare() {
-    syncURL(true);
-    const url = location.href;
-    if (navigator.share) {
-        try { await navigator.share({ title: 'Zcash Supply & Issuance', url }); return;
-        } catch(e) { if (e.name === 'AbortError') return; }
-    }
-    try {
-        await navigator.clipboard.writeText(url);
-        const btn = document.getElementById('btnShare');
-        const orig = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => { btn.textContent = orig; }, 1500);
-    } catch(e) { prompt('Copy this URL:', url); }
- }
-
- /* ================================================================
-    Boot
-    ================================================================ */
-
-initTheme();
-zip234ActivationHeight=3_687_123n;
-actCollapsed=false;
-burnCollapsed=false;
-view.tMin=genTime;
-view.tMax=blockToTime(6_000_000n);
-
-// Load state from URL hash (overrides defaults for shared links)
-const loadedFromURL = loadStateFromHash();
- if (loadedFromURL && !yLockedFromURL) { yDirty = true; ySnapOnFirstData = true; }
-
- clampView();
-
- // Sync UI toggles to match (possibly URL-loaded) state
- document.querySelectorAll('.ltoggle').forEach(el=>{
-  const key=el.dataset.series;
-  if(key&&show[key]!==undefined)el.classList.toggle('active',show[key]);
-});
- document.querySelectorAll('#futureModeGroup .seg').forEach(b =>
-   b.classList.toggle('active', b.dataset.mode === futureMode));
-
- function bigPowFP64(base, exp) {
-   let result = 1n << 64n, b = base, e = exp;
-    while (e > 0n) {
-        if (e & 1n) result = (result * b) >> 64n;
-        b = (b * b) >> 64n;
-        e >>= 1n;
-    }
-    return result;
-}
-
-function getZip234At(h) {
-    if (h < zip234ActivationHeight) return null;
-    // First try precomputed data
-    if (scenarios.zip234.data.length > 0) {
-        const z = lookupScenario(scenarios.zip234.data, h);
-        if (z && abs(z.h - h) <= SAMPLE_EVERY)
-            return { supply: z.supplyZat, issBlock: z.issBlockZat };
-    }
-    // Analytical fallback: closed-form exponential decay
-    const supAtAct = sumIssuanceRangeClean(0n, zip234ActivationHeight);
-    const remAtAct = MAX_MONEY_ZAT - supAtAct;
-    const ONE_MINUS_K = (1n << 64n) - ZIP234_K_NUM;
-    const n = h - zip234ActivationHeight;
-    const decayFP = bigPowFP64(ONE_MINUS_K, n);
-    const remNow = (remAtAct * decayFP) >> 64n;
-    const supNow = MAX_MONEY_ZAT - remNow;
-    const issBlockZat = (remNow * ZIP234_K_NUM) >> 64n;
-    return { supply: supNow, issBlock: issBlockZat };
-}
-
- urlSyncEnabled = true;
- requestDraw();computeAllScenarios();
- /* ================
-    REGRESSION TESTS
-    ================ */
- setTimeout(function runRegressionTests() {
-   const results = [];
-  function test(name, fn) {
-    try {
-      const pass = fn();
-      results.push({ name, pass });
-    } catch (e) {
-      results.push({ name, pass: false, error: e.message });
-    }
-  }
-
-  // --- Issuance logic ---
-
-  test("issuance_per_block(0) is 0 (slow start)", () => {
-    return issuance_per_block(0) === 0n;
-  });
-
-  test("issuance_per_block(20000) is 1250000000 (full subsidy pre-Blossom)", () => {
-    return issuance_per_block(20000) === 1250000000n;
-  });
-
-  test("issuance_per_block(653600) is 625000000 (Blossom halves block subsidy)", () => {
-    return issuance_per_block(653600) === 625000000n;
-  });
-
-  test("issuance_per_block at halving 1 (1046400) is 312500000", () => {
-    return issuance_per_block(1046400) === 312500000n;
-  });
-
-  test("issuance_per_block at halving 2 (2726400) is 156250000", () => {
-    return issuance_per_block(2726400) === 156250000n;
-  });
-
-  test("issuance_per_block just before halving 2 is 312500000", () => {
-    return issuance_per_block(2726399) === 312500000n;
-  });
-
-  // --- Time anchors ---
-
-  test("Genesis time is Oct 28, 2016", () => {
-    return TIME_ANCHORS[0].time === Date.UTC(2016, 9, 28, 7, 56);
-  });
-
-  test("blockToTime(0) equals genesis time", () => {
-    return blockToTime(0) === TIME_ANCHORS[0].time;
-  });
-
-  test("blockToTime is monotonically increasing", () => {
-    const h = [0, 100000, 653600, 1046400, 2000000, 2726400, 3000000];
-    for (let i = 1; i < h.length; i++) {
-      if (blockToTime(h[i]) <= blockToTime(h[i - 1])) return false;
-    }
-    return true;
-  });
-
-  // --- Halving heights ---
-
-  test("halvingHeights returns correct first halving", () => {
-    const hh = halvingHeights(2000000n);
-    return hh.length >= 1 && hh[0] === 1046400n;
-  });
-
-  test("halvingHeights includes halving 2 at 2726400", () => {
-    const hh = halvingHeights(3000000n);
-    return hh.includes(2726400n);
-  });
-
-  test("halving spacing is 1,680,000", () => {
-    const hh = halvingHeights(6000000n);
-    for (let i = 1; i < hh.length; i++) {
-      if (hh[i] - hh[i - 1] !== 1680000n) return false;
-    }
-    return true;
-  });
-
-  // --- ZIP 234 math ---
-
-  test("getZip234At returns null for height below activation", () => {
-    return getZip234At(zip234ActivationHeight - 1n) === null;
-  });
-
-  test("ZIP 234 supply is monotonically increasing", () => {
-    const actH = zip234ActivationHeight;
-    const heights = [actH, actH + 10000n, actH + 100000n, actH + 500000n];
-    let prev = 0;
-    for (const h of heights) {
-      const z = getZip234At(h);
-      if (!z || z.supply <= prev) return false;
-      prev = z.supply;
-    }
-    return true;
-  });
-
-  test("ZIP 234 issuance per block is positive and decreasing", () => {
-    const actH = zip234ActivationHeight;
-    const heights = [actH, actH + 100000n, actH + 500000n, actH + 1000000n];
-    let prev = MAX_MONEY_ZAT;
-    for (const h of heights) {
-      const z = getZip234At(h);
-      if (!z || z.issBlock <= 0n || z.issBlock >= prev) return false;
-      prev = z.issBlock;
-    }
-    return true;
-  });
-
-  test("ZIP 234 supply never exceeds 21M", () => {
-    const z = getZip234At(zip234ActivationHeight + 10_000_000n);
-    return z !== null && z.supply <= MAX_MONEY_ZAT;
-  });
-
-  // --- sumIssuanceRangeClean ---
-
-  test("sumIssuanceRangeClean(0,0) is 0", () => {
-    return sumIssuanceRangeClean(0n, 0n) === 0n;
-  });
-
-  test("sumIssuanceRangeClean(0,1) equals issuance_per_block(0)", () => {
-    return sumIssuanceRangeClean(0n, 1n) === issuance_per_block(0n);
-  });
-
-  test("sumIssuanceRangeClean agrees with brute force for small range", () => {
-    let brute = 0n;
-    for (let h = 20000n; h < 20010n; h++) brute += issuance_per_block(h);
-    return sumIssuanceRangeClean(20000n, 20010n) === brute;
-  });
-
-  // --- View state ---
-
-  test("view.tMin is at or near genesis at boot", () => {
-    return abs(view.tMin - genTime) < 86400000n; // within 1 day
-  });
-
-  test("view.tMax corresponds to roughly block 6M", () => {
-    const expected = blockToTime(6_000_000n);
-    return abs(view.tMax - expected) < 86400000n * 30n; // within 30 days
-  });
-
-  test("Activation height clamp: functional test via block input", () => {
-    const saved = zip234ActivationHeight;
-    const savedView = { tMin: view.tMin, tMax: view.tMax };
-    const input = document.getElementById("actBlockInput");
-    if (!input) return false;
-
-    // Set input to a value below WRITTEN_HEIGHT and fire Enter
-    const tooLow = WRITTEN_HEIGHT - 500_000n;
-    input.value = String(tooLow);
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-    // After the handler runs, activation height should still be >= WRITTEN_HEIGHT
-    const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
-
-    if (!pass) {
-      console.warn(`  ⚠ Block input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
-    }
-
-    // Restore
-    zip234ActivationHeight = saved;
-    view.tMin = savedView.tMin; view.tMax = savedView.tMax;
-    requestDraw();
-    return pass;
-  });
-
-  test("Activation height clamp: functional test via date input", () => {
-    const saved = zip234ActivationHeight;
-    const savedView = { tMin: view.tMin, tMax: view.tMax };
-    const input = document.getElementById("actDateInput");
-    if (!input) return false;
-
-    // Use genesis date — way before WRITTEN_HEIGHT
-    input.value = "Oct 28, 2016";
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-    const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
-
-    if (!pass) {
-      console.warn(`  ⚠ Date input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
-    }
-
-    zip234ActivationHeight = saved;
-    view.tMin = savedView.tMin; view.tMax = savedView.tMax;
-    requestDraw();
-    return pass;
-  });
-
-  // --- CSS / styling checks ---
-
-  test("actHandle is above chart (negative or zero top)", () => {
-    const h = document.getElementById("actHandle");
-    if (!h) return false;
-    const top = parseInt(getComputedStyle(h).top) || parseInt(h.style.top) || -20;
-    return top <= 0;
-  });
-
-  test("Activation stem bottom aligns in collapsed and expanded states", () => {
-    // This test needs the DOM to be fully laid out.
-    // Schedule it to run after next frame and report async.
-    // For now, force a synchronous draw + layout:
-
-    // Ensure enough data exists to draw
-    const testData = scenarios.default.data.length >= 2 ? scenarios.default.data : scenarios.zip234.data;
-    if (testData.length < 2) return false;
-
-    // Force a synchronous draw (populates layout, sizes canvas, calls updateActHandle)
-    drawRAF = null; // clear any pending RAF
-    draw();
-
-    if (!layout || !layout.MG || !layout.PW) {
-      console.warn("  ⚠ Stem test: layout not populated after draw()");
-      return false;
-    }
-
-    const stem = document.querySelector("#actHandle .act-stem");
-    const wrapEl = document.getElementById("chartWrap");
-    if (!stem || !wrapEl) return false;
-
-    // Verify the handle is actually visible
-    if (actHandle.style.display === "none") {
-      console.warn("  ⚠ Stem test: actHandle is hidden (activation out of view?)");
-      return false;
-    }
-
-    const saved = actCollapsed;
-    const eps = 2.0;
-
-    // Measure in expanded mode
-    actCollapsed = false;
-    updateActHandle();
-    actHandle.offsetHeight;
-    const wrapRect1 = wrapEl.getBoundingClientRect();
-    const stemRect1 = stem.getBoundingClientRect();
-    const stemBottom1 = stemRect1.bottom - wrapRect1.top;
-
-    // Measure in collapsed mode
-    actCollapsed = true;
-    updateActHandle();
-    actHandle.offsetHeight;
-    const wrapRect2 = wrapEl.getBoundingClientRect();
-    const stemRect2 = stem.getBoundingClientRect();
-    const stemBottom2 = stemRect2.bottom - wrapRect2.top;
-
-    // Restore
-    actCollapsed = saved;
-    updateActHandle();
-
-    const diff = abs(stemBottom1 - stemBottom2);
-    const pass = diff <= eps && stemRect1.height > 0 && stemRect2.height > 0;
-
-    if (!pass) {
-      console.warn(`  ⚠ Stem bottom expanded=${stemBottom1.toFixed(1)}px, collapsed=${stemBottom2.toFixed(1)}px, diff=${diff.toFixed(1)}px, heights=${stemRect1.height.toFixed(1)}/${stemRect2.height.toFixed(1)}`);
-    }
-
-    return pass;
-  });
-
-  // --- Report ---
-
-  const passed = results.filter(r => r.pass).length;
-  const failed = results.filter(r => !r.pass).length;
-  const total = results.length;
-
-  console.log(`%c=== REGRESSION TESTS: ${passed}/${total} passed, ${failed} failed ===`,
-    failed > 0 ? "color:red;font-weight:bold;font-size:14px" : "color:green;font-weight:bold;font-size:14px");
-
-  for (const r of results) {
-    if (r.pass) {
-      console.log(`  %c✓ ${r.name}`, "color:green");
-    } else {
-      console.log(`  %c✗ ${r.name}${r.error ? " — " + r.error : ""}`, "color:red;font-weight:bold");
-    }
-  }
-
-  if (failed > 0) {
-    console.warn(`⚠️ ${failed} regression test(s) FAILED — check for regressions before shipping!`);
-  }
-}, 500);
-</script>
-</body>
+
+       // Animate Y axes toward targets
+       const yAnimating = animateYAxes();
+
+       // Pixel mapping from animated display values
+       const ySupRange = yDisp.supMaxZat - yDisp.supMinZat;
+       const ySP = zat => {
+         if (ySupRange <= 0n) return MG.top + PH / 2;
+         return MG.top + PH - Number((zat - yDisp.supMinZat) * BigInt(PH) * 1000n / ySupRange) / 1000;
+       };
+       const yIP = zat => {
+         if (yDisp.issMaxZat <= 0n) return MG.top + PH;
+         return MG.top + PH - Number(zat * BigInt(PH) * 1000n / yDisp.issMaxZat) / 1000;
+       };
+       const yAP = p => MG.top + PH - (p / yDisp.annMax) * PH;
+
+       // Compute display steps for grid/ticks
+       const dispSupStep = niceStepZat(ySupRange, 6);
+       const dispIssStep = niceStepZat(yDisp.issMaxZat, 5);
+       const dispAnnStep = niceStepNum(yDisp.annMax, 5);
+       const supUseMSuffix = yDisp.supMaxZat >= 1_000_000n * ZATOSHI;
+
+       // Grid
+       if(show.supply){
+         ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
+         const gridStart = yDisp.supMinZat <= 0n ? 0n : (yDisp.supMinZat / dispSupStep) * dispSupStep;
+         for(let s=gridStart;s<=yDisp.supMaxZat;s+=dispSupStep){
+           ctx.beginPath();ctx.moveTo(MG.left,ySP(s));ctx.lineTo(MG.left+PW,ySP(s));ctx.stroke();
+         }
+       }
+
+       // 21M cap (only draw if within visible Y range)
+       if(show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat){
+         ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
+         ctx.beginPath();ctx.moveTo(MG.left,ySP(MAX_MONEY_ZAT));ctx.lineTo(MG.left+PW,ySP(MAX_MONEY_ZAT));ctx.stroke();ctx.setLineDash([]);
+         ctx.fillStyle=T.capLine;ctx.font="10px system-ui";ctx.textAlign="left";ctx.fillText("21 M cap",MG.left+4,ySP(MAX_MONEY_ZAT)-4);ctx.restore();
+       }
+
+       // Event verticals
+       ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1;
+
+       // Blossom
+       {const t=blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
+         if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventObs;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
+
+       // Halvings (only up to defaultCutoffH)
+       {const halvMax = min(defaultCutoffH, timeToHeight(view.tMax) + 200_000n);
+         for(const hh of halvingHeights(halvMax)){
+           const t=blockToTime(hh);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventHalv;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}}
+
+       // Written ("Sim written")
+       {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.written;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
+
+       // Burn events
+       for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.burnEvent;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
+
+       // ZIP 234 activation
+       if(showZip234()){
+         const t=blockToTime(zip234ActivationHeight);
+         if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.zip234Act;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
+           ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}
+       }
+
+       ctx.setLineDash([]);ctx.restore();
+
+       // Clip to plot area
+       ctx.save();ctx.beginPath();ctx.rect(MG.left,MG.top,PW,PH);ctx.clip();
+
+       // Helper: draw split line (observed solid / expected dashed)
+       function drawSplit(pts,splitH,yFn,obsC,expC,lw){
+         ctx.beginPath();ctx.strokeStyle=obsC;ctx.lineWidth=lw;ctx.setLineDash([]);
+         let started=false;
+         for(const p of pts){if(p.h>splitH)break;const py=yFn(p);if(!isFinite(py))continue;
+           const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+         ctx.stroke();
+         ctx.beginPath();ctx.strokeStyle=expC;ctx.lineWidth=lw;ctx.setLineDash([6,4]);started=false;
+         for(const p of pts){if(p.h<splitH){const py=yFn(p);if(!isFinite(py))continue;ctx.moveTo(xP(p.time),py);started=true;continue;}
+           const py=yFn(p);if(!isFinite(py))continue;const px=xP(p.time);
+           if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+         ctx.stroke();ctx.setLineDash([]);
+       }
+
+       function fillAreaAlways(pts,yFn,color){
+         if(pts.length<2)return;
+         const baseline=MG.top+PH;
+         ctx.beginPath();
+         ctx.moveTo(xP(pts[0].time),baseline);
+         for(const p of pts){const py=yFn(p);if(isFinite(py))ctx.lineTo(xP(p.time),py);}
+         ctx.lineTo(xP(pts[pts.length-1].time),baseline);
+         ctx.closePath();ctx.fillStyle=color;ctx.fill();
+       }
+
+       const ANNUAL_PCT_SPLIT_HEIGHT = WRITTEN_HEIGHT - ONE_YEAR_MS / 1000n / (WRITTEN_HEIGHT < 653600n ? 150n : 75n);
+
+       // Default model curves
+       if(D.length>=2){
+         if(show.supply){
+           fillAreaAlways(D,p=>ySP(p.supplyZat),T.supplyFillObs);
+           drawSplit(D,WRITTEN_HEIGHT,p=>ySP(p.supplyZat),T.supplyObs,T.supplyExp,2);
+         }
+         if(show.issDay)drawSplit(D,WRITTEN_HEIGHT,p=>yIP(p.issDayZat),T.issObs,T.issExp,2);
+         if(show.annPct)drawSplit(D,ANNUAL_PCT_SPLIT_HEIGHT,p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.annualObs,T.annualExp,1.8);
+       }
+
+       // ZIP 234 curves
+       if(showZip234()&&Z.length>=1){
+         if(show.supply&&Z.length>=2){
+           fillAreaAlways(Z,p=>ySP(p.supplyZat),T.zip234FillObs);
+         }
+
+         function drawZ234Line(yFn,color,lw){
+           if(Z.length<1)return;ctx.beginPath();ctx.setLineDash([6,4]);ctx.strokeStyle=color;ctx.lineWidth=lw;
+           let started=false;for(const p of Z){const py=yFn(p);if(!isFinite(py))continue;
+             const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+           ctx.stroke();ctx.setLineDash([]);
+         }
+
+         if(show.supply)drawZ234Line(p=>ySP(p.supplyZat),T.zip234Supply,2.5);
+         if(show.issDay)drawZ234Line(p=>yIP(p.issDayZat),T.zip234Iss,2.5);
+         if(show.annPct)drawZ234Line(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.zip234Ann,1.8);
+       }
+
+       ctx.restore();// end clip
+
+       // Event labels
+       ctx.font="9px system-ui";
+       const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+       function eventLabel(h,label,color){
+         const t=blockToTime(h);if(t<view.tMin||t>view.tMax)return;
+         ctx.fillStyle=color;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
+         ctx.textAlign="left";ctx.fillText(label+" — "+mo[new Date(t).getUTCMonth()]+" "+new Date(t).getUTCFullYear(),0,0);ctx.restore();
+       }
+
+       eventLabel(BLOSSOM_ACTIVATION_HEIGHT,"Blossom",T.eventObs);
+       {const halvMax = min(defaultCutoffH, timeToHeight(view.tMax) + 200_000n);
+         for(const hh of halvingHeights(halvMax)){
+           const idx=Number((hh-1_046_400n)/1_680_000n)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
+
+       // "Sim written" label
+       {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Sim written",0,0);ctx.restore();}}
+
+       // Burn event labels
+       for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=cv("--burnEvent");ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(b.label,0,0);ctx.restore();}}
+
+       // ZIP 234 activation label
+       if(showZip234()){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
+         ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
+         ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
+
+       // Left axis 1 (Issuance/Day)
+       if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left-ax.tickX;
+         ctx.fillStyle=T.issObs;ctx.font="11px system-ui";ctx.textAlign="right";
+         for(let v=0n;v<=yDisp.issMaxZat;v+=dispIssStep){
+           const py = yIP(v);
+           if (py >= MG.top - 5 && py <= MG.top + PH + 5)
+             ctx.fillText(formatZatForAxis(v, dispIssStep, isNarrow, false),bx,py+4);
+         }
+
+         if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
+           ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ⓩ)",0,0);ctx.restore();}}
+
+       // Left axis 2 (Annual %)
+       if(show.annPct&&axL.annPct){const ax=axL.annPct,bx=MG.left-ax.tickX;
+         ctx.fillStyle=T.annualObs;ctx.font="10px system-ui";ctx.textAlign="right";
+         for(let p=0;p<=yDisp.annMax;p+=dispAnnStep){
+           const py = yAP(p);
+           if (py >= MG.top - 5 && py <= MG.top + PH + 5) {
+             const dec = dispAnnStep < 1 ? (dispAnnStep < 0.1 ? 2 : 1) : 0;
+             ctx.fillText(p.toFixed(dec)+"%",bx,py+3);
+           }
+         }
+         if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
+           ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Issuance %",0,0);ctx.restore();}}
+
+       // Right axis (Supply)
+       if(show.supply&&axR.supply){const ax=axR.supply,bx=MG.left+PW+ax.tickX;
+         ctx.fillStyle=T.supplyObs;ctx.font="11px system-ui";ctx.textAlign="left";
+         const supTickStart = yDisp.supMinZat <= 0n ? 0n : (yDisp.supMinZat / dispSupStep) * dispSupStep;
+         for(let s=supTickStart;s<=yDisp.supMaxZat;s+=dispSupStep){
+           const py = ySP(s);
+           if (py >= MG.top - 5 && py <= MG.top + PH + 5)
+             ctx.fillText(formatZatForAxis(s, dispSupStep, isNarrow, supUseMSuffix),bx,py+4);
+         }
+
+         if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
+           ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ⓩ)",0,0);ctx.restore();}}
+
+       // X axis
+       ctx.fillStyle=T.muted;ctx.font="10px system-ui";ctx.textAlign="center";
+       const maxViewH=timeToHeight(view.tMax)+200_000n;
+       const allHalvings=halvingHeights(maxViewH);
+       for(const hh of allHalvings){
+         const t=blockToTime(hh);
+         if(t<view.tMin||t>view.tMax)continue;
+         const d=new Date(t);
+         const label=mo[d.getUTCMonth()]+" "+d.getUTCFullYear();
+         ctx.fillText(label,xP(t),MG.top+PH+20);
+         ctx.strokeStyle=T.gridLine;ctx.lineWidth=1;
+         ctx.beginPath();ctx.moveTo(xP(t),MG.top+PH);ctx.lineTo(xP(t),MG.top+PH+4);ctx.stroke();
+       }
+       ctx.font="12px system-ui";ctx.fillText("Date (UTC)",MG.left+PW/2,MG.top+PH+42);
+
+       // Frame
+       ctx.strokeStyle=T.frameBorder;ctx.lineWidth=1;ctx.strokeRect(MG.left,MG.top,PW,PH);
+
+       // Stem target for handles: cap line if visible, else plot top
+       layout.stemTargetY = (show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat)
+                          ? ySP(MAX_MONEY_ZAT) : MG.top;
+
+       // Position activation handle
+       updateActHandle();
+       // Position burn handle
+       updateBurnHandle();
+       // Continue animating if Y axes haven't converged
+       if (yAnimating) requestDraw();
+
+       // Keep URL in sync with current state
+       syncURL();
+     }
+
+     /* ================================================================
+        Activation handle geometry helpers
+        ================================================================ */
+     function computeStemHeightFromBottom(visibleBottomInWrap, plotTop, minHeight=4){
+       return max(minHeight, plotTop - visibleBottomInWrap);
+     }
+
+     function measureActHandleGeometry({ actHandle, wrapEl, actCollapsed, MG }){
+       // Apply state before measuring so we measure the actual visible element
+       actHandle.classList.toggle("collapsed", actCollapsed);
+       actHandle.offsetHeight; // force layout
+
+       const visibleEl = actCollapsed
+                       ? actHandle.querySelector(".act-nub")
+                       : actHandle.querySelector(".act-pill");
+
+       const visibleRect = visibleEl.getBoundingClientRect();
+       const wrapRect = wrapEl.getBoundingClientRect();
+
+       const visibleBottomInWrap = visibleRect.bottom - wrapRect.top;
+       const stemHeight = computeStemHeightFromBottom(visibleBottomInWrap, MG.top);
+
+       return { visibleBottomInWrap, stemHeight };
+     }
+     
+     /* ================================================================
+        Activation handle positioning
+        ================================================================ */
+     const actHandle=document.getElementById("actHandle");
+     const actBlockInput=document.getElementById("actBlockInput");
+     const actDateInput=document.getElementById("actDateInput");
+
+     function updateActHandle(){
+       if(!showZip234()){actHandle.style.display="none";return null;}
+       const{CSS_W,CSS_H,MG,PW,PH}=layout;
+       if(!PW){actHandle.style.display="none";return null;}
+       const t=blockToTime(zip234ActivationHeight);
+       if(t<view.tMin||t>view.tMax){actHandle.style.display="none";return null;}
+       const frac=(t-view.tMin)/(view.tMax-view.tMin);
+       const xPx=MG.left+frac*PW;
+       actHandle.style.display="block";
+       actHandle.style.left=xPx+"px";
+       // Apply collapsed state
+       actHandle.classList.toggle("collapsed", actCollapsed);
+       // Zero out stem and reset top before measuring
+       const stem=actHandle.querySelector('.act-stem');
+       stem.style.height="0px";
+       actHandle.style.top="0px";
+       actHandle.offsetHeight;
+       // Center the visible element at y=0 (top of chart-wrap)
+       const visibleEl=actCollapsed
+                     ? actHandle.querySelector('.act-nub')
+                     : actHandle.querySelector('.act-pill');
+       const visH=visibleEl.offsetHeight;
+       actHandle.style.top=(-visH/2)+"px";
+       actHandle.offsetHeight;
+       // Measure where content ends
+       const wrapEl=document.getElementById("chartWrap");
+       const wrapRect=wrapEl.getBoundingClientRect();
+       const handleRect=actHandle.getBoundingClientRect();
+       const handleBottom=handleRect.bottom-wrapRect.top;
+       // Stem reaches the 21M cap line (ySupMax is 22M, so capY = MG.top + PH/22)
+       const stemTargetY=layout.stemTargetY||MG.top;
+       const stemHeight=max(0, stemTargetY-handleBottom);
+       stem.style.height=stemHeight+"px";
+       actBlockInput.value=zip234ActivationHeight.toLocaleString();
+       actDateInput.value=fmtDate(blockToTime(zip234ActivationHeight));
+       return {stemHeight};
+     }
+
+     /* ================================================================
+        Burn handle state & positioning
+        ================================================================ */
+     const burnHandle=document.getElementById("burnHandle");
+     const burnBlockInput=document.getElementById("burnBlockInput");
+     const burnDateInput=document.getElementById("burnDateInput");
+     const burnAmtInput=document.getElementById("burnAmtInput");
+     let burnCollapsed=false;
+
+     function clampBurnHeight(h){
+       return max(WRITTEN_HEIGHT, h);
+     }
+
+     function updateBurnHandle(){
+       if(!burnHandle)return null;
+       const{CSS_W,CSS_H,MG,PW,PH}=layout;
+       if(!PW){burnHandle.style.display="none";return null;}
+       const b=BURN_EVENTS[0];
+       if(!b){burnHandle.style.display="none";return null;}
+       const t=blockToTime(b.h);
+       if(t<view.tMin||t>view.tMax){burnHandle.style.display="none";return null;}
+       const frac=(t-view.tMin)/(view.tMax-view.tMin);
+       const xPx=MG.left+frac*PW;
+       burnHandle.style.display="block";
+       burnHandle.style.left=xPx+"px";
+       burnHandle.classList.toggle("collapsed",burnCollapsed);
+       const stem=burnHandle.querySelector('.burn-stem');
+       stem.style.height="0px";
+       burnHandle.style.top="0px";
+       burnHandle.offsetHeight;
+       const visibleEl=burnCollapsed
+                     ? burnHandle.querySelector('.burn-nub')
+                     : burnHandle.querySelector('.burn-pill');
+       const visH=visibleEl.offsetHeight;
+       burnHandle.style.top=(-visH/2)+"px";
+       burnHandle.offsetHeight;
+       const wrapEl=document.getElementById("chartWrap");
+       const wrapRect=wrapEl.getBoundingClientRect();
+       const handleRect=burnHandle.getBoundingClientRect();
+       const handleBottom=handleRect.bottom-wrapRect.top;
+       const stemTargetY=layout.stemTargetY||MG.top;
+       const stemHeight=max(0,stemTargetY-handleBottom);
+       stem.style.height=stemHeight+"px";
+       burnBlockInput.value=b.h.toLocaleString();
+       burnDateInput.value=fmtDate(blockToTime(b.h));
+       burnAmtInput.value = zatToZecString(b.zat);
+
+       document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(b=>
+         b.classList.toggle('active', b.dataset.burnMode === BURN_EVENTS[0].mode));
+
+       return {stemHeight};
+     }
+     
+     /* ================================================================
+        Extracted handler: activation drag (shared by mouse & touch)
+        ================================================================ */
+     function handleActDrag(clientX){
+       const adjustedX=clientX-actDragOffsetX;
+       const canvasEl=document.getElementById("chart");
+       const rect=canvasEl.getBoundingClientRect();
+       const{MG,PW}=layout;
+       const cssW=parseInt(canvasEl.style.width);
+       const mx=(adjustedX-rect.left)*(cssW/rect.width);
+       const frac=max(0,min(1,(mx-MG.left)/PW));
+       const t=view.tMin+frac*(view.tMax-view.tMin);
+       changeZIP234ActivationHeight(timeToHeight(t));
+     }
+
+     function changeZIP234ActivationHeight(newH) {
+       const clampedH = max(newH, WRITTEN_HEIGHT);
+       const oldH = zip234ActivationHeight;
+       if (oldH !== clampedH) {
+         zip234ActivationHeight = clampedH;
+         invalidateScenarioFrom('zip234', min(oldH, clampedH));
+         requestDraw();
+       }
+     }
+
+     /* ================================================================
+        Extracted handler: activation block input
+        ================================================================ */
+     function handleActBlockInput(){
+       const raw=actBlockInput.value.replace(/,/g,"").trim();
+       try {
+         const v=BigInt(raw);
+         if(v>=0n){
+           changeZIP234ActivationHeight(v);
+           zoomToActivation(zip234ActivationHeight);
+         }
+       } catch(e) {}
+       actBlockInput.blur();
+     }
+
+     /* ================================================================
+        Extracted handler: activation date input
+        ================================================================ */
+     function handleActDateInput(){
+       const raw=actDateInput.value.trim();
+       const parsed=Date.parse(raw);
+       if(!isNaN(parsed)){
+         changeZIP234ActivationHeight(timeToHeight(parsed));
+         zoomToActivation(zip234ActivationHeight);
+       }
+       actDateInput.blur();
+     }
+
+     /* ================================================================
+        Extracted handler: burn drag (shared by mouse & touch)
+        ================================================================ */
+     let burnDragging=false,burnDragOffsetX=0;
+
+     function handleBurnDrag(clientX) {
+       const adjustedX = clientX - burnDragOffsetX;
+       const canvasEl = document.getElementById("chart");
+       const rect = canvasEl.getBoundingClientRect();
+       const {MG, PW} = layout;
+       const cssW = parseInt(canvasEl.style.width);
+       const mx = (adjustedX - rect.left) * (cssW / rect.width);
+       const frac = max(0, min(1, (mx - MG.left) / PW));
+       const t = view.tMin + frac * (view.tMax - view.tMin);
+       changeBurn(timeToHeight(t));
+     }
+
+     /* ================================================================
+        Extracted handler: burn block input
+        ================================================================ */
+     function handleBurnBlockInput() {
+       const raw = burnBlockInput.value.replace(/,/g, "").trim();
+       try { changeBurn(BigInt(raw)); } catch(e) {}
+       burnBlockInput.blur();
+     }
+
+     function min(a, b) { return a < b ? a : b; }
+     function max(a, b) { return a > b ? a : b; }
+     function abs(a) { return a < 0 ? - a : a; }
+
+     /* ================================================================
+        Extracted handler: burn date input
+        ================================================================ */
+     function handleBurnDateInput() {
+       const raw = burnDateInput.value.trim();
+       const parsed = Date.parse(raw);
+       if (!isNaN(parsed)) {
+         changeBurn(timeToHeight(parsed));
+       }
+       burnDateInput.blur();
+     }
+
+     /* ================================================================
+        Extracted handler: burn amount input
+        ================================================================ */
+     function handleBurnAmtInput() {
+       changeBurn(undefined, parseZecToZat(burnAmtInput.value));
+       burnAmtInput.blur();
+     }
+
+     /* ================================================================
+        Extracted handler: chart drag
+        ================================================================ */
+     let dragging=false,dragStartX=0,dragStartTMin=0,dragStartTMax=0;
+
+     function handleChartDragStart(clientX){
+       dragging=true;dragStartX=clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;
+       document.getElementById("chart").style.cursor="grabbing";
+     }
+
+     function handleChartDragMove(clientX){
+       const rect=document.getElementById("chart").getBoundingClientRect();
+       const dx=clientX-dragStartX;
+       const pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;
+       view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;
+       clampView();requestDraw();computeAllScenarios();
+     }
+
+     /* ================================================================
+        Extracted handler: chart wheel (zoom/pan)
+        ================================================================ */
+     function handleChartWheel(e){
+       e.preventDefault();
+       const rect=document.getElementById("chart").getBoundingClientRect();
+       const frac=(e.clientX-rect.left)/rect.width;
+       if(e.ctrlKey||e.metaKey||abs(e.deltaY)>50&&abs(e.deltaX)<5){
+         yDirty=true;
+         const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
+         view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
+       }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
+       clampView();requestDraw();computeAllScenarios();
+     }
+
+     /* ================================================================
+        Extracted handler: legend toggle
+        ================================================================ */
+     function handleLegendToggle(el) {
+       const key = el.dataset.series;
+       show[key] = !show[key];
+       el.classList.toggle('active', show[key]);
+       yDirty=true;
+       requestDraw();
+     }
+
+     /* ================================================================
+        Extracted handler: chart hover (tooltip)
+        ================================================================ */
+     function handleChartHover(e){
+       const tooltip=document.getElementById("tooltip");
+       const writtenTipEl=document.getElementById("writtenTip");
+       const tooltipData=scenarios.default.data.length>=2?scenarios.default.data:scenarios.zip234.data;
+       if(dragging||actDragging||burnDragging||tooltipData.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
+       const canvasEl=document.getElementById("chart");
+       const rect=canvasEl.getBoundingClientRect();
+       const cssW=parseInt(canvasEl.style.width),cssH=parseInt(canvasEl.style.height);
+       const{MG,PW,PH}=layout;if(!PW){tooltip.style.display="none";return;}
+       const mx=(e.clientX-rect.left)*(cssW/rect.width),my=(e.clientY-rect.top)*(cssH/rect.height);
+
+       // Written tooltip + Burn event tooltips
+       let specialTipShown=false;
+       const wt=writtenTime;
+       if(wt>=view.tMin&&wt<=view.tMax){
+         const wx=MG.left+((wt-view.tMin)/(view.tMax-view.tMin))*PW;
+         if(abs(mx-wx)<12&&my>=MG.top&&my<=MG.top+PH){
+           writtenTipEl.innerHTML='This is when this simulation was written.<br>Data before this line is <b>observed</b>; after is <b>expected</b>.';
+           writtenTipEl.style.display="block";
+           const tipScreenX=rect.left+(wx/cssW)*rect.width;
+           const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
+           writtenTipEl.style.left=tipScreenX+"px";
+           writtenTipEl.style.top=tipScreenY+"px";
+           specialTipShown=true;
+         }
+       }
+       if(!specialTipShown){
+         for(const b of BURN_EVENTS){
+           const bt=blockToTime(b.h);
+           if(bt>=view.tMin&&bt<=view.tMax){
+             const bx=MG.left+((bt-view.tMin)/(view.tMax-view.tMin))*PW;
+             if(abs(mx-bx)<12&&my>=MG.top&&my<=MG.top+PH){
+               writtenTipEl.innerHTML=`<b style="color:var(--burnEvent)">${b.label}</b><br>Block ${b.h.toLocaleString()}<br>${fmtDate(bt)} (UTC)<br>${zatToZecString(b.zat).toLocaleString()} ⓩ burned`;
+               writtenTipEl.style.display="block";
+               const tipScreenX=rect.left+(bx/cssW)*rect.width;
+               const tipScreenY=rect.top+((MG.top+PH+6)/cssH)*rect.height;
+               writtenTipEl.style.left=tipScreenX+"px";
+               writtenTipEl.style.top=tipScreenY+"px";
+               specialTipShown=true;
+               break;
+             }
+           }
+         }
+       }
+       if(!specialTipShown)writtenTipEl.style.display="none";
+
+       if(mx<MG.left||mx>MG.left+PW||my<MG.top||my>MG.top+PH){tooltip.style.display="none";return;}
+       const mouseTime=view.tMin+((mx-MG.left)/PW)*(view.tMax-view.tMin);
+
+       let lo=0,hi=tooltipData.length-1;
+       while(lo<hi){const mid=(lo+hi)>>1;tooltipData[mid].time<mouseTime?lo=mid+1:hi=mid;}
+       if(lo>0&&abs(tooltipData[lo-1].time-mouseTime)<abs(tooltipData[lo].time-mouseTime))lo--;
+       const d=tooltipData[lo];
+
+       const isExp=d.h>WRITTEN_HEIGHT,status=isExp?"Expected":"Observed",sc=isExp?"tt-exp":"tt-obs";
+       const pct = pctOfCapStr(d.supplyZat);
+       const annStatus=d.annualPctIsExpected?"expected":"observed";
+       const annVal=isFinite(annPctVal(d))?annPctVal(d).toFixed(2)+"%":"—";
+       const annColor=d.annualPctIsExpected?"var(--annualExp)":"var(--annualObs)";
+
+       let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
+                `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
+
+       const defaultCutoffH2=showDefaultFuture()?0x7FFFFFFFFFFFFFn:(showZip234()?zip234ActivationHeight:-1n);
+       const showDefHere=d.h<=defaultCutoffH2;
+
+       if(showDefHere){
+         if(show.supply)html+=`<div style="margin-top:6px"><span style="color:var(--supplyObs)">Supply:</span> ${zatToZecString(d.supplyZat, 2)} ⓩ <span class="tt-muted">(${pct}% of cap)</span></div>`;
+         if(show.issDay)html+=`<div><span style="color:var(--issObs)">Issuance:</span> ${zatToZecString(d.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(d.issBlockZat, 8, 8)} ⓩ</div>`;
+         if(show.annPct)html+=`<div><span style="color:${annColor}">Annual:</span> ${annVal} <span class="tt-muted">(${annStatus})</span></div>`;
+       }
+
+       if(showZip234()&&d.h>=zip234ActivationHeight){
+         const z=lookupScenario(scenarios.zip234.data,d.h);
+         if(z){
+           html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--zip234Supply)">ZIP 234 (smooth):</b></div>`;
+           if(show.supply){const zp=pctOfCapStr(z.supplyZat);html+=`<div><span style="color:var(--zip234Supply)">Supply:</span> ${zatToZecString(z.supplyZat, 2)} ⓩ <span class="tt-muted">(${zp}%)</span></div>`;}
+           if(show.issDay)html+=`<div><span style="color:var(--zip234Iss)">Issuance:</span> ${zatToZecString(z.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(z.issBlockZat, 8, 8)} ⓩ</div>`;
+           if(show.annPct){const av=isFinite(annPctVal(z))?annPctVal(z).toFixed(2)+"%":"—";html+=`<div><span style="color:var(--zip234Ann)">Annual:</span> ${av}</div>`;}
+         }
+       }else if(showZip234()&&d.h<zip234ActivationHeight){
+         html+=`<div style="margin-top:4px" class="tt-muted"><i>ZIP 234 activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
+       }
+
+       tooltip.innerHTML=html;tooltip.style.display="block";
+       const tipW=min(400,window.innerWidth-20);
+       tooltip.style.left=min(e.clientX+14,window.innerWidth-tipW-10)+"px";
+       tooltip.style.top=max(10,e.clientY-130)+"px";
+     }
+
+     /* ================================================================
+        Wire up event listeners (thin wrappers calling named functions)
+        ================================================================ */
+     const canvas=document.getElementById("chart");
+     const tooltip=document.getElementById("tooltip");
+     const writtenTip=document.getElementById("writtenTip");
+     let actDragging=false, actDragOffsetX=0;
+
+     // --- Activation handle: mouse drag ---
+     let actPointerStart = { x: 0, y: 0, time: 0 };
+
+     actHandle.addEventListener("mousedown",e=>{
+       if(e.target.tagName==="INPUT")return;
+       actDragging=true;
+       const hr=actHandle.getBoundingClientRect();
+       actDragOffsetX=e.clientX-(hr.left+hr.right)/2;
+       actPointerStart={x: e.clientX,y: e.clientY,time: Date.now()};
+       e.preventDefault();
+       e.stopPropagation();
+     });
+
+     window.addEventListener("mouseup", e => {
+       if (actDragging) {
+         const dx = abs(e.clientX - actPointerStart.x);
+         const dt = Date.now() - actPointerStart.time;
+         // If barely moved and quick, it's a click → toggle collapsed
+         if (dx < 4 && dt < 300) {
+           actCollapsed = !actCollapsed;
+           requestDraw();
+         }
+         actDragging = false;
+       }
+     });
+
+     window.addEventListener("mousemove",e=>{
+       if(!actDragging)return;
+       handleActDrag(e.clientX);
+     });
+
+     // --- Activation handle: touch drag ---
+     actHandle.addEventListener("touchstart",e=>{
+       if(e.target.tagName==="INPUT")return;
+       actDragging=true;
+       const t=e.touches[0];
+       const hr=actHandle.getBoundingClientRect();
+       actDragOffsetX=t.clientX-(hr.left+hr.right)/2;
+       actPointerStart={x: t.clientX,y: t.clientY,time: Date.now()};
+       e.stopPropagation();
+     },{passive: true});
+
+     window.addEventListener("touchend", e => {
+       if (actDragging) {
+         const cx = e.changedTouches?.[0]?.clientX ?? actPointerStart.x;
+         const dx = abs(cx - actPointerStart.x);
+         const dt = Date.now() - actPointerStart.time;
+         if (dx < 4 && dt < 300) {
+           actCollapsed = !actCollapsed;
+           requestDraw();
+         }
+         actDragging = false;
+       }
+     });
+
+     window.addEventListener("touchmove",e=>{
+       if(!actDragging)return;
+       handleActDrag(e.touches[0].clientX);
+     },{passive:true});
+
+     // --- Activation handle: block input ---
+     actBlockInput.addEventListener("keydown",e=>{
+       if(e.key==="Enter"){handleActBlockInput();}
+       e.stopPropagation();
+     });
+     actBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
+     actBlockInput.addEventListener("click",e=>e.stopPropagation());
+
+     // --- Activation handle: date input ---
+     actDateInput.addEventListener("keydown",e=>{
+       if(e.key==="Enter"){handleActDateInput();}
+       e.stopPropagation();
+     });
+     actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
+     actDateInput.addEventListener("click",e=>e.stopPropagation());
+
+     // --- Burn handle: mouse drag ---
+     let burnPointerStart={x:0,y:0,time:0};
+     burnHandle.addEventListener("mousedown",e=>{
+       if(e.target.tagName==="INPUT")return;
+       burnDragging=true;
+       const hr=burnHandle.getBoundingClientRect();
+       burnDragOffsetX=e.clientX-(hr.left+hr.right)/2;
+       burnPointerStart={x:e.clientX,y:e.clientY,time:Date.now()};
+       e.preventDefault();
+       e.stopPropagation();
+     });
+     window.addEventListener("mouseup",e=>{
+       if(burnDragging){
+         const dx=abs(e.clientX-burnPointerStart.x);
+         const dt=Date.now()-burnPointerStart.time;
+         if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
+         burnDragging=false;
+       }
+     });
+     window.addEventListener("mousemove",e=>{
+       if(!burnDragging)return;
+       handleBurnDrag(e.clientX);
+     });
+     // --- Burn handle: touch drag ---
+     burnHandle.addEventListener("touchstart",e=>{
+       if(e.target.tagName==="INPUT")return;
+       burnDragging=true;
+       const t=e.touches[0];
+       const hr=burnHandle.getBoundingClientRect();
+       burnDragOffsetX=t.clientX-(hr.left+hr.right)/2;
+       burnPointerStart={x:t.clientX,y:t.clientY,time:Date.now()};
+       e.stopPropagation();
+     },{passive:true});
+     window.addEventListener("touchend",e=>{
+       if(burnDragging){
+         const cx=e.changedTouches?.[0]?.clientX??burnPointerStart.x;
+         const dx=abs(cx-burnPointerStart.x);
+         const dt=Date.now()-burnPointerStart.time;
+         if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
+         burnDragging=false;
+       }
+     });
+     window.addEventListener("touchmove",e=>{
+       if(!burnDragging)return;
+       handleBurnDrag(e.touches[0].clientX);
+     },{passive:true});
+     // --- Burn handle: block input ---
+     burnBlockInput.addEventListener("keydown",e=>{
+       if(e.key==="Enter"){handleBurnBlockInput();}
+       e.stopPropagation();
+     });
+     burnBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
+     burnBlockInput.addEventListener("click",e=>e.stopPropagation());
+     // --- Burn handle: date input ---
+     burnDateInput.addEventListener("keydown",e=>{
+       if(e.key==="Enter"){handleBurnDateInput();}
+       e.stopPropagation();
+     });
+     burnDateInput.addEventListener("mousedown",e=>e.stopPropagation());
+     burnDateInput.addEventListener("click",e=>e.stopPropagation());
+     // --- Burn handle: amount input ---
+     burnAmtInput.addEventListener("keydown",e=>{
+       if(e.key==="Enter"){handleBurnAmtInput();}
+       e.stopPropagation();
+     });
+     burnAmtInput.addEventListener("mousedown",e=>e.stopPropagation());
+     burnAmtInput.addEventListener("click",e=>e.stopPropagation());
+
+     // --- Chart: mouse drag ---
+     canvas.addEventListener("mousedown",e=>{if(actDragging||burnDragging)return;handleChartDragStart(e.clientX);});
+     window.addEventListener("mousemove",e=>{if(!dragging||actDragging||burnDragging)return;handleChartDragMove(e.clientX);});
+     window.addEventListener("mouseup",()=>{dragging=false;canvas.style.cursor="crosshair";});
+
+     // --- Chart: wheel ---
+     canvas.addEventListener("wheel",handleChartWheel,{passive:false});
+
+     // --- Chart: double-click ---
+     canvas.addEventListener("dblclick",()=>resetView());
+
+     // --- Chart: touch pan/zoom ---
+     let lastTouchDist=0;
+     canvas.addEventListener("touchstart",e=>{if(e.touches.length===1){handleChartDragStart(e.touches[0].clientX);}
+       else if(e.touches.length===2){dragging=false;lastTouchDist=abs(e.touches[0].clientX-e.touches[1].clientX);}},{passive:true});
+     canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging&&!actDragging){handleChartDragMove(e.touches[0].clientX);}
+       else if(e.touches.length===2){const dist=abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
+         if(lastTouchDist>0){yDirty=true;const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),
+                                               span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
+           clampView();requestDraw();computeAllScenarios();}lastTouchDist=dist;}},{passive:true});
+     canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
+
+     // --- Chart: hover (tooltip) ---
+     canvas.addEventListener("mousemove",handleChartHover);
+     canvas.addEventListener("mouseleave",()=>{tooltip.style.display="none";writtenTip.style.display="none";});
+
+     /* ================================================================
+        Buttons
+        ================================================================ */
+     document.getElementById("btnReset").addEventListener("click",()=>resetView());
+     document.getElementById("btnShare").addEventListener("click",()=>handleShare());
+     document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
+
+     document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
+       btn.addEventListener('click',e=>{
+         e.stopPropagation();
+         const newMode = btn.dataset.burnMode;
+         if(newMode === BURN_EVENTS[0].mode) return;
+         const currentZat = parseZecToZat(burnAmtInput.value);
+         const currentBlock = (() => { try { return BigInt(burnBlockInput.value.replace(/,/g,"")); } catch(e) { return undefined; } })();
+         changeBurn(currentBlock, currentZat !== null ? currentZat : undefined, newMode);
+       });
+       btn.addEventListener('mousedown',e=>e.stopPropagation());
+       btn.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+     });
+
+     // --- Legend toggles ---
+     document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
+       btn.addEventListener('click', () => {
+         if (btn.dataset.mode === futureMode) return; // no change
+         futureMode = btn.dataset.mode;
+         yDirty=true;
+         document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
+         requestDraw();
+         computeAllScenarios();
+       });
+     });
+     document.querySelectorAll('.ltoggle').forEach(el=>{
+       el.addEventListener('click',()=>handleLegendToggle(el));
+     });
+
+     canvas.style.cursor="crosshair";
+
+     /* ================================================================
+        URL state sharing
+        ================================================================ */
+     let urlSyncEnabled = false;
+     let lastUrlSyncTime = 0;
+
+     function stateToHash() {
+       const p = new URLSearchParams();
+       p.set('v', Math.round(view.tMin) + '_' + Math.round(view.tMax));
+       p.set('f', futureMode);
+       p.set('s', (show.supply?1:0) + '' + (show.issDay?1:0) + '' + (show.annPct?1:0));
+       p.set('a', String(zip234ActivationHeight));
+       const b = BURN_EVENTS[0];
+       p.set('bh', String(b.h));
+       p.set('bz', String(b.zat));
+       p.set('bm', b.mode);
+       p.set('t', getTheme());
+       p.set('ys', String(yTarget.supMinZat) + '_' + String(yTarget.supMaxZat));
+       p.set('yi', String(yTarget.issMaxZat));
+       p.set('ya', String(yTarget.annMax));
+       return '#' + p.toString();
+     }
+
+     function loadStateFromHash() {
+       const hash = location.hash.slice(1);
+       if (!hash) return false;
+       try {
+         const p = new URLSearchParams(hash);
+         if (p.has('v')) {
+           const parts = p.get('v').split(/[_,]/);
+           if (parts.length === 2) {
+             const tMin = Number(parts[0]), tMax = Number(parts[1]);
+             if (isFinite(tMin) && isFinite(tMax) && tMax > tMin) {
+               view.tMin = tMin; view.tMax = tMax;
+             }
+           }
+         }
+         if (p.has('f') && ['both','default','zip234'].includes(p.get('f')))
+           futureMode = p.get('f');
+         if (p.has('s') && p.get('s').length === 3) {
+           const s = p.get('s');
+           show.supply = s[0]==='1'; show.issDay = s[1]==='1'; show.annPct = s[2]==='1';
+         }
+         if (p.has('a')) {
+           try { const ah = BigInt(p.get('a'));
+             if (ah >= WRITTEN_HEIGHT) zip234ActivationHeight = ah;
+           } catch(e) {}
+         }
+         if (p.has('bh') && p.has('bz') && p.has('bm')) {
+           try {
+             const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
+             if (['once','perblock'].includes(bm) && bh >= WRITTEN_HEIGHT && bz >= 0n) {
+               BURN_EVENTS[0].h = bh; BURN_EVENTS[0].zat = bz;
+               BURN_EVENTS[0].mode = bm;
+               BURN_EVENTS[0].label = formatBurnLabel(bz, bm);
+             }
+           } catch(e) {}
+         }
+         if (p.has('t') && ['light','dark'].includes(p.get('t')))
+           setTheme(p.get('t'));
+         if (p.has('ys') && p.has('yi')) {
+           try {
+             const yp = p.get('ys').split('_');
+             if (yp.length === 2) {
+               const smin = BigInt(yp[0]), smax = BigInt(yp[1]);
+               const imax = BigInt(p.get('yi'));
+               const amax = p.has('ya') ? Number(p.get('ya')) : FIXED_ANN_MAX;
+               yTarget.supMinZat = smin; yTarget.supMaxZat = smax;
+               yTarget.issMaxZat = imax; yTarget.annMax = amax;
+               yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
+               yDisp.issMaxZat = imax; yDisp.annMax = amax;
+               yLockedFromURL = true;
+             }
+           } catch(e) {}
+         }
+         return true;
+       } catch(e) { return false; }
+     }
+
+     function syncURL(force) {
+       if (!urlSyncEnabled) return;
+       const now = Date.now();
+       if (!force && now - lastUrlSyncTime < 250) return;
+       lastUrlSyncTime = now;
+       const newHash = stateToHash();
+       if (location.hash !== newHash) {
+         try { history.replaceState(null, '', newHash); }
+         catch(e) { try { location.hash = newHash.slice(1); } catch(e2) {} }
+       }
+     }
+
+     async function handleShare() {
+       syncURL(true);
+       const url = location.href;
+       if (navigator.share) {
+         try { await navigator.share({ title: 'Zcash Supply & Issuance', url }); return;
+         } catch(e) { if (e.name === 'AbortError') return; }
+       }
+       try {
+         await navigator.clipboard.writeText(url);
+         const btn = document.getElementById('btnShare');
+         const orig = btn.textContent;
+         btn.textContent = '✓ Copied!';
+         setTimeout(() => { btn.textContent = orig; }, 1500);
+       } catch(e) { prompt('Copy this URL:', url); }
+     }
+
+     /* ================================================================
+        Boot
+        ================================================================ */
+
+     initTheme();
+     zip234ActivationHeight=3_687_123n;
+     actCollapsed=false;
+     burnCollapsed=false;
+     view.tMin=genTime;
+     view.tMax=blockToTime(6_000_000n);
+
+     // Load state from URL hash (overrides defaults for shared links)
+     const loadedFromURL = loadStateFromHash();
+     if (loadedFromURL && !yLockedFromURL) { yDirty = true; ySnapOnFirstData = true; }
+
+     clampView();
+
+     // Sync UI toggles to match (possibly URL-loaded) state
+     document.querySelectorAll('.ltoggle').forEach(el=>{
+       const key=el.dataset.series;
+       if(key&&show[key]!==undefined)el.classList.toggle('active',show[key]);
+     });
+     document.querySelectorAll('#futureModeGroup .seg').forEach(b =>
+       b.classList.toggle('active', b.dataset.mode === futureMode));
+
+     function bigPowFP64(base, exp) {
+       let result = 1n << 64n, b = base, e = exp;
+       while (e > 0n) {
+         if (e & 1n) result = (result * b) >> 64n;
+         b = (b * b) >> 64n;
+         e >>= 1n;
+       }
+       return result;
+     }
+
+     function getZip234At(h) {
+       if (h < zip234ActivationHeight) return null;
+       // First try precomputed data
+       if (scenarios.zip234.data.length > 0) {
+         const z = lookupScenario(scenarios.zip234.data, h);
+         if (z && abs(z.h - h) <= SAMPLE_EVERY)
+           return { supply: z.supplyZat, issBlock: z.issBlockZat };
+       }
+       // Analytical fallback: closed-form exponential decay
+       const supAtAct = sumIssuanceRangeClean(0n, zip234ActivationHeight);
+       const remAtAct = MAX_MONEY_ZAT - supAtAct;
+       const ONE_MINUS_K = (1n << 64n) - ZIP234_K_NUM;
+       const n = h - zip234ActivationHeight;
+       const decayFP = bigPowFP64(ONE_MINUS_K, n);
+       const remNow = (remAtAct * decayFP) >> 64n;
+       const supNow = MAX_MONEY_ZAT - remNow;
+       const issBlockZat = (remNow * ZIP234_K_NUM) >> 64n;
+       return { supply: supNow, issBlock: issBlockZat };
+     }
+
+     urlSyncEnabled = true;
+     requestDraw();computeAllScenarios();
+     /* ================
+        REGRESSION TESTS
+        ================ */
+     setTimeout(function runRegressionTests() {
+       const results = [];
+       function test(name, fn) {
+         try {
+           const pass = fn();
+           results.push({ name, pass });
+         } catch (e) {
+           results.push({ name, pass: false, error: e.message });
+         }
+       }
+
+       // --- Issuance logic ---
+
+       test("issuance_per_block(0) is 0 (slow start)", () => {
+         return issuance_per_block(0) === 0n;
+       });
+
+       test("issuance_per_block(20000) is 1250000000 (full subsidy pre-Blossom)", () => {
+         return issuance_per_block(20000) === 1250000000n;
+       });
+
+       test("issuance_per_block(653600) is 625000000 (Blossom halves block subsidy)", () => {
+         return issuance_per_block(653600) === 625000000n;
+       });
+
+       test("issuance_per_block at halving 1 (1046400) is 312500000", () => {
+         return issuance_per_block(1046400) === 312500000n;
+       });
+
+       test("issuance_per_block at halving 2 (2726400) is 156250000", () => {
+         return issuance_per_block(2726400) === 156250000n;
+       });
+
+       test("issuance_per_block just before halving 2 is 312500000", () => {
+         return issuance_per_block(2726399) === 312500000n;
+       });
+
+       // --- Time anchors ---
+
+       test("Genesis time is Oct 28, 2016", () => {
+         return TIME_ANCHORS[0].time === Date.UTC(2016, 9, 28, 7, 56);
+       });
+
+       test("blockToTime(0) equals genesis time", () => {
+         return blockToTime(0) === TIME_ANCHORS[0].time;
+       });
+
+       test("blockToTime is monotonically increasing", () => {
+         const h = [0, 100000, 653600, 1046400, 2000000, 2726400, 3000000];
+         for (let i = 1; i < h.length; i++) {
+           if (blockToTime(h[i]) <= blockToTime(h[i - 1])) return false;
+         }
+         return true;
+       });
+
+       // --- Halving heights ---
+
+       test("halvingHeights returns correct first halving", () => {
+         const hh = halvingHeights(2000000n);
+         return hh.length >= 1 && hh[0] === 1046400n;
+       });
+
+       test("halvingHeights includes halving 2 at 2726400", () => {
+         const hh = halvingHeights(3000000n);
+         return hh.includes(2726400n);
+       });
+
+       test("halving spacing is 1,680,000", () => {
+         const hh = halvingHeights(6000000n);
+         for (let i = 1; i < hh.length; i++) {
+           if (hh[i] - hh[i - 1] !== 1680000n) return false;
+         }
+         return true;
+       });
+
+       // --- ZIP 234 math ---
+
+       test("getZip234At returns null for height below activation", () => {
+         return getZip234At(zip234ActivationHeight - 1n) === null;
+       });
+
+       test("ZIP 234 supply is monotonically increasing", () => {
+         const actH = zip234ActivationHeight;
+         const heights = [actH, actH + 10000n, actH + 100000n, actH + 500000n];
+         let prev = 0;
+         for (const h of heights) {
+           const z = getZip234At(h);
+           if (!z || z.supply <= prev) return false;
+           prev = z.supply;
+         }
+         return true;
+       });
+
+       test("ZIP 234 issuance per block is positive and decreasing", () => {
+         const actH = zip234ActivationHeight;
+         const heights = [actH, actH + 100000n, actH + 500000n, actH + 1000000n];
+         let prev = MAX_MONEY_ZAT;
+         for (const h of heights) {
+           const z = getZip234At(h);
+           if (!z || z.issBlock <= 0n || z.issBlock >= prev) return false;
+           prev = z.issBlock;
+         }
+         return true;
+       });
+
+       test("ZIP 234 supply never exceeds 21M", () => {
+         const z = getZip234At(zip234ActivationHeight + 10_000_000n);
+         return z !== null && z.supply <= MAX_MONEY_ZAT;
+       });
+
+       // --- sumIssuanceRangeClean ---
+
+       test("sumIssuanceRangeClean(0,0) is 0", () => {
+         return sumIssuanceRangeClean(0n, 0n) === 0n;
+       });
+
+       test("sumIssuanceRangeClean(0,1) equals issuance_per_block(0)", () => {
+         return sumIssuanceRangeClean(0n, 1n) === issuance_per_block(0n);
+       });
+
+       test("sumIssuanceRangeClean agrees with brute force for small range", () => {
+         let brute = 0n;
+         for (let h = 20000n; h < 20010n; h++) brute += issuance_per_block(h);
+         return sumIssuanceRangeClean(20000n, 20010n) === brute;
+       });
+
+       // --- View state ---
+
+       test("view.tMin is at or near genesis at boot", () => {
+         return abs(view.tMin - genTime) < 86400000n; // within 1 day
+       });
+
+       test("view.tMax corresponds to roughly block 6M", () => {
+         const expected = blockToTime(6_000_000n);
+         return abs(view.tMax - expected) < 86400000n * 30n; // within 30 days
+       });
+
+       test("Activation height clamp: functional test via block input", () => {
+         const saved = zip234ActivationHeight;
+         const savedView = { tMin: view.tMin, tMax: view.tMax };
+         const input = document.getElementById("actBlockInput");
+         if (!input) return false;
+
+         // Set input to a value below WRITTEN_HEIGHT and fire Enter
+         const tooLow = WRITTEN_HEIGHT - 500_000n;
+         input.value = String(tooLow);
+         input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+         // After the handler runs, activation height should still be >= WRITTEN_HEIGHT
+         const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
+
+         if (!pass) {
+           console.warn(`  ⚠ Block input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
+         }
+
+         // Restore
+         zip234ActivationHeight = saved;
+         view.tMin = savedView.tMin; view.tMax = savedView.tMax;
+         requestDraw();
+         return pass;
+       });
+
+       test("Activation height clamp: functional test via date input", () => {
+         const saved = zip234ActivationHeight;
+         const savedView = { tMin: view.tMin, tMax: view.tMax };
+         const input = document.getElementById("actDateInput");
+         if (!input) return false;
+
+         // Use genesis date — way before WRITTEN_HEIGHT
+         input.value = "Oct 28, 2016";
+         input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+         const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
+
+         if (!pass) {
+           console.warn(`  ⚠ Date input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
+         }
+
+         zip234ActivationHeight = saved;
+         view.tMin = savedView.tMin; view.tMax = savedView.tMax;
+         requestDraw();
+         return pass;
+       });
+
+       // --- CSS / styling checks ---
+
+       test("actHandle is above chart (negative or zero top)", () => {
+         const h = document.getElementById("actHandle");
+         if (!h) return false;
+         const top = parseInt(getComputedStyle(h).top) || parseInt(h.style.top) || -20;
+         return top <= 0;
+       });
+
+       test("Activation stem bottom aligns in collapsed and expanded states", () => {
+         // This test needs the DOM to be fully laid out.
+         // Schedule it to run after next frame and report async.
+         // For now, force a synchronous draw + layout:
+
+         // Ensure enough data exists to draw
+         const testData = scenarios.default.data.length >= 2 ? scenarios.default.data : scenarios.zip234.data;
+         if (testData.length < 2) return false;
+
+         // Force a synchronous draw (populates layout, sizes canvas, calls updateActHandle)
+         drawRAF = null; // clear any pending RAF
+         draw();
+
+         if (!layout || !layout.MG || !layout.PW) {
+           console.warn("  ⚠ Stem test: layout not populated after draw()");
+           return false;
+         }
+
+         const stem = document.querySelector("#actHandle .act-stem");
+         const wrapEl = document.getElementById("chartWrap");
+         if (!stem || !wrapEl) return false;
+
+         // Verify the handle is actually visible
+         if (actHandle.style.display === "none") {
+           console.warn("  ⚠ Stem test: actHandle is hidden (activation out of view?)");
+           return false;
+         }
+
+         const saved = actCollapsed;
+         const eps = 2.0;
+
+         // Measure in expanded mode
+         actCollapsed = false;
+         updateActHandle();
+         actHandle.offsetHeight;
+         const wrapRect1 = wrapEl.getBoundingClientRect();
+         const stemRect1 = stem.getBoundingClientRect();
+         const stemBottom1 = stemRect1.bottom - wrapRect1.top;
+
+         // Measure in collapsed mode
+         actCollapsed = true;
+         updateActHandle();
+         actHandle.offsetHeight;
+         const wrapRect2 = wrapEl.getBoundingClientRect();
+         const stemRect2 = stem.getBoundingClientRect();
+         const stemBottom2 = stemRect2.bottom - wrapRect2.top;
+
+         // Restore
+         actCollapsed = saved;
+         updateActHandle();
+
+         const diff = abs(stemBottom1 - stemBottom2);
+         const pass = diff <= eps && stemRect1.height > 0 && stemRect2.height > 0;
+
+         if (!pass) {
+           console.warn(`  ⚠ Stem bottom expanded=${stemBottom1.toFixed(1)}px, collapsed=${stemBottom2.toFixed(1)}px, diff=${diff.toFixed(1)}px, heights=${stemRect1.height.toFixed(1)}/${stemRect2.height.toFixed(1)}`);
+         }
+
+         return pass;
+       });
+
+       // --- Report ---
+
+       const passed = results.filter(r => r.pass).length;
+       const failed = results.filter(r => !r.pass).length;
+       const total = results.length;
+
+       console.log(`%c=== REGRESSION TESTS: ${passed}/${total} passed, ${failed} failed ===`,
+                   failed > 0 ? "color:red;font-weight:bold;font-size:14px" : "color:green;font-weight:bold;font-size:14px");
+
+       for (const r of results) {
+         if (r.pass) {
+           console.log(`  %c✓ ${r.name}`, "color:green");
+         } else {
+           console.log(`  %c✗ ${r.name}${r.error ? " — " + r.error : ""}`, "color:red;font-weight:bold");
+         }
+       }
+
+       if (failed > 0) {
+         console.warn(`⚠️ ${failed} regression test(s) FAILED — check for regressions before shipping!`);
+       }
+     }, 500);
+    </script>
+  </body>
 </html>
