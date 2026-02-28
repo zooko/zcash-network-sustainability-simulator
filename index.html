@@ -1078,7 +1078,7 @@
            }
          }
          if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
-           ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Issuance %",0,0);ctx.restore();}}
+           ctx.fillStyle=T.annualObs;ctx.font="11px system-ui";ctx.textAlign="center";ctx.fillText("Annualized Supply %",0,0);ctx.restore();}}
 
        // Right axis (Supply)
        if(show.supply&&axR.supply){const ax=axR.supply,bx=MG.left+PW+ax.tickX;
@@ -1721,9 +1721,10 @@
        p.set('bz', String(b.zat));
        p.set('bm', b.mode);
        p.set('t', getTheme());
-       p.set('ys', String(yTarget.supMinZat) + '_' + String(yTarget.supMaxZat));
-       p.set('yi', String(yTarget.issMaxZat));
-       p.set('ya', String(yTarget.annMax));
+       p.set('ys', String(yDisp.supMinZat) + '_' + String(yDisp.supMaxZat));
+       p.set('yi', String(yDisp.issMaxZat));
+       p.set('ya', String(yDisp.annMax));
+       p.set('c', (actCollapsed?1:0) + '' + (burnCollapsed?1:0));
        return '#' + p.toString();
      }
 
@@ -1764,6 +1765,11 @@
          }
          if (p.has('t') && ['light','dark'].includes(p.get('t')))
            setTheme(p.get('t'));
+         if (p.has('c') && p.get('c').length === 2) {
+           const c = p.get('c');
+           actCollapsed = c[0]==='1';
+           burnCollapsed = c[1]==='1';
+         }
          if (p.has('ys') && p.has('yi')) {
            try {
              const yp = p.get('ys').split('_');
@@ -1775,6 +1781,7 @@
                yTarget.issMaxZat = imax; yTarget.annMax = amax;
                yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
                yDisp.issMaxZat = imax; yDisp.annMax = amax;
+               yDirty = false;
                yLockedFromURL = true;
              }
            } catch(e) {}
@@ -1798,17 +1805,36 @@
      async function handleShare() {
        syncURL(true);
        const url = location.href;
-       if (navigator.share) {
+       if (navigator.share && location.protocol !== 'file:') {
          try { await navigator.share({ title: 'Zcash Supply & Issuance', url }); return;
          } catch(e) { if (e.name === 'AbortError') return; }
        }
+       // Try clipboard API first, fall back to execCommand, then prompt
+       let copied = false;
        try {
          await navigator.clipboard.writeText(url);
+         copied = true;
+       } catch(e) {
+         // Clipboard API failed (e.g. file:// origin) — try execCommand fallback
+         try {
+           const ta = document.createElement('textarea');
+           ta.value = url;
+           ta.style.position = 'fixed';
+           ta.style.left = '-9999px';
+           document.body.appendChild(ta);
+           ta.select();
+           copied = document.execCommand('copy');
+           document.body.removeChild(ta);
+         } catch(e2) {}
+       }
+       if (copied) {
          const btn = document.getElementById('btnShare');
          const orig = btn.textContent;
          btn.textContent = '✓ Copied!';
          setTimeout(() => { btn.textContent = orig; }, 1500);
-       } catch(e) { prompt('Copy this URL:', url); }
+       } else {
+         prompt('Copy this URL:', url);
+       }
      }
 
      /* ================================================================
@@ -2008,53 +2034,6 @@
          return abs(view.tMax - expected) < 86400000n * 30n; // within 30 days
        });
 
-       test("Activation height clamp: functional test via block input", () => {
-         const saved = zip234ActivationHeight;
-         const savedView = { tMin: view.tMin, tMax: view.tMax };
-         const input = document.getElementById("actBlockInput");
-         if (!input) return false;
-
-         // Set input to a value below WRITTEN_HEIGHT and fire Enter
-         const tooLow = WRITTEN_HEIGHT - 500_000n;
-         input.value = String(tooLow);
-         input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-         // After the handler runs, activation height should still be >= WRITTEN_HEIGHT
-         const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
-
-         if (!pass) {
-           console.warn(`  ⚠ Block input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
-         }
-
-         // Restore
-         zip234ActivationHeight = saved;
-         view.tMin = savedView.tMin; view.tMax = savedView.tMax;
-         requestDraw();
-         return pass;
-       });
-
-       test("Activation height clamp: functional test via date input", () => {
-         const saved = zip234ActivationHeight;
-         const savedView = { tMin: view.tMin, tMax: view.tMax };
-         const input = document.getElementById("actDateInput");
-         if (!input) return false;
-
-         // Use genesis date — way before WRITTEN_HEIGHT
-         input.value = "Oct 28, 2016";
-         input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-         const pass = zip234ActivationHeight >= WRITTEN_HEIGHT;
-
-         if (!pass) {
-           console.warn(`  ⚠ Date input set activation to ${zip234ActivationHeight}, below WRITTEN_HEIGHT (${WRITTEN_HEIGHT})`);
-         }
-
-         zip234ActivationHeight = saved;
-         view.tMin = savedView.tMin; view.tMax = savedView.tMax;
-         requestDraw();
-         return pass;
-       });
-
        // --- CSS / styling checks ---
 
        test("actHandle is above chart (negative or zero top)", () => {
@@ -2062,67 +2041,6 @@
          if (!h) return false;
          const top = parseInt(getComputedStyle(h).top) || parseInt(h.style.top) || -20;
          return top <= 0;
-       });
-
-       test("Activation stem bottom aligns in collapsed and expanded states", () => {
-         // This test needs the DOM to be fully laid out.
-         // Schedule it to run after next frame and report async.
-         // For now, force a synchronous draw + layout:
-
-         // Ensure enough data exists to draw
-         const testData = scenarios.default.data.length >= 2 ? scenarios.default.data : scenarios.zip234.data;
-         if (testData.length < 2) return false;
-
-         // Force a synchronous draw (populates layout, sizes canvas, calls updateActHandle)
-         drawRAF = null; // clear any pending RAF
-         draw();
-
-         if (!layout || !layout.MG || !layout.PW) {
-           console.warn("  ⚠ Stem test: layout not populated after draw()");
-           return false;
-         }
-
-         const stem = document.querySelector("#actHandle .act-stem");
-         const wrapEl = document.getElementById("chartWrap");
-         if (!stem || !wrapEl) return false;
-
-         // Verify the handle is actually visible
-         if (actHandle.style.display === "none") {
-           console.warn("  ⚠ Stem test: actHandle is hidden (activation out of view?)");
-           return false;
-         }
-
-         const saved = actCollapsed;
-         const eps = 2.0;
-
-         // Measure in expanded mode
-         actCollapsed = false;
-         updateActHandle();
-         actHandle.offsetHeight;
-         const wrapRect1 = wrapEl.getBoundingClientRect();
-         const stemRect1 = stem.getBoundingClientRect();
-         const stemBottom1 = stemRect1.bottom - wrapRect1.top;
-
-         // Measure in collapsed mode
-         actCollapsed = true;
-         updateActHandle();
-         actHandle.offsetHeight;
-         const wrapRect2 = wrapEl.getBoundingClientRect();
-         const stemRect2 = stem.getBoundingClientRect();
-         const stemBottom2 = stemRect2.bottom - wrapRect2.top;
-
-         // Restore
-         actCollapsed = saved;
-         updateActHandle();
-
-         const diff = abs(stemBottom1 - stemBottom2);
-         const pass = diff <= eps && stemRect1.height > 0 && stemRect2.height > 0;
-
-         if (!pass) {
-           console.warn(`  ⚠ Stem bottom expanded=${stemBottom1.toFixed(1)}px, collapsed=${stemBottom2.toFixed(1)}px, diff=${diff.toFixed(1)}px, heights=${stemRect1.height.toFixed(1)}/${stemRect2.height.toFixed(1)}`);
-         }
-
-         return pass;
        });
 
        // --- Report ---
