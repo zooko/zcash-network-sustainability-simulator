@@ -284,6 +284,7 @@
 <div id="tooltip"></div>
 <div class="controls">
   <button id="btnReset">Reset view</button>
+  <button id="btnShare">📋 Share view</button>
   <button id="btnTheme">☀/🌙</button>
 </div>
 <script>
@@ -579,7 +580,7 @@ async function computeAllScenarios(){
                 s.h=batchEnd;
             }
             if(!anyAdvanced)break;
-          if(isFirstRun) yDirty = true;
+          if(isFirstRun && !yLockedFromURL) yDirty = true;
           requestDraw();
           await new Promise(r=>setTimeout(r,0));
             if(simVersion!==myVer){cancelled=true;}
@@ -590,7 +591,7 @@ async function computeAllScenarios(){
             simComputedVer=myVer;simComputedMaxH=maxH;break;
         }
     }
-   simRunning=false;if(isFirstRun) yDirty=true;requestDraw();
+   simRunning=false;if(isFirstRun && !yLockedFromURL) yDirty=true;yLockedFromURL=false;requestDraw();
  }
 
  /* ================================================================
@@ -784,6 +785,8 @@ const yDisp = {
 };
 let yInitialized = false;
 let yDirty = true;
+ let ySnapOnFirstData = false;
+ let yLockedFromURL = false;
 
  function lerpZat(cur, tgt) {
    if (cur === tgt) return cur;
@@ -893,7 +896,16 @@ function draw(){
       ? scenarios.zip234.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
       : [];
 
-   if (yDirty && (D.length >= 2 || Z.length >= 1)) { updateYTargets(); yDirty = false; }
+   if (yDirty && (D.length >= 2 || Z.length >= 1)) {
+       updateYTargets(); yDirty = false;
+       if (ySnapOnFirstData) {
+           yDisp.supMinZat = yTarget.supMinZat;
+           yDisp.supMaxZat = yTarget.supMaxZat;
+           yDisp.issMaxZat = yTarget.issMaxZat;
+           yDisp.annMax = yTarget.annMax;
+           if (!simRunning) ySnapOnFirstData = false;
+       }
+   }
 
    // Animate Y axes toward targets
    const yAnimating = animateYAxes();
@@ -1109,6 +1121,9 @@ function draw(){
    updateBurnHandle();
    // Continue animating if Y axes haven't converged
    if (yAnimating) requestDraw();
+
+   // Keep URL in sync with current state
+   syncURL();
  }
 
  /* ================================================================
@@ -1352,8 +1367,8 @@ function handleChartDragMove(clientX){
   const dx=clientX-dragStartX;
   const pxPerMs=(dragStartTMax-dragStartTMin)/rect.width;
   view.tMin=dragStartTMin-dx*pxPerMs;view.tMax=dragStartTMax-dx*pxPerMs;
-  clampView();requestDraw();computeAllScenarios();
-}
+   clampView();requestDraw();computeAllScenarios();
+ }
 
 /* ================================================================
    Extracted handler: chart wheel (zoom/pan)
@@ -1367,7 +1382,7 @@ function handleChartWheel(e){
     const zf=Math.pow(1.002,e.deltaY),span=view.tMax-view.tMin,pivot=view.tMin+frac*span;
     view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
   }else{const shift=(e.deltaX||e.deltaY)*(view.tMax-view.tMin)*0.001;view.tMin+=shift;view.tMax+=shift;}
-  clampView();requestDraw();computeAllScenarios();
+   clampView();requestDraw();computeAllScenarios();
 }
 
 /* ================================================================
@@ -1656,9 +1671,10 @@ canvas.addEventListener("mouseleave",()=>{tooltip.style.display="none";writtenTi
    Buttons
    ================================================================ */
 document.getElementById("btnReset").addEventListener("click",()=>resetView());
-document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
+ document.getElementById("btnShare").addEventListener("click",()=>handleShare());
+ document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
 
-document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
+ document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
     btn.addEventListener('click',e=>{
         e.stopPropagation();
         const newMode = btn.dataset.burnMode;
@@ -1689,23 +1705,139 @@ document.querySelectorAll('.ltoggle').forEach(el=>{
 canvas.style.cursor="crosshair";
 
 /* ================================================================
-   Boot
+   URL state sharing
    ================================================================ */
+let urlSyncEnabled = false;
+ let lastUrlSyncTime = 0;
+
+function stateToHash() {
+    const p = new URLSearchParams();
+   p.set('v', Math.round(view.tMin) + '_' + Math.round(view.tMax));
+   p.set('f', futureMode);
+   p.set('s', (show.supply?1:0) + '' + (show.issDay?1:0) + '' + (show.annPct?1:0));
+    p.set('a', String(zip234ActivationHeight));
+    const b = BURN_EVENTS[0];
+    p.set('bh', String(b.h));
+    p.set('bz', String(b.zat));
+    p.set('bm', b.mode);
+    p.set('t', getTheme());
+    p.set('ys', String(yTarget.supMinZat) + '_' + String(yTarget.supMaxZat));
+    p.set('yi', String(yTarget.issMaxZat));
+   p.set('ya', String(yTarget.annMax));
+   return '#' + p.toString();
+ }
+
+function loadStateFromHash() {
+    const hash = location.hash.slice(1);
+    if (!hash) return false;
+    try {
+        const p = new URLSearchParams(hash);
+        if (p.has('v')) {
+          const parts = p.get('v').split(/[_,]/);
+          if (parts.length === 2) {
+            const tMin = Number(parts[0]), tMax = Number(parts[1]);
+                if (isFinite(tMin) && isFinite(tMax) && tMax > tMin) {
+                    view.tMin = tMin; view.tMax = tMax;
+                }
+            }
+        }
+        if (p.has('f') && ['both','default','zip234'].includes(p.get('f')))
+            futureMode = p.get('f');
+        if (p.has('s') && p.get('s').length === 3) {
+            const s = p.get('s');
+            show.supply = s[0]==='1'; show.issDay = s[1]==='1'; show.annPct = s[2]==='1';
+        }
+        if (p.has('a')) {
+            try { const ah = BigInt(p.get('a'));
+                if (ah >= WRITTEN_HEIGHT) zip234ActivationHeight = ah;
+            } catch(e) {}
+        }
+        if (p.has('bh') && p.has('bz') && p.has('bm')) {
+            try {
+                const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
+                if (['once','perblock'].includes(bm) && bh >= WRITTEN_HEIGHT && bz >= 0n) {
+                    BURN_EVENTS[0].h = bh; BURN_EVENTS[0].zat = bz;
+                    BURN_EVENTS[0].mode = bm;
+                    BURN_EVENTS[0].label = formatBurnLabel(bz, bm);
+                }
+            } catch(e) {}
+        }
+        if (p.has('t') && ['light','dark'].includes(p.get('t')))
+            setTheme(p.get('t'));
+        if (p.has('ys') && p.has('yi')) {
+            try {
+                const yp = p.get('ys').split('_');
+                if (yp.length === 2) {
+                    const smin = BigInt(yp[0]), smax = BigInt(yp[1]);
+                    const imax = BigInt(p.get('yi'));
+                    const amax = p.has('ya') ? Number(p.get('ya')) : FIXED_ANN_MAX;
+                    yTarget.supMinZat = smin; yTarget.supMaxZat = smax;
+                    yTarget.issMaxZat = imax; yTarget.annMax = amax;
+                    yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
+                    yDisp.issMaxZat = imax; yDisp.annMax = amax;
+                    yLockedFromURL = true;
+                }
+            } catch(e) {}
+        }
+      return true;
+    } catch(e) { return false; }
+}
+
+function syncURL(force) {
+    if (!urlSyncEnabled) return;
+    const now = Date.now();
+    if (!force && now - lastUrlSyncTime < 250) return;
+    lastUrlSyncTime = now;
+    const newHash = stateToHash();
+    if (location.hash !== newHash) {
+        try { history.replaceState(null, '', newHash); }
+        catch(e) { try { location.hash = newHash.slice(1); } catch(e2) {} }
+    }
+ }
+
+async function handleShare() {
+    syncURL(true);
+    const url = location.href;
+    if (navigator.share) {
+        try { await navigator.share({ title: 'Zcash Supply & Issuance', url }); return;
+        } catch(e) { if (e.name === 'AbortError') return; }
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        const btn = document.getElementById('btnShare');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+    } catch(e) { prompt('Copy this URL:', url); }
+ }
+
+ /* ================================================================
+    Boot
+    ================================================================ */
+
 initTheme();
 zip234ActivationHeight=3_687_123n;
 actCollapsed=false;
 burnCollapsed=false;
 view.tMin=genTime;
 view.tMax=blockToTime(6_000_000n);
-clampView();
 
-  document.querySelectorAll('.ltoggle').forEach(el=>{
+// Load state from URL hash (overrides defaults for shared links)
+const loadedFromURL = loadStateFromHash();
+ if (loadedFromURL && !yLockedFromURL) { yDirty = true; ySnapOnFirstData = true; }
+
+ clampView();
+
+ // Sync UI toggles to match (possibly URL-loaded) state
+ document.querySelectorAll('.ltoggle').forEach(el=>{
   const key=el.dataset.series;
   if(key&&show[key]!==undefined)el.classList.toggle('active',show[key]);
 });
+ document.querySelectorAll('#futureModeGroup .seg').forEach(b =>
+   b.classList.toggle('active', b.dataset.mode === futureMode));
 
-function bigPowFP64(base, exp) {
-    let result = 1n << 64n, b = base, e = exp;
+ function bigPowFP64(base, exp) {
+   let result = 1n << 64n, b = base, e = exp;
     while (e > 0n) {
         if (e & 1n) result = (result * b) >> 64n;
         b = (b * b) >> 64n;
@@ -1734,12 +1866,13 @@ function getZip234At(h) {
     return { supply: supNow, issBlock: issBlockZat };
 }
 
-requestDraw();computeAllScenarios();
-/* ================
-   REGRESSION TESTS
-   ================ */
-setTimeout(function runRegressionTests() {
-  const results = [];
+ urlSyncEnabled = true;
+ requestDraw();computeAllScenarios();
+ /* ================
+    REGRESSION TESTS
+    ================ */
+ setTimeout(function runRegressionTests() {
+   const results = [];
   function test(name, fn) {
     try {
       const pass = fn();
@@ -1877,6 +2010,7 @@ setTimeout(function runRegressionTests() {
 
   test("Activation height clamp: functional test via block input", () => {
     const saved = zip234ActivationHeight;
+    const savedView = { tMin: view.tMin, tMax: view.tMax };
     const input = document.getElementById("actBlockInput");
     if (!input) return false;
 
@@ -1894,12 +2028,14 @@ setTimeout(function runRegressionTests() {
 
     // Restore
     zip234ActivationHeight = saved;
+    view.tMin = savedView.tMin; view.tMax = savedView.tMax;
     requestDraw();
     return pass;
   });
 
   test("Activation height clamp: functional test via date input", () => {
     const saved = zip234ActivationHeight;
+    const savedView = { tMin: view.tMin, tMax: view.tMax };
     const input = document.getElementById("actDateInput");
     if (!input) return false;
 
@@ -1914,6 +2050,7 @@ setTimeout(function runRegressionTests() {
     }
 
     zip234ActivationHeight = saved;
+    view.tMin = savedView.tMin; view.tMax = savedView.tMax;
     requestDraw();
     return pass;
   });
