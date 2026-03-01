@@ -113,51 +113,6 @@
 
      #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
 
-     #burnHandle{position:absolute;display:none;z-index:19;cursor:ew-resize;
-       transform:translateX(-50%);pointer-events:auto;top:-8px}
-     #burnHandle .burn-nub{display:none;width:24px;height:16px;border-radius:8px;
-       background:var(--burnHandleBg);color:#fff;font:600 11px/16px system-ui;text-align:center;
-       border:1.5px solid var(--burnHandleBorder);cursor:ew-resize;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-     #burnHandle.collapsed .burn-nub{display:block}
-     #burnHandle.collapsed .burn-pill{display:none}
-     #burnHandle .burn-pill{
-       background:var(--burnHandleBg);color:#fff;font:600 .68rem/1 system-ui;
-       padding:5px 8px;border-radius:6px;border:1.5px solid var(--burnHandleBorder);
-       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
-       box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
-       transition:opacity 0.15s,filter 0.15s}
-     #burnHandle .burn-content{display:flex;align-items:stretch;gap:8px;width:100%}
-     #burnHandle .burn-left{display:flex;flex-direction:column;align-items:center;
-       justify-content:center;gap:3px}
-     #burnHandle .burn-pill .burn-label{opacity:0.85;font-size:.66rem}
-     #burnHandle .burn-collapse-icon{width:18px;height:18px;border-radius:50%;
-       background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);
-       font:600 11px/18px system-ui;text-align:center;cursor:pointer;transition:background 0.12s}
-     #burnHandle .burn-collapse-icon:hover{background:rgba(255,255,255,0.3)}
-     #burnHandle .burn-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-     #burnHandle .burn-pill input{width:80px;padding:2px 4px;border-radius:3px;
-       border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);color:#fff;
-       font:600 .66rem/1 system-ui;text-align:center}
-     #burnHandle .burn-pill input.burn-date{width:88px}
-     #burnHandle .burn-amt-row{display:flex;align-items:center;gap:3px}
-     #burnHandle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
-     #burnHandle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
-     #burnHandle .burn-mode-row{display:flex;align-items:center;gap:4px;margin-top:3px}
-     #burnHandle .burn-mode-group{display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
-     #burnHandle .burn-mode-btn{padding:1px 6px;font:600 .58rem/1.2 system-ui;border:none;
-       border-right:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);
-       cursor:pointer;transition:all 0.12s}
-     #burnHandle .burn-mode-btn:last-child{border-right:none}
-     #burnHandle .burn-mode-btn.active{background:rgba(255,255,255,.2);color:#fff}
-     #burnHandle .burn-mode-btn:hover{background:rgba(255,255,255,.12)}
-
-     #burnHandle .burn-info-icon{position:relative;cursor:help;font-size:.6rem;opacity:0.65;user-select:none}
-     #burnHandle .burn-info-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
-       width:210px;padding:6px 8px;border-radius:6px;font:normal .62rem/1.4 system-ui;
-       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-       box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:normal;text-align:left;z-index:100;margin-bottom:6px}
-     #burnHandle .burn-info-icon:hover .burn-info-tip{display:block}
-
      #actHandle .act-nub {
        display: none;
        width: 44px;
@@ -210,6 +165,47 @@
      .seg.active[data-mode="both"]    { background: var(--frameBorder); color: var(--fg); }
      .seg.active[data-mode="default"] { background: rgba(245,158,11,0.25); color: var(--supplyObs); }
      .seg.active[data-mode="zip234"]  { background: rgba(56,189,248,0.25); color: var(--zip234Supply); }
+
+     .burn-handle .burn-delete {
+       position:absolute; right:-8px; bottom:-8px;
+       width:18px; height:18px; border-radius:50%;
+       background:rgba(0,0,0,0.5); color:#fff;
+       font:600 11px/18px system-ui; text-align:center;
+       cursor:pointer; border:1.5px solid rgba(255,255,255,0.3);
+       transition:background 0.12s;
+     }
+     .burn-handle .burn-delete:hover { background:rgba(220,38,38,0.9); }
+     .burn-handle.collapsed .burn-delete { display:none; }
+     .burn-handle .burn-nub{display:none;width:24px;height:16px;border-radius:8px;
+       background:var(--burnHandleBg);color:#fff;font:600 11px/16px system-ui;text-align:center;
+       border:1.5px solid var(--burnHandleBorder);cursor:ew-resize;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+     .burn-handle.collapsed .burn-nub{display:block}
+     .burn-handle.collapsed .burn-pill{display:none}
+     .burn-handle .burn-pill{
+       background:var(--burnHandleBg);color:#fff;font:600 .68rem/1 system-ui;
+       padding:5px 8px;border-radius:6px;border:1.5px solid var(--burnHandleBorder);
+       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
+       transition:opacity 0.15s,filter 0.15s;position:relative}
+     .burn-handle .burn-content{display:flex;align-items:stretch;gap:8px;width:100%}
+     .burn-handle .burn-left{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+     .burn-handle .burn-pill .burn-label{opacity:0.85;font-size:.66rem}
+     .burn-handle .burn-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+     .burn-handle .burn-pill input{width:80px;padding:2px 4px;border-radius:3px;
+       border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);color:#fff;
+       font:600 .66rem/1 system-ui;text-align:center}
+     .burn-handle .burn-pill input.burn-date{width:88px}
+     .burn-handle .burn-amt-row{display:flex;align-items:center;gap:3px}
+     .burn-handle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
+     .burn-handle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
+     .burn-handle .burn-mode-row{display:flex;align-items:center;gap:4px;margin-top:3px}
+     .burn-handle .burn-mode-group{display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
+     .burn-handle .burn-mode-btn{padding:1px 6px;font:600 .58rem/1.2 system-ui;border:none;
+       border-right:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);
+       cursor:pointer;transition:all 0.12s}
+     .burn-handle .burn-mode-btn:last-child{border-right:none}
+     .burn-handle .burn-mode-btn.active{background:rgba(255,255,255,.2);color:#fff}
+     .burn-handle .burn-mode-btn:hover{background:rgba(255,255,255,.12)}
     </style>
   </head>
   <body>
@@ -236,35 +232,6 @@
         </div>
         <div class="act-stem"></div>
       </div>
-      <div id="burnHandle">
-        <div class="burn-nub">⋯</div>
-        <div class="burn-pill">
-          <div class="burn-content">
-            <div class="burn-left">
-              <span class="burn-label">Burn</span>
-              <div class="burn-amt-row"><input id="burnAmtInput" type="text" value="2000000"><span class="burn-unit">ⓩ</span></div>
-            </div>
-            <div class="burn-right">
-              <input id="burnBlockInput" type="text" value="5000000">
-              <input id="burnDateInput" type="text" class="burn-date" value="">
-              <div class="burn-mode-row">
-                <span class="burn-mode-group" id="burnModeGroup">
-                  <button class="burn-mode-btn active" data-burn-mode="once">Once</button>
-                  <button class="burn-mode-btn" data-burn-mode="perblock">/blk</button>
-                </span>
-                <span class="burn-info-icon" id="burnInfoIcon">ⓘ
-                  <span class="burn-info-tip">
-                    <b>Once</b>: a single burn at this block.<br>
-                    <b>/blk</b>: this amount is burned every block from here on.
-                  </span>
-                </span>
-              </div>
-            </div>
-          </div>
-          <span class="burn-collapse-icon" title="Click to collapse">▾</span>
-        </div>
-        <div class="burn-stem"></div>
-      </div>
       <div id="writtenTip"></div>
     </div>
     <div class="legend" id="legend">
@@ -286,8 +253,14 @@
       <button id="btnReset">Reset view</button>
       <button id="btnShare">📋 Share view</button>
       <button id="btnTheme">☀/🌙</button>
+      <button id="btnAddBurn">+ Add burn event</button>
     </div>
     <script>
+
+     function min(a, b) { return a < b ? a : b; }
+     function max(a, b) { return a > b ? a : b; }
+     function abs(a) { return a < 0 ? - a : a; }
+
      /* ================================================================
         Toggle state
         ================================================================ */
@@ -295,6 +268,43 @@
      let futureMode = 'both'; // 'default' | 'zip234' | 'both'
      function showDefaultFuture() { return futureMode !== 'zip234'; }
      function showZip234() { return futureMode !== 'default'; }
+
+     function createBurnHandleElement(burn) {
+       const el = document.createElement('div');
+       el.className = 'burn-handle';
+       el.style.cssText = 'position:absolute;display:none;z-index:19;cursor:ew-resize;transform:translateX(-50%);pointer-events:auto;top:-8px';
+       el.innerHTML = `
+         <div class="burn-nub">⋯</div>
+         <div class="burn-pill">
+           <div class="burn-content">
+             <div class="burn-left">
+               <span class="burn-label">Burn</span>
+               <input class="burn-block-input" type="text" value="">
+               <input class="burn-date-input burn-date" type="text" value="">
+             </div>
+             <div class="burn-right">
+               <div class="burn-amt-row">
+                 <input class="burn-amt-input" type="text" value="">
+                 <span class="burn-unit">ⓩ</span>
+               </div>
+               <div class="burn-mode-row">
+                 <span class="burn-mode-group">
+                   <button class="burn-mode-btn${burn.mode==='once'?' active':''}" data-burn-mode="once">Once</button>
+                   <button class="burn-mode-btn${burn.mode==='perday'?' active':''}" data-burn-mode="perday">per day</button>
+                 </span>
+               </div>
+             </div>
+           </div>
+           <span class="burn-delete" title="Delete burn">✕</span>
+         </div>
+         <div class="burn-stem"></div>
+       `;
+       document.getElementById('chartWrap').appendChild(el);
+       burn.el = el;
+       wireUpBurnHandle(burn);
+       return el;
+     }
+     
 
      // For display: BigInt zats → formatted string (no floats involved)
      // Extended zatToZecString with precision control
@@ -358,8 +368,20 @@
 
      const BLOSSOM_ACTIVATION_HEIGHT=653_600n;
      const WRITTEN_HEIGHT=3_234_946n;
-     const BURN_EVENTS = [{ h: 4_500_000n, zat: 2_000_000_000_000_00n, label: "Burn 2M ⓩ", mode: 'once'}];
-     BURN_EVENTS[0].label = formatBurnLabel(BURN_EVENTS[0].zat, BURN_EVENTS[0].mode);
+
+     let burnIdCounter = 0;
+     function makeBurn(h, zat, mode) {
+       return {
+         id: burnIdCounter++,
+         h: h,
+         zat: zat,
+         mode: mode,           // 'once' or 'perday'
+         label: formatBurnLabel(zat, mode),
+         collapsed: false,
+         el: null,             // DOM handle element, created later
+       };
+     }
+     const BURN_EVENTS = [makeBurn(4_500_000n, 200_000_000_000_000n, 'once')];
 
      const ONE_YEAR_NUM = 365.25*86400*1000;          // Number, for timestamp math
      const ONE_YEAR_MS  = BigInt(Math.round(ONE_YEAR_NUM)); // BigInt, for block math
@@ -555,11 +577,21 @@
              anyAdvanced=true;
              const batchEnd=min(s.h+SIM_BATCH,maxH+1n);
              for(let h=s.h;h<batchEnd;h++){
-               for(const b of BURN_EVENTS){
-                 const shouldBurn = (b.mode==='once' && b.h===h) || (b.mode==='perblock' && h>=b.h);
-                 if(shouldBurn){
-                   const amt=b.zat<s.supZat?b.zat:s.supZat;
-                   s.supZat-=amt;s.remZat+=amt;
+               for (const b of BURN_EVENTS) {
+                 let burnThisBlock = 0n;
+                 if (b.mode === 'once' && b.h === h) {
+                   burnThisBlock = b.zat < s.supZat ? b.zat : s.supZat;
+                 } else if (b.mode === 'perday' && h >= b.h) {
+                   // spb = seconds per block for this height
+                   const spb = h < BLOSSOM_ACTIVATION_HEIGHT ? 150n : 75n;
+                   // per-block burn = dailyZat * spb / 86400
+                   // All BigInt, no floats
+                   const perBlock = b.zat * spb / 86400n;
+                   burnThisBlock = perBlock < s.supZat ? perBlock : s.supZat;
+                 }
+                 if (burnThisBlock > 0n) {
+                   s.supZat -= burnThisBlock;
+                   s.remZat += burnThisBlock;
                  }
                }
                const issZat=s.fn(h,s.supZat,s.remZat);
@@ -597,48 +629,17 @@
      /* ================================================================
         Burn event helpers
         ================================================================ */
-     function formatBurnLabel(zat, mode){
-       const w=zat/100_000_000n,f=zat%100_000_000n;
-       const u=mode==='perblock'?'ⓩ/blk':'ⓩ';
-       if(f===0n){
-         if(w>=1_000_000n&&w%1_000_000n===0n)return"Burn "+w/1_000_000n+"M "+u;
-         if(w>=1_000n&&w%1_000n===0n)return"Burn "+w/1_000n+"K "+u;
+     function formatBurnLabel(zat, mode) {
+       const w = zat / 100_000_000n, f = zat % 100_000_000n;
+       const u = mode === 'perday' ? 'ⓩ/day' : 'ⓩ';
+       if (f === 0n) {
+         if (w >= 1_000_000n && w % 1_000_000n === 0n) return "Burn " + w / 1_000_000n + "M " + u;
+         if (w >= 1_000n && w % 1_000n === 0n) return "Burn " + w / 1_000n + "K " + u;
        }
-       return"Burn "+zatToZecString(zat)+" "+u;
+       return "Burn " + zatToZecString(zat) + " " + u;
      }
 
      function supplyAtHeightZat(h) { return sumIssuanceRangeClean(0n, h); }
-
-     function changeBurn(newH=undefined, newZats=undefined, newMode=undefined){
-       const b = BURN_EVENTS[0];
-       const oldH = b.h;
-       const oldZat = b.zat;
-       const oldMode = b.mode;
-
-       // Use current value if arg not provided
-       const h = newH !== undefined ? clampBurnHeight(newH) : oldH;
-       const mode = newMode !== undefined ? newMode : oldMode;
-       const zat = newZats !== undefined ? newZats : oldZat;
-
-       // Clamp: one-time burn can't exceed supply at that height
-       const clampedZat = (mode === 'once')
-                        ? min(supplyAtHeightZat(h), zat)
-                        : zat;  // per-block is clamped each block in the sim loop
-
-       // Skip if nothing changed
-       if(h === oldH && clampedZat === oldZat && mode === oldMode) return;
-
-       // Apply
-       b.h = h;
-       b.zat = clampedZat;
-       b.mode = mode;
-       b.label = formatBurnLabel(clampedZat, mode);
-
-       // Invalidate from the earliest affected height
-       const fromH = min(oldH, h);
-       invalidateAllFrom(fromH);
-       requestDraw();
-     }
 
      /* ================================================================
         View state
@@ -1118,7 +1119,7 @@
        // Position activation handle
        updateActHandle();
        // Position burn handle
-       updateBurnHandle();
+       updateAllBurnHandles();
        // Continue animating if Y axes haven't converged
        if (yAnimating) requestDraw();
 
@@ -1199,54 +1200,181 @@
      /* ================================================================
         Burn handle state & positioning
         ================================================================ */
-     const burnHandle=document.getElementById("burnHandle");
-     const burnBlockInput=document.getElementById("burnBlockInput");
-     const burnDateInput=document.getElementById("burnDateInput");
-     const burnAmtInput=document.getElementById("burnAmtInput");
-     let burnCollapsed=false;
+     function wireUpBurnHandle(burn) {
+       console.log('wireUpBurnHandle called for burn id:', burn.id);
+       setTimeout(() => {
+         const a = el.querySelector('.burn-amt-input');
+         console.log('amtIn element:', a, 'in DOM:', document.contains(a));
+         a.addEventListener('keydown', e => console.log('RAW keydown on amtIn:', e.key));
+       }, 100);
+       const el = burn.el;
+
+       // --- Drag ---
+       let dragging = false, dragOffsetX = 0;
+       let pointerStart = {x:0, time:0};
+       el.addEventListener("mousedown", e => {
+         if (e.target.tagName === "INPUT" || e.target.classList.contains('burn-delete')
+             || e.target.classList.contains('burn-mode-btn')) return;
+         dragging = true;
+         const hr = el.getBoundingClientRect();
+         dragOffsetX = e.clientX - (hr.left + hr.right) / 2;
+         pointerStart = {x: e.clientX, time: Date.now()};
+         e.preventDefault(); e.stopPropagation();
+       });
+       window.addEventListener("mouseup", e => {
+         if (!dragging) return;
+         if (abs(e.clientX - pointerStart.x) < 4 && Date.now() - pointerStart.time < 300) {
+           burn.collapsed = !burn.collapsed; requestDraw();
+         }
+         dragging = false;
+       });
+       window.addEventListener("mousemove", e => {
+         if (!dragging) return;
+         const canvasEl = document.getElementById("chart");
+         const rect = canvasEl.getBoundingClientRect();
+         const {MG, PW} = layout;
+         const cssW = parseInt(canvasEl.style.width);
+         const mx = (e.clientX - dragOffsetX - rect.left) * (cssW / rect.width);
+         const frac = max(0, min(1, (mx - MG.left) / PW));
+         const t = view.tMin + frac * (view.tMax - view.tMin);
+         const newH = max(WRITTEN_HEIGHT, timeToHeight(t));
+         if (newH !== burn.h) {
+           const oldH = burn.h;
+           burn.h = newH;
+           burn.label = formatBurnLabel(burn.zat, burn.mode);
+           invalidateAllFrom(min(oldH, newH));
+           requestDraw();
+         }
+       });
+
+       // --- Inputs ---
+       const blockIn = el.querySelector('.burn-block-input');
+       const dateIn = el.querySelector('.burn-date-input');
+       const amtIn = el.querySelector('.burn-amt-input');
+
+       function commitBlock() {
+         try {
+           const v = BigInt(blockIn.value.replace(/,/g, ''));
+           const h = max(WRITTEN_HEIGHT, v);
+           if (h !== burn.h) { const old = burn.h; burn.h = h; burn.label = formatBurnLabel(burn.zat, burn.mode); invalidateAllFrom(min(old, h)); requestDraw(); }
+         } catch(e) {}
+         blockIn.blur();
+       }
+       function commitDate() {
+         const parsed = Date.parse(dateIn.value.trim());
+         if (!isNaN(parsed)) {
+           const h = max(WRITTEN_HEIGHT, timeToHeight(parsed));
+           if (h !== burn.h) { const old = burn.h; burn.h = h; burn.label = formatBurnLabel(burn.zat, burn.mode); invalidateAllFrom(min(old, h)); requestDraw(); }
+         }
+         dateIn.blur();
+       }
+       function commitAmt() {
+         console.log('commitAmt called, value:', amtIn.value);
+         const z = parseZecToZat(amtIn.value);
+         console.log('parsed zat:', z, 'current burn.zat:', burn.zat, 'equal:', z === burn.zat);
+         if (z !== null && z !== burn.zat) {
+           burn.zat = z; burn.label = formatBurnLabel(z, burn.mode);
+           invalidateAllFrom(burn.h); requestDraw();
+         }
+         amtIn.blur();
+       }
+
+       blockIn.addEventListener("keydown", e => { if (e.key === "Enter") commitBlock(); e.stopPropagation(); });
+       dateIn.addEventListener("keydown", e => { if (e.key === "Enter") commitDate(); e.stopPropagation(); });
+       amtIn.addEventListener("keydown", e => { if (e.key === "Enter") commitAmt(); e.stopPropagation(); });
+       [blockIn, dateIn, amtIn].forEach(inp => {
+         inp.addEventListener("mousedown", e => e.stopPropagation());
+         inp.addEventListener("click", e => e.stopPropagation());
+       });
+
+       // --- Delete ---
+       el.querySelector('.burn-delete').addEventListener('click', e => {
+         e.stopPropagation();
+         const idx = BURN_EVENTS.indexOf(burn);
+         if (idx < 0) return;
+         BURN_EVENTS.splice(idx, 1);
+         el.remove();
+         invalidateAllFrom(burn.h);
+         requestDraw();
+       });
+
+       // --- Mode toggle ---
+       el.querySelectorAll('.burn-mode-btn').forEach(btn => {
+         btn.addEventListener('click', e => {
+           e.stopPropagation();
+           const newMode = btn.dataset.burnMode;
+           if (newMode === burn.mode) return;
+           // Capture any un-committed edits from the inputs
+           const typedZat = parseZecToZat(amtIn.value);
+           if (typedZat !== null) burn.zat = typedZat;
+           burn.mode = newMode;
+         });
+         btn.addEventListener('mousedown', e => e.stopPropagation());
+       });
+     }
+
+     document.getElementById('btnAddBurn').addEventListener('click', () => {
+       // Default: at the midpoint of current view, 1M ZEC once
+       const midTime = (view.tMin + view.tMax) / 2;
+       const h = max(WRITTEN_HEIGHT, timeToHeight(midTime));
+       const b = makeBurn(h, 100_000_000_000_000n, 'once'); // 1M ZEC
+       BURN_EVENTS.push(b);
+       createBurnHandleElement(b);
+       invalidateAllFrom(h);
+       requestDraw();
+     });
 
      function clampBurnHeight(h){
        return max(WRITTEN_HEIGHT, h);
      }
 
-     function updateBurnHandle(){
-       if(!burnHandle)return null;
-       const{CSS_W,CSS_H,MG,PW,PH}=layout;
-       if(!PW){burnHandle.style.display="none";return null;}
-       const b=BURN_EVENTS[0];
-       if(!b){burnHandle.style.display="none";return null;}
-       const t=blockToTime(b.h);
-       if(t<view.tMin||t>view.tMax){burnHandle.style.display="none";return null;}
-       const frac=(t-view.tMin)/(view.tMax-view.tMin);
-       const xPx=MG.left+frac*PW;
-       burnHandle.style.display="block";
-       burnHandle.style.left=xPx+"px";
-       burnHandle.classList.toggle("collapsed",burnCollapsed);
-       const stem=burnHandle.querySelector('.burn-stem');
-       stem.style.height="0px";
-       burnHandle.style.top="0px";
-       burnHandle.offsetHeight;
-       const visibleEl=burnCollapsed
-                     ? burnHandle.querySelector('.burn-nub')
-                     : burnHandle.querySelector('.burn-pill');
-       const visH=visibleEl.offsetHeight;
-       burnHandle.style.top=(-visH/2)+"px";
-       burnHandle.offsetHeight;
-       const wrapEl=document.getElementById("chartWrap");
-       const wrapRect=wrapEl.getBoundingClientRect();
-       const handleRect=burnHandle.getBoundingClientRect();
-       const handleBottom=handleRect.bottom-wrapRect.top;
-       const stemTargetY=layout.stemTargetY||MG.top;
-       const stemHeight=max(0,stemTargetY-handleBottom);
-       stem.style.height=stemHeight+"px";
-       burnBlockInput.value=b.h.toLocaleString();
-       burnDateInput.value=fmtDate(blockToTime(b.h));
-       burnAmtInput.value = zatToZecString(b.zat);
+     function updateAllBurnHandles() {
+       for (const b of BURN_EVENTS) {
+         if (!b.el) createBurnHandleElement(b);
+         updateSingleBurnHandle(b);
+       }
+     }
 
-       document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(b=>
-         b.classList.toggle('active', b.dataset.burnMode === BURN_EVENTS[0].mode));
-
-       return {stemHeight};
+     function updateSingleBurnHandle(burn) {
+       const el = burn.el;
+       if (!el) return;
+       const {CSS_W, CSS_H, MG, PW, PH} = layout;
+       if (!PW) { el.style.display = "none"; return; }
+       const t = blockToTime(burn.h);
+       if (t < view.tMin || t > view.tMax) { el.style.display = "none"; return; }
+       const frac = (t - view.tMin) / (view.tMax - view.tMin);
+       const xPx = MG.left + frac * PW;
+       el.style.display = "block";
+       el.style.left = xPx + "px";
+       el.classList.toggle("collapsed", burn.collapsed);
+       const stem = el.querySelector('.burn-stem');
+       stem.style.height = "0px";
+       el.style.top = "0px";
+       el.offsetHeight;
+       const visibleEl = burn.collapsed
+                       ? el.querySelector('.burn-nub')
+                       : el.querySelector('.burn-pill');
+       const visH = visibleEl.offsetHeight;
+       el.style.top = (-visH / 2) + "px";
+       el.offsetHeight;
+       const wrapEl = document.getElementById("chartWrap");
+       const wrapRect = wrapEl.getBoundingClientRect();
+       const handleRect = el.getBoundingClientRect();
+       const handleBottom = handleRect.bottom - wrapRect.top;
+       const stemTargetY = layout.stemTargetY || MG.top;
+       const stemHeight = max(0, stemTargetY - handleBottom);
+       stem.style.height = stemHeight + "px";
+       const blockIn = el.querySelector('.burn-block-input');
+       const dateIn = el.querySelector('.burn-date-input');
+       const amtIn = el.querySelector('.burn-amt-input');
+       const anyFocused = el.contains(document.activeElement);
+       if (!anyFocused) {
+         blockIn.value = burn.h.toLocaleString();
+         dateIn.value = fmtDate(blockToTime(burn.h));
+         amtIn.value = zatToZecString(burn.zat);
+       }
+       el.querySelectorAll('.burn-mode-btn').forEach(b =>
+         b.classList.toggle('active', b.dataset.burnMode === burn.mode));
      }
      
      /* ================================================================
@@ -1303,56 +1431,6 @@
      }
 
      /* ================================================================
-        Extracted handler: burn drag (shared by mouse & touch)
-        ================================================================ */
-     let burnDragging=false,burnDragOffsetX=0;
-
-     function handleBurnDrag(clientX) {
-       const adjustedX = clientX - burnDragOffsetX;
-       const canvasEl = document.getElementById("chart");
-       const rect = canvasEl.getBoundingClientRect();
-       const {MG, PW} = layout;
-       const cssW = parseInt(canvasEl.style.width);
-       const mx = (adjustedX - rect.left) * (cssW / rect.width);
-       const frac = max(0, min(1, (mx - MG.left) / PW));
-       const t = view.tMin + frac * (view.tMax - view.tMin);
-       changeBurn(timeToHeight(t));
-     }
-
-     /* ================================================================
-        Extracted handler: burn block input
-        ================================================================ */
-     function handleBurnBlockInput() {
-       const raw = burnBlockInput.value.replace(/,/g, "").trim();
-       try { changeBurn(BigInt(raw)); } catch(e) {}
-       burnBlockInput.blur();
-     }
-
-     function min(a, b) { return a < b ? a : b; }
-     function max(a, b) { return a > b ? a : b; }
-     function abs(a) { return a < 0 ? - a : a; }
-
-     /* ================================================================
-        Extracted handler: burn date input
-        ================================================================ */
-     function handleBurnDateInput() {
-       const raw = burnDateInput.value.trim();
-       const parsed = Date.parse(raw);
-       if (!isNaN(parsed)) {
-         changeBurn(timeToHeight(parsed));
-       }
-       burnDateInput.blur();
-     }
-
-     /* ================================================================
-        Extracted handler: burn amount input
-        ================================================================ */
-     function handleBurnAmtInput() {
-       changeBurn(undefined, parseZecToZat(burnAmtInput.value));
-       burnAmtInput.blur();
-     }
-
-     /* ================================================================
         Extracted handler: chart drag
         ================================================================ */
      let dragging=false,dragStartX=0,dragStartTMin=0,dragStartTMax=0;
@@ -1403,7 +1481,7 @@
        const tooltip=document.getElementById("tooltip");
        const writtenTipEl=document.getElementById("writtenTip");
        const tooltipData=scenarios.default.data.length>=2?scenarios.default.data:scenarios.zip234.data;
-       if(dragging||actDragging||burnDragging||tooltipData.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
+       if(dragging||actDragging||tooltipData.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
        const canvasEl=document.getElementById("chart");
        const rect=canvasEl.getBoundingClientRect();
        const cssW=parseInt(canvasEl.style.width),cssH=parseInt(canvasEl.style.height);
@@ -1573,77 +1651,9 @@
      actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
      actDateInput.addEventListener("click",e=>e.stopPropagation());
 
-     // --- Burn handle: mouse drag ---
-     let burnPointerStart={x:0,y:0,time:0};
-     burnHandle.addEventListener("mousedown",e=>{
-       if(e.target.tagName==="INPUT")return;
-       burnDragging=true;
-       const hr=burnHandle.getBoundingClientRect();
-       burnDragOffsetX=e.clientX-(hr.left+hr.right)/2;
-       burnPointerStart={x:e.clientX,y:e.clientY,time:Date.now()};
-       e.preventDefault();
-       e.stopPropagation();
-     });
-     window.addEventListener("mouseup",e=>{
-       if(burnDragging){
-         const dx=abs(e.clientX-burnPointerStart.x);
-         const dt=Date.now()-burnPointerStart.time;
-         if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
-         burnDragging=false;
-       }
-     });
-     window.addEventListener("mousemove",e=>{
-       if(!burnDragging)return;
-       handleBurnDrag(e.clientX);
-     });
-     // --- Burn handle: touch drag ---
-     burnHandle.addEventListener("touchstart",e=>{
-       if(e.target.tagName==="INPUT")return;
-       burnDragging=true;
-       const t=e.touches[0];
-       const hr=burnHandle.getBoundingClientRect();
-       burnDragOffsetX=t.clientX-(hr.left+hr.right)/2;
-       burnPointerStart={x:t.clientX,y:t.clientY,time:Date.now()};
-       e.stopPropagation();
-     },{passive:true});
-     window.addEventListener("touchend",e=>{
-       if(burnDragging){
-         const cx=e.changedTouches?.[0]?.clientX??burnPointerStart.x;
-         const dx=abs(cx-burnPointerStart.x);
-         const dt=Date.now()-burnPointerStart.time;
-         if(dx<4&&dt<300){burnCollapsed=!burnCollapsed;requestDraw();}
-         burnDragging=false;
-       }
-     });
-     window.addEventListener("touchmove",e=>{
-       if(!burnDragging)return;
-       handleBurnDrag(e.touches[0].clientX);
-     },{passive:true});
-     // --- Burn handle: block input ---
-     burnBlockInput.addEventListener("keydown",e=>{
-       if(e.key==="Enter"){handleBurnBlockInput();}
-       e.stopPropagation();
-     });
-     burnBlockInput.addEventListener("mousedown",e=>e.stopPropagation());
-     burnBlockInput.addEventListener("click",e=>e.stopPropagation());
-     // --- Burn handle: date input ---
-     burnDateInput.addEventListener("keydown",e=>{
-       if(e.key==="Enter"){handleBurnDateInput();}
-       e.stopPropagation();
-     });
-     burnDateInput.addEventListener("mousedown",e=>e.stopPropagation());
-     burnDateInput.addEventListener("click",e=>e.stopPropagation());
-     // --- Burn handle: amount input ---
-     burnAmtInput.addEventListener("keydown",e=>{
-       if(e.key==="Enter"){handleBurnAmtInput();}
-       e.stopPropagation();
-     });
-     burnAmtInput.addEventListener("mousedown",e=>e.stopPropagation());
-     burnAmtInput.addEventListener("click",e=>e.stopPropagation());
-
      // --- Chart: mouse drag ---
-     canvas.addEventListener("mousedown",e=>{if(actDragging||burnDragging)return;handleChartDragStart(e.clientX);});
-     window.addEventListener("mousemove",e=>{if(!dragging||actDragging||burnDragging)return;handleChartDragMove(e.clientX);});
+     canvas.addEventListener("mousedown",e=>{if(actDragging)return;handleChartDragStart(e.clientX);});
+     window.addEventListener("mousemove",e=>{if(!dragging||actDragging)return;handleChartDragMove(e.clientX);});
      window.addEventListener("mouseup",()=>{dragging=false;canvas.style.cursor="crosshair";});
 
      // --- Chart: wheel ---
@@ -1674,19 +1684,6 @@
      document.getElementById("btnShare").addEventListener("click",()=>handleShare());
      document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
 
-     document.querySelectorAll('#burnModeGroup .burn-mode-btn').forEach(btn=>{
-       btn.addEventListener('click',e=>{
-         e.stopPropagation();
-         const newMode = btn.dataset.burnMode;
-         if(newMode === BURN_EVENTS[0].mode) return;
-         const currentZat = parseZecToZat(burnAmtInput.value);
-         const currentBlock = (() => { try { return BigInt(burnBlockInput.value.replace(/,/g,"")); } catch(e) { return undefined; } })();
-         changeBurn(currentBlock, currentZat !== null ? currentZat : undefined, newMode);
-       });
-       btn.addEventListener('mousedown',e=>e.stopPropagation());
-       btn.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
-     });
-
      // --- Legend toggles ---
      document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
        btn.addEventListener('click', () => {
@@ -1716,10 +1713,11 @@
        p.set('f', futureMode);
        p.set('s', (show.supply?1:0) + '' + (show.issDay?1:0) + '' + (show.annPct?1:0));
        p.set('a', String(zip234ActivationHeight));
-       const b = BURN_EVENTS[0];
-       p.set('bh', String(b.h));
-       p.set('bz', String(b.zat));
-       p.set('bm', b.mode);
+       const burnStr = BURN_EVENTS.map(b =>
+         String(b.h) + '.' + String(b.zat) + '.' + b.mode
+       ).join('|');
+       p.set('burns', burnStr);
+       
        p.set('t', getTheme());
        p.set('ys', String(yDisp.supMinZat) + '_' + String(yDisp.supMaxZat));
        p.set('yi', String(yDisp.issMaxZat));
@@ -1756,12 +1754,21 @@
          if (p.has('bh') && p.has('bz') && p.has('bm')) {
            try {
              const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
-             if (['once','perblock'].includes(bm) && bh >= WRITTEN_HEIGHT && bz >= 0n) {
-               BURN_EVENTS[0].h = bh; BURN_EVENTS[0].zat = bz;
-               BURN_EVENTS[0].mode = bm;
-               BURN_EVENTS[0].label = formatBurnLabel(bz, bm);
-             }
            } catch(e) {}
+         }
+         if (p.has('burns')) {
+           BURN_EVENTS.length = 0;
+           for (const seg of p.get('burns').split('|')) {
+             const parts = seg.split('.');
+             if (parts.length === 3) {
+               try {
+                 const bh = BigInt(parts[0]), bz = BigInt(parts[1]);
+                 const bm = ['once','perday'].includes(parts[2]) ? parts[2] : 'once';
+                 if (bh >= WRITTEN_HEIGHT && bz >= 0n)
+                   BURN_EVENTS.push(makeBurn(bh, bz, bm));
+               } catch(e) {}
+             }
+           }
          }
          if (p.has('t') && ['light','dark'].includes(p.get('t')))
            setTheme(p.get('t'));
@@ -1853,6 +1860,7 @@
      if (loadedFromURL && !yLockedFromURL) { yDirty = true; ySnapOnFirstData = true; }
 
      clampView();
+     for (const b of BURN_EVENTS) createBurnHandleElement(b);
 
      // Sync UI toggles to match (possibly URL-loaded) state
      document.querySelectorAll('.ltoggle').forEach(el=>{
