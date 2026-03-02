@@ -16,6 +16,7 @@
        --zip234Iss: #7dd3fc;      /* sky-300 */
        --zip234Ann: #38bdf8;
        --zip234Act: rgba(56,189,248,0.50);
+       --lts: #a78bfa;
        --handleBg: rgba(56,189,248,0.92);
        --handleBorder: #fff;
        --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
@@ -39,6 +40,7 @@
        --zip234Iss: #0369a1;      /* sky-700 */
        --zip234Ann: #0284c7;
        --zip234Act: rgba(2,132,199,0.40);
+       --lts: #7c3aed;
        --handleBg: rgba(2,132,199,0.92);
        --handleBorder: #1e293b;
        --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
@@ -234,15 +236,10 @@
      @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
        .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
        .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
-     .seg-label { color: var(--muted); font-size: 0.78rem; margin-right: 2px; }
-     .seg-group { display: inline-flex; border: 1px solid var(--controlsBorder); border-radius: 6px; overflow: hidden; }
      .seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
        background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
      .seg:last-child { border-right: none; }
      .seg:hover { opacity: 0.85; }
-     .seg.active[data-mode="both"]    { background: var(--frameBorder); color: var(--fg); }
-     .seg.active[data-mode="default"] { background: rgba(245,158,11,0.25); color: var(--supplyObs); }
-     .seg.active[data-mode="zip234"]  { background: rgba(56,189,248,0.25); color: var(--zip234Supply); }
 
      /* Burn handle (single canonical section) */
      .burn-handle{
@@ -498,17 +495,20 @@
       <div id="writtenTip"></div>
     </div>
     <div class="legend" id="legend">
-      <span class="seg-label">Future:</span>
-      <span class="seg-group" id="futureModeGroup">
-        <button class="seg active" data-mode="both">Both</button>
-        <button class="seg" data-mode="default">Default</button>
-        <button class="seg" data-mode="zip234">ZIP 234</button>
-      </span>
-      <span style="color:var(--muted)">│</span>
-      <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
-      <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
-      <span class="ltoggle" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
-      <span><span class="dash"></span> Dashed = <b>Expected</b></span>
+      <span class="ltoggle active" data-future="default">
+        <span class="sw" style="background:var(--supplyObs)"></span>Default</span>
+        <span class="ltoggle active" data-future="zip234">
+          <span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
+          <span class="ltoggle" data-future="lts">
+            <span class="sw" style="background:var(--lts)"></span>LTS</span>
+            <span style="color:var(--muted)">│</span>
+            <span class="ltoggle active" data-series="supply">
+              <span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
+              <span class="ltoggle active" data-series="issDay">
+                <span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
+                <span class="ltoggle" data-series="annPct">
+                  <span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
+                  <span><span class="dash"></span> Dashed = <b>Expected</b></span>
     </div>
     <div id="tooltip"></div>
     <div class="controls">
@@ -527,7 +527,10 @@
         Toggle state
         ================================================================ */
      const show = {supply:true, issDay:true, annPct:false};
-     let futureMode = 'both'; // 'default' | 'zip234' | 'both'
+     const showFuture = { default: true, zip234: true, lts: false };
+     function showDefaultFuture() { return showFuture.default; }
+     function showZip234() { return showFuture.zip234; }
+     function showLts() { return showFuture.lts; }
 
      /* ================================================================
         Handle stacking (expanded to front, collapsed to back)
@@ -557,9 +560,6 @@
        }
      }
      
-     function showDefaultFuture() { return futureMode !== 'zip234'; }
-     function showZip234() { return futureMode !== 'default'; }
-
      function createBurnHandleElement(burn) {
        const el = document.createElement('div');
        el.className = 'burn-handle';
@@ -1530,7 +1530,6 @@
        const DRAG_START_PX = 6;
 
        const el = burn.el;
-       // --- Drag ---
 
        el.addEventListener("mousedown", e => {
          if (
@@ -1540,6 +1539,14 @@
            e.target.closest('.burn-collapse-icon')
          ) return;
 
+         // Commit pending edits NOW, before blur/redraw can
+         // overwrite inputs with stale values
+         if (!burn.collapsed) {
+           commitBlock();
+           commitDate();
+           commitAmt();
+         }
+
          pointerDown = true;
          isDragging = false;
          const hr = el.getBoundingClientRect();
@@ -1547,6 +1554,20 @@
          pointerStart = { x: e.clientX, y: e.clientY, time: Date.now() };
          e.preventDefault();
          e.stopPropagation();
+       });
+
+       window.addEventListener("mouseup", e => {
+         if (!pointerDown) return;
+
+         if (!isDragging) {
+           burn.collapsed = !burn.collapsed;
+           applyHandleStackState(el, burn.collapsed,
+                                 { justExpanded: !burn.collapsed });
+           requestDraw();
+         }
+
+         pointerDown = false;
+         isDragging = false;
        });
 
        window.addEventListener("mousemove", e => {
@@ -1577,26 +1598,22 @@
          }
        });
 
-       window.addEventListener("mouseup", e => {
-         if (!pointerDown) return;
-
-         if (!isDragging) {
-           burn.collapsed = !burn.collapsed;
-           applyHandleStackState(el, burn.collapsed, { justExpanded: !burn.collapsed });
-           requestDraw();
-         }
-
-         pointerDown = false;
-         isDragging = false;
-       });
-       
        // --- Inputs ---
        const blockIn = el.querySelector('.burn-block-input');
        const dateIn = el.querySelector('.burn-date-input');
        const amtIn = el.querySelector('.burn-amt-input');
 
        const burnCollapseIcon = el.querySelector('.burn-collapse-icon');
-       burnCollapseIcon.addEventListener('mousedown', e => e.stopPropagation());
+       burnCollapseIcon.addEventListener('mousedown', e => {
+         e.stopPropagation();
+         // Commit pending edits before blur/redraw can overwrite input values
+         if (!burn.collapsed) {
+           commitBlock();
+           commitDate();
+           commitAmt();
+         }
+       });
+
        burnCollapseIcon.addEventListener('click', e => {
          e.stopPropagation();
          burn.collapsed = !burn.collapsed;
@@ -1863,15 +1880,21 @@
      }
 
      /* ================================================================
-        Extracted handler: legend toggle
+        Extracted handler: legend toggles
         ================================================================ */
-     function handleLegendToggle(el) {
-       yLockedFromURL = false;
-       const key = el.dataset.series;
-       show[key] = !show[key];
-       el.classList.toggle('active', show[key]);
-       yDirty=true;
+     function handleLegendToggles(el) {
+       if (el.dataset.series) {
+         const key = el.dataset.series;
+         show[key] = !show[key];
+         el.classList.toggle('active', show[key]);
+       } else if (el.dataset.future) {
+         const key = el.dataset.future;
+         showFuture[key] = !showFuture[key];
+         el.classList.toggle('active', showFuture[key]);
+       }
+       yDirty = true;
        requestDraw();
+       computeAllScenarios();
      }
 
      /* ================================================================
@@ -2157,20 +2180,12 @@
      document.getElementById("btnShare").addEventListener("click",()=>handleShare());
      document.getElementById("btnTheme").addEventListener("click",()=>toggleTheme());
 
-     // --- Legend toggles ---
-     document.querySelectorAll('#futureModeGroup .seg').forEach(btn => {
-       btn.addEventListener('click', () => {
-         if (btn.dataset.mode === futureMode) return; // no change
-         futureMode = btn.dataset.mode;
-         yLockedFromURL = false;
-         yDirty=true;
-         document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
-         requestDraw();
-         computeAllScenarios();
-       });
-     });
-     document.querySelectorAll('.ltoggle').forEach(el=>{
-       el.addEventListener('click',()=>handleLegendToggle(el));
+     document.querySelectorAll('.ltoggle').forEach(el => {
+       el.addEventListener('click', () => handleLegendToggles(el));
+       if (el.dataset.series && show[el.dataset.series] !== undefined)
+         el.classList.toggle('active', show[el.dataset.series]);
+       if (el.dataset.future && showFuture[el.dataset.future] !== undefined)
+         el.classList.toggle('active', showFuture[el.dataset.future]);
      });
 
      canvas.style.cursor="crosshair";
@@ -2182,7 +2197,7 @@
      let lastUrlSyncTime = 0;
 
      const STATE_BUNDLE_KEY = "z";   // hash format: #z=<base64url>
-     const STATE_BUNDLE_VER = 2;     // bump if format changes
+     const STATE_BUNDLE_VER = 3;     // bump if format changes
 
      function b64urlFromBytes(bytes) {
        let bin = "";
@@ -2223,37 +2238,24 @@
        throw new Error("varuint too long");
      }
 
-     function futureModeToBits(m) {
-       if (m === "both") return 0;
-       if (m === "default") return 1;
-       if (m === "zip234") return 2;
-       throw new Error("invalid futureMode");
-     }
-
-     function bitsToFutureMode(v) {
-       if (v === 0) return "both";
-       if (v === 1) return "default";
-       if (v === 2) return "zip234";
-       throw new Error("invalid futureMode bits");
-     }
-
      function stateToHash() {
        const out = [];
        out.push(STATE_BUNDLE_VER);
 
-       // flags byte
-       // bits 0..1 future mode (0 both,1 default,2 zip234)
-       // bit 2 supply, bit 3 issDay, bit 4 annPct
-       // bit 5 themeLight
-       // bit 6 actCollapsed
-       // bit 7 reserved (must be 0)
+       // v3 flags byte:
+       // bit0 showFuture.default, bit1 showFuture.zip234,
+       // bit2 showFuture.lts,
+       // bit3 supply, bit4 issDay, bit5 annPct,
+       // bit6 themeLight, bit7 actCollapsed
        let flags = 0;
-       flags |= futureModeToBits(futureMode);
-       if (show.supply) flags |= (1 << 2);
-       if (show.issDay) flags |= (1 << 3);
-       if (show.annPct) flags |= (1 << 4);
-       if (getTheme() === "light") flags |= (1 << 5);
-       if (actCollapsed) flags |= (1 << 6);
+       if (showFuture.default) flags |= (1 << 0);
+       if (showFuture.zip234)  flags |= (1 << 1);
+       if (showFuture.lts)     flags |= (1 << 2);
+       if (show.supply)        flags |= (1 << 3);
+       if (show.issDay)        flags |= (1 << 4);
+       if (show.annPct)        flags |= (1 << 5);
+       if (getTheme() === "light") flags |= (1 << 6);
+       if (actCollapsed)       flags |= (1 << 7);
        out.push(flags);
 
        writeVarUint(out, BigInt(Math.round(view.tMin)));
@@ -2305,18 +2307,18 @@
          if (ver !== STATE_BUNDLE_VER) return false;
 
          const flags = bytes[st.i++];
-         if (flags & (1 << 7)) return false; // strict: reserved bit must be 0
-
-         const fmBits = flags & 0b11;
-         const newFutureMode = bitsToFutureMode(fmBits);
-
-         const newShow = {
-           supply: !!(flags & (1 << 2)),
-           issDay: !!(flags & (1 << 3)),
-           annPct: !!(flags & (1 << 4)),
+         const newShowFuture = {
+           default: !!(flags & (1 << 0)),
+           zip234:  !!(flags & (1 << 1)),
+           lts:     !!(flags & (1 << 2)),
          };
-         const newTheme = (flags & (1 << 5)) ? "light" : "dark";
-         const newActCollapsed = !!(flags & (1 << 6));
+         const newShow = {
+           supply: !!(flags & (1 << 3)),
+           issDay: !!(flags & (1 << 4)),
+           annPct: !!(flags & (1 << 5)),
+         };
+         const newTheme = (flags & (1 << 6)) ? "light" : "dark";
+         const newActCollapsed = !!(flags & (1 << 7));
 
          const tMin = Number(readVarUint(bytes, st));
          const tMax = Number(readVarUint(bytes, st));
@@ -2361,7 +2363,9 @@
 
          view.tMin = tMin;
          view.tMax = tMax;
-         futureMode = newFutureMode;
+         showFuture.default = newShowFuture.default;
+         showFuture.zip234 = newShowFuture.zip234;
+         showFuture.lts = newShowFuture.lts;
          show.supply = newShow.supply;
          show.issDay = newShow.issDay;
          show.annPct = newShow.annPct;
@@ -2403,6 +2407,41 @@
        }
      }
 
+     async function handleShare() {
+       syncURL(true);
+       const url = location.href;
+       if (navigator.share && location.protocol !== 'file:') {
+         try { await navigator.share({
+           title: 'Zcash Supply & Issuance', url });
+           return;
+         } catch(e) { if (e.name === 'AbortError') return; }
+       }
+       let copied = false;
+       try {
+         await navigator.clipboard.writeText(url);
+         copied = true;
+       } catch(e) {
+         try {
+           const ta = document.createElement('textarea');
+           ta.value = url;
+           ta.style.position = 'fixed';
+           ta.style.left = '-9999px';
+           document.body.appendChild(ta);
+           ta.select();
+           copied = document.execCommand('copy');
+           document.body.removeChild(ta);
+         } catch(e2) {}
+       }
+       if (copied) {
+         const btn = document.getElementById('btnShare');
+         const orig = btn.textContent;
+         btn.textContent = '✓ Copied!';
+         setTimeout(() => { btn.textContent = orig; }, 1500);
+       } else {
+         prompt('Copy this URL:', url);
+       }
+     }
+
      /* ================================================================
         Boot
         ================================================================ */
@@ -2426,8 +2465,6 @@
        const key=el.dataset.series;
        if(key&&show[key]!==undefined)el.classList.toggle('active',show[key]);
      });
-     document.querySelectorAll('#futureModeGroup .seg').forEach(b =>
-       b.classList.toggle('active', b.dataset.mode === futureMode));
 
      function bigPowFP64(base, exp) {
        let result = 1n << 64n, b = base, e = exp;
