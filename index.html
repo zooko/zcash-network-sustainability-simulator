@@ -671,22 +671,21 @@
 
      let burnIdCounter = 0;
      function makeBurn(h, zat, mode) {
-       const safeMode = mode === 'perday' ? 'perday' : 'once';
-       const onceZat = safeMode === 'once' ? zat : DEFAULT_BURN_ONCE_ZAT;
-       const perdayZat = safeMode === 'perday' ? zat : DEFAULT_BURN_PERDAY_ZAT;
-       const b = {
+       const onceZat = mode === 'once' ? zat : DEFAULT_BURN_ONCE_ZAT;
+       const perdayZat = mode === 'perday' ? zat : DEFAULT_BURN_PERDAY_ZAT;
+       const activeZat = mode === 'perday' ? perdayZat : onceZat;
+
+       return {
          id: burnIdCounter++,
          h,
-         mode: safeMode,
+         mode,                    // 'once' | 'perday'
          onceZat,
          perdayZat,
-         zat: 0n,
-         label: '',
+         zat: activeZat,          // currently-active amount for simulation/display
+         label: formatBurnLabel(activeZat, mode),
          collapsed: false,
-         el: null
+         el: null,
        };
-       syncBurnActiveAmount(b);
-       return b;
      }
      const BURN_EVENTS = [makeBurn(4_500_000n, DEFAULT_BURN_ONCE_ZAT, 'once')];
 
@@ -929,7 +928,7 @@
            simComputedVer=myVer;simComputedMaxH=maxH;break;
          }
        }
-       simRunning=false;if(isFirstRun && !yLockedFromURL) yDirty=true;yLockedFromURL=false;requestDraw();
+       simRunning=false;if(isFirstRun && !yLockedFromURL) yDirty=true;requestDraw();
      }
 
      /* ================================================================
@@ -961,9 +960,13 @@
        if(view.tMin<genTime-2*ONE_YEAR_NUM)view.tMin=genTime-2*ONE_YEAR_NUM;
      }
 
-     function resetView(){yDirty=true;view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();}
+     function resetView(){
+       yLockedFromURL = false;
+       yDirty=true;view.tMin=genTime;view.tMax=blockToTime(6_000_000);clampView();requestDraw();computeAllScenarios();
+     }
 
      function zoomToActivation(h){
+       yLockedFromURL = false;
        yDirty=true;
        view.tMin=genTime;
        const endH=max(h*2n,h+100_000n);
@@ -1094,6 +1097,7 @@
      let yDirty = true;
      let ySnapOnFirstData = false;
      let yLockedFromURL = false;
+     let yPinnedFromURL = false; // keep URL-restored Y until user changes view/data
 
      function lerpZat(cur, tgt) {
        if (cur === tgt) return cur;
@@ -1512,10 +1516,15 @@
         Burn handle state & positioning
         ================================================================ */
      function wireUpBurnHandle(burn) {
+       let pointerDown = false;
+       let isDragging = false;
+       let dragOffsetX = 0;
+       let pointerStart = { x: 0, y: 0, time: 0 };
+       const DRAG_START_PX = 6;
+
        const el = burn.el;
        // --- Drag ---
-       let dragging = false, dragOffsetX = 0;
-       let pointerStart = {x:0, time:0};
+
        el.addEventListener("mousedown", e => {
          if (
            e.target.tagName === "INPUT" ||
@@ -1524,30 +1533,30 @@
            e.target.closest('.burn-collapse-icon')
          ) return;
 
-         dragging = true;
+         pointerDown = true;
+         isDragging = false;
          const hr = el.getBoundingClientRect();
          dragOffsetX = e.clientX - (hr.left + hr.right) / 2;
-         pointerStart = {x: e.clientX, time: Date.now()};
+         pointerStart = { x: e.clientX, y: e.clientY, time: Date.now() };
          e.preventDefault();
          e.stopPropagation();
        });
-       window.addEventListener("mouseup", e => {
-         if (!dragging) return;
-         if (abs(e.clientX - pointerStart.x) < 4 && Date.now() - pointerStart.time < 300) {
-           burn.collapsed = !burn.collapsed;
-           applyHandleStackState(el, burn.collapsed, { justExpanded: !burn.collapsed });
-           requestDraw();
-         }
-         dragging = false;
-       });
+
        window.addEventListener("mousemove", e => {
-         if (!dragging) return;
+         if (!pointerDown) return;
+
+         const dx = e.clientX - pointerStart.x;
+         const dy = e.clientY - pointerStart.y;
+         if (!isDragging) {
+           if (dx * dx + dy * dy < DRAG_START_PX * DRAG_START_PX) return;
+           isDragging = true;
+         }
+
          const canvasEl = document.getElementById("chart");
          const rect = canvasEl.getBoundingClientRect();
-         const {MG, PW} = layout;
+         const { MG, PW } = layout;
          const cssW = parseInt(canvasEl.style.width);
          const mx = (e.clientX - dragOffsetX - rect.left) * (cssW / rect.width);
-
          const frac = max(0, min(1, (mx - MG.left) / PW));
          const t = view.tMin + frac * (view.tMax - view.tMin);
          const newH = max(WRITTEN_HEIGHT, timeToHeight(t));
@@ -1561,6 +1570,19 @@
          }
        });
 
+       window.addEventListener("mouseup", e => {
+         if (!pointerDown) return;
+
+         if (!isDragging) {
+           burn.collapsed = !burn.collapsed;
+           applyHandleStackState(el, burn.collapsed, { justExpanded: !burn.collapsed });
+           requestDraw();
+         }
+
+         pointerDown = false;
+         isDragging = false;
+       });
+       
        // --- Inputs ---
        const blockIn = el.querySelector('.burn-block-input');
        const dateIn = el.querySelector('.burn-date-input');
@@ -1586,6 +1608,7 @@
        }
 
        function commitBlock() {
+         yLockedFromURL = false;
          try {
            const v = BigInt(blockIn.value.replace(/,/g, ''));
            const h = max(WRITTEN_HEIGHT, v);
@@ -1594,6 +1617,7 @@
          blockIn.blur();
        }
        function commitDate() {
+         yLockedFromURL = false;
          const parsed = Date.parse(dateIn.value.trim());
          if (!isNaN(parsed)) {
            const h = max(WRITTEN_HEIGHT, timeToHeight(parsed));
@@ -1602,13 +1626,15 @@
          dateIn.blur();
        }
        function commitAmt() {
+         yLockedFromURL = false;
          const z = parseZecToZat(amtIn.value);
          if (z !== null) {
            if (burn.mode === 'once') burn.onceZat = z;
            else burn.perdayZat = z;
-           const prev = burn.zat;
-           syncBurnActiveAmount(burn);
-           if (burn.zat !== prev) {
+           
+           if (z !== burn.zat) {
+             burn.zat = z;
+             burn.label = formatBurnLabel(z, burn.mode);
              invalidateAllFrom(burn.h);
              requestDraw();
            }
@@ -1641,7 +1667,9 @@
            e.stopPropagation();
            const newMode = btn.dataset.burnMode;
            if (newMode === burn.mode) return;
-
+           yLockedFromURL = false;
+           
+           // Capture uncommitted typed amount into current mode bucket
            const typedZat = parseZecToZat(amtIn.value);
            if (typedZat !== null) {
              if (burn.mode === 'once') burn.onceZat = typedZat;
@@ -1649,10 +1677,14 @@
            }
 
            burn.mode = newMode;
-           syncBurnActiveAmount(burn);
+           burn.zat = (newMode === 'once') ? burn.onceZat : burn.perdayZat;
+           burn.label = formatBurnLabel(burn.zat, burn.mode);
+           amtIn.value = zatToZecString(burn.zat);
+           
            invalidateAllFrom(burn.h);
            requestDraw();
          });
+         btn.addEventListener('mousedown', e => e.stopPropagation());
        });
      }
 
@@ -1750,6 +1782,7 @@
      }
 
      function changeZIP234ActivationHeight(newH) {
+       yLockedFromURL = false;
        const clampedH = max(newH, WRITTEN_HEIGHT);
        const oldH = zip234ActivationHeight;
        if (oldH !== clampedH) {
@@ -1793,6 +1826,7 @@
      let dragging=false,dragStartX=0,dragStartTMin=0,dragStartTMax=0;
 
      function handleChartDragStart(clientX){
+       yLockedFromURL = false;
        dragging=true;dragStartX=clientX;dragStartTMin=view.tMin;dragStartTMax=view.tMax;
        document.getElementById("chart").style.cursor="grabbing";
      }
@@ -1809,6 +1843,7 @@
         Extracted handler: chart wheel (zoom/pan)
         ================================================================ */
      function handleChartWheel(e){
+       yLockedFromURL = false;
        e.preventDefault();
        const rect=document.getElementById("chart").getBoundingClientRect();
        const frac=(e.clientX-rect.left)/rect.width;
@@ -1824,6 +1859,7 @@
         Extracted handler: legend toggle
         ================================================================ */
      function handleLegendToggle(el) {
+       yLockedFromURL = false;
        const key = el.dataset.series;
        show[key] = !show[key];
        el.classList.toggle('active', show[key]);
@@ -1930,91 +1966,121 @@
      const canvas=document.getElementById("chart");
      const tooltip=document.getElementById("tooltip");
      const writtenTip=document.getElementById("writtenTip");
-     let actDragging=false, actDragOffsetX=0;
 
-     // --- Activation handle: mouse drag ---
+     let actPointerDown = false;
+     let actDragging = false; // only true after drag threshold
+     let actDragOffsetX = 0;
      let actPointerStart = { x: 0, y: 0, time: 0 };
+     const ACT_DRAG_START_PX = 6;
+     const ACT_DRAG_START_PX2 = ACT_DRAG_START_PX * ACT_DRAG_START_PX;
 
-     actHandle.addEventListener("mousedown",e=>{
-       if (
-         e.target.tagName === "INPUT" ||
-         e.target.closest('.act-collapse-icon')
-       ) return;
-       actDragging=true;
-       const hr=actHandle.getBoundingClientRect();
-       actDragOffsetX=e.clientX-(hr.left+hr.right)/2;
-       actPointerStart={x: e.clientX,y: e.clientY,time: Date.now()};
+     // --- Activation handle: mouse ---
+     actHandle.addEventListener("mousedown", e => {
+       if (e.target.tagName === "INPUT" || e.target.closest(".act-collapse-icon")) return;
+
+       actPointerDown = true;
+       actDragging = false;
+
+       const hr = actHandle.getBoundingClientRect();
+       actDragOffsetX = e.clientX - (hr.left + hr.right) / 2;
+       actPointerStart = { x: e.clientX, y: e.clientY, time: Date.now() };
+
        e.preventDefault();
        e.stopPropagation();
      });
 
-     document.addEventListener('visibilitychange', () => {
+     window.addEventListener("mousemove", e => {
+       if (!actPointerDown) return;
+
+       const dx = e.clientX - actPointerStart.x;
+       const dy = e.clientY - actPointerStart.y;
+
+       if (!actDragging) {
+         if (dx * dx + dy * dy < ACT_DRAG_START_PX2) return;
+         actDragging = true;
+       }
+
+       handleActDrag(e.clientX);
+     });
+
+     window.addEventListener("mouseup", () => {
+       if (!actPointerDown) return;
+
+       if (!actDragging) {
+         actCollapsed = !actCollapsed;
+         applyHandleStackState(actHandle, actCollapsed, { justExpanded: !actCollapsed });
+         requestDraw();
+       }
+
+       actPointerDown = false;
+       actDragging = false;
+     });
+
+     // --- Activation handle: touch ---
+     actHandle.addEventListener("touchstart", e => {
+       if (e.target.tagName === "INPUT" || e.target.closest(".act-collapse-icon")) return;
+
+       const t = e.touches[0];
+       actPointerDown = true;
+       actDragging = false;
+
+       const hr = actHandle.getBoundingClientRect();
+       actDragOffsetX = t.clientX - (hr.left + hr.right) / 2;
+       actPointerStart = { x: t.clientX, y: t.clientY, time: Date.now() };
+
+       e.stopPropagation();
+     }, { passive: true });
+
+     window.addEventListener("touchmove", e => {
+       if (!actPointerDown) return;
+
+       const t = e.touches[0];
+       const dx = t.clientX - actPointerStart.x;
+       const dy = t.clientY - actPointerStart.y;
+
+       if (!actDragging) {
+         if (dx * dx + dy * dy < ACT_DRAG_START_PX2) return;
+         actDragging = true;
+       }
+
+       handleActDrag(t.clientX);
+     }, { passive: true });
+
+     window.addEventListener("touchend", () => {
+       if (!actPointerDown) return;
+
+       if (!actDragging) {
+         actCollapsed = !actCollapsed;
+         applyHandleStackState(actHandle, actCollapsed, { justExpanded: !actCollapsed });
+         requestDraw();
+       }
+
+       actPointerDown = false;
+       actDragging = false;
+     });
+
+     window.addEventListener("touchcancel", () => {
+       actPointerDown = false;
+       actDragging = false;
+     });
+
+     document.addEventListener("visibilitychange", () => {
        if (!document.hidden) {
          requestDraw();
          computeAllScenarios();
        }
      });
 
-     window.addEventListener('pageshow', () => {
+     window.addEventListener("pageshow", () => {
        requestDraw();
        computeAllScenarios();
      });
 
-     window.addEventListener('focus', () => {
+     window.addEventListener("focus", () => {
        requestDraw();
        computeAllScenarios();
      });
-
-     window.addEventListener("mouseup", e => {
-       if (actDragging) {
-         const dx = abs(e.clientX - actPointerStart.x);
-         const dt = Date.now() - actPointerStart.time;
-         // If barely moved and quick, it's a click → toggle collapsed
-         if (dx < 4 && dt < 300) {
-           actCollapsed = !actCollapsed;
-           applyHandleStackState(actHandle, actCollapsed, { justExpanded: !actCollapsed });
-           requestDraw();
-         }
-         actDragging = false;
-       }
-     });
-
-     window.addEventListener("mousemove",e=>{
-       if(!actDragging)return;
-       handleActDrag(e.clientX);
-     });
-
-     // --- Activation handle: touch drag ---
-     actHandle.addEventListener("touchstart",e=>{
-       if(e.target.tagName==="INPUT")return;
-       if (e.target.closest('.act-collapse-icon')) return;
-       actDragging=true;
-       const t=e.touches[0];
-       const hr=actHandle.getBoundingClientRect();
-       actDragOffsetX=t.clientX-(hr.left+hr.right)/2;
-       actPointerStart={x: t.clientX,y: t.clientY,time: Date.now()};
-       e.stopPropagation();
-     },{passive: true});
-
-     window.addEventListener("touchend", e => {
-       if (actDragging) {
-         const cx = e.changedTouches?.[0]?.clientX ?? actPointerStart.x;
-         const dx = abs(cx - actPointerStart.x);
-         const dt = Date.now() - actPointerStart.time;
-         if (dx < 4 && dt < 300) {
-           actCollapsed = !actCollapsed;
-           applyHandleStackState(actHandle, actCollapsed, { justExpanded: !actCollapsed });
-           requestDraw();
-         }
-         actDragging = false;
-       }
-     });
-
-     window.addEventListener("touchmove",e=>{
-       if(!actDragging)return;
-       handleActDrag(e.touches[0].clientX);
-     },{passive:true});
-
+     
      // --- Activation handle: block input ---
      actBlockInput.addEventListener("keydown",e=>{
        if(e.key==="Enter"){handleActBlockInput();}
@@ -2089,6 +2155,7 @@
        btn.addEventListener('click', () => {
          if (btn.dataset.mode === futureMode) return; // no change
          futureMode = btn.dataset.mode;
+         yLockedFromURL = false;
          yDirty=true;
          document.querySelectorAll('#futureModeGroup .seg').forEach(b => b.classList.toggle('active', b === btn));
          requestDraw();
@@ -2541,17 +2608,6 @@
        const passed = results.filter(r => r.pass).length;
        const failed = results.filter(r => !r.pass).length;
        const total = results.length;
-
-       console.log(`%c=== REGRESSION TESTS: ${passed}/${total} passed, ${failed} failed ===`,
-                   failed > 0 ? "color:red;font-weight:bold;font-size:14px" : "color:green;font-weight:bold;font-size:14px");
-
-       for (const r of results) {
-         if (r.pass) {
-           console.log(`  %c✓ ${r.name}`, "color:green");
-         } else {
-           console.log(`  %c✗ ${r.name}${r.error ? " — " + r.error : ""}`, "color:red;font-weight:bold");
-         }
-       }
 
        if (failed > 0) {
          console.warn(`⚠️ ${failed} regression test(s) FAILED — check for regressions before shipping!`);
