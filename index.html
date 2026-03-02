@@ -1543,7 +1543,6 @@
          // overwrite inputs with stale values
          if (!burn.collapsed) {
            commitBlock();
-           commitDate();
            commitAmt();
          }
 
@@ -1609,7 +1608,6 @@
          // Commit pending edits before blur/redraw can overwrite input values
          if (!burn.collapsed) {
            commitBlock();
-           commitDate();
            commitAmt();
          }
        });
@@ -1674,6 +1672,19 @@
          inp.addEventListener("click", e => e.stopPropagation());
        });
 
+       blockIn.addEventListener('input', () => {
+         try {
+           const v = BigInt(blockIn.value.replace(/,/g, '').trim());
+           if (v >= 0n) dateIn.value = fmtDate(blockToTime(v));
+         } catch(e) {}
+       });
+
+       dateIn.addEventListener('input', () => {
+         const parsed = Date.parse(dateIn.value.trim());
+         if (!isNaN(parsed))
+           blockIn.value = timeToHeight(parsed).toLocaleString();
+       });
+
        // --- Delete ---
        el.querySelector('.burn-delete').addEventListener('click', e => {
          e.stopPropagation();
@@ -1721,7 +1732,16 @@
        requestDraw();
      });
 
-     actCollapseIcon.addEventListener('mousedown', e => e.stopPropagation());
+     actCollapseIcon.addEventListener('mousedown', e => {
+       e.stopPropagation();
+       if (!actCollapsed) {
+         try {
+           const raw = actBlockInput.value.replace(/,/g, '').trim();
+           const v = BigInt(raw);
+           if (v >= 0n) changeZIP234ActivationHeight(v);
+         } catch (e2) {}
+       }
+     });
 
      document.getElementById('btnAddBurn').addEventListener('click', () => {
        // Default: at the midpoint of current view, 1M ZEC once
@@ -2126,6 +2146,19 @@
      });
      actDateInput.addEventListener("mousedown",e=>e.stopPropagation());
      actDateInput.addEventListener("click",e=>e.stopPropagation());
+
+     actBlockInput.addEventListener('input', () => {
+       try {
+         const v = BigInt(actBlockInput.value.replace(/,/g, '').trim());
+         if (v >= 0n) actDateInput.value = fmtDate(blockToTime(v));
+       } catch(e) {}
+     });
+
+     actDateInput.addEventListener('input', () => {
+       const parsed = Date.parse(actDateInput.value.trim());
+       if (!isNaN(parsed))
+         actBlockInput.value = timeToHeight(parsed).toLocaleString();
+     });
 
      // --- Chart: mouse drag ---
      canvas.addEventListener("mousedown",e=>{if(actDragging)return;handleChartDragStart(e.clientX);});
