@@ -7,56 +7,80 @@
     <style>
      :root{
        --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
-       --supplyObs:#f59e0b; --issObs:#22d3ee;
-       --supplyExp:rgba(245,158,11,0.55); --issExp:rgba(34,211,238,0.55);
-       --annualObs:#4ade80; --annualExp:rgba(74,222,128,0.55);
+       /* Default scenario: muted slate — "status quo" */
+       --supplyObs:#94a3b8;          /* slate-400 */
+       --issObs:#cbd5e1;             /* slate-300 */
+       --supplyExp:rgba(148,163,184,0.38);
+       --issExp:rgba(203,213,225,0.38);
+       --annualObs:#94a3b8;
+       --annualExp:rgba(148,163,184,0.38);
+       /* Events & chrome */
        --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
        --written:rgba(167,139,250,0.65);
-       --zip234Supply: #38bdf8;   /* sky-400 */
-       --zip234Iss: #7dd3fc;      /* sky-300 */
-       --zip234Ann: #38bdf8;
-       --zip234Act: rgba(56,189,248,0.50);
-       --lts: #a78bfa;
-       --handleBg: rgba(56,189,248,0.92);
-       --handleBorder: #fff;
+       /* ZIP 234: deep trustworthy blue — the hero */
+       --zip234Supply:#3b82f6;       /* blue-500 */
+       --zip234Iss:#93c5fd;          /* blue-300 */
+       --zip234Ann:#3b82f6;
+       --zip234Act:rgba(59,130,246,0.50);
+       /* NSMalt: warm amber — energetic but secondary */
+       --nsmaltSupply:#f59e0b;       /* amber-500 */
+       --nsmaltIss:#fcd34d;          /* amber-300 */
+       --nsmaltAnn:#f59e0b;
+       --nsmaltAct:rgba(245,158,11,0.50);
+       /* Handles */
+       --handleBg:rgba(59,130,246,0.92);
+       --handleBorder:#fff;
        --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
        --burnEvent:rgba(255,80,80,0.70);
+       /* Chrome */
        --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
        --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
        --btnHover:rgba(148,163,184,0.4);
        --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
-       --gridLine:rgba(148,163,184,0.08); --capLine:rgba(245,158,11,0.20);
+       --gridLine:rgba(148,163,184,0.08); --capLine:rgba(148,163,184,0.28);
        --frameBorder:rgba(148,163,184,0.10);
        --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
      }
      [data-theme="light"]{
        --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
-       --supplyObs:#d97706; --issObs:#0891b2;
-       --supplyExp:rgba(217,119,6,0.55); --issExp:rgba(8,145,178,0.55);
-       --annualObs:#16a34a; --annualExp:rgba(22,163,74,0.55);
+       /* Default scenario: darker slate */
+       --supplyObs:#64748b;           /* slate-500 */
+       --issObs:#94a3b8;              /* slate-400 */
+       --supplyExp:rgba(100,116,139,0.38);
+       --issExp:rgba(148,163,184,0.38);
+       --annualObs:#64748b;
+       --annualExp:rgba(100,116,139,0.38);
+       /* Events */
        --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
        --written:rgba(124,58,237,0.55);
-       --zip234Supply: #0284c7;   /* sky-600 */
-       --zip234Iss: #0369a1;      /* sky-700 */
-       --zip234Ann: #0284c7;
-       --zip234Act: rgba(2,132,199,0.40);
-       --lts: #7c3aed;
-       --handleBg: rgba(2,132,199,0.92);
-       --handleBorder: #1e293b;
+       /* ZIP 234: deep authoritative blue */
+       --zip234Supply:#1d4ed8;        /* blue-700 */
+       --zip234Iss:#3b82f6;           /* blue-500 */
+       --zip234Ann:#1d4ed8;
+       --zip234Act:rgba(29,78,216,0.40);
+       /* NSMalt: warm amber */
+       --nsmaltSupply:#d97706;        /* amber-600 */
+       --nsmaltIss:#f59e0b;           /* amber-500 */
+       --nsmaltAnn:#d97706;
+       --nsmaltAct:rgba(217,119,6,0.40);
+       /* Handles */
+       --handleBg:rgba(29,78,216,0.92);
+       --handleBorder:#1e293b;
        --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
        --burnEvent:rgba(220,38,38,0.60);
+       /* Chrome */
        --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
        --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
        --btnHover:rgba(148,163,184,0.55);
        --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
-       --gridLine:rgba(148,163,184,0.12); --capLine:rgba(217,119,6,0.25);
+       --gridLine:rgba(148,163,184,0.12); --capLine:rgba(100,116,139,0.28);
        --frameBorder:rgba(148,163,184,0.18);
        --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
      }
      *{margin:0;padding:0;box-sizing:border-box}
      body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
        display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
-     h1{font-size:1.35rem;color:var(--supplyObs);margin-bottom:2px}
+     h1{font-size:1.35rem;color:var(--zip234Supply);margin-bottom:2px}
      .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
      .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
        background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
@@ -83,7 +107,6 @@
      .ltoggle:not(.active){opacity:.38}
      .ltoggle:not(.active) .sw{background:var(--muted)!important}
      .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
-     /* Draggable activation handle — ABOVE the chart with gap */
      #actHandle{
        position:absolute;
        display:none;
@@ -221,7 +244,6 @@
        color:#1e293b;
        border-color:rgba(0,0,0,.2);
      }
-     /* Written tooltip */
      #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
        background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
        border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
@@ -231,7 +253,7 @@
        pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
        background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
        backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-     #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#38bdf8;font-weight:600}
+     #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#60a5fa;font-weight:600}
      #tooltip .tt-exp{color:var(--written);font-weight:600}
      @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
        .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
@@ -241,7 +263,6 @@
      .seg:last-child { border-right: none; }
      .seg:hover { opacity: 0.85; }
 
-     /* Burn handle (single canonical section) */
      .burn-handle{
        position:absolute;
        display:none;
@@ -467,7 +488,7 @@
   <body>
     <h1>Zcash Supply &amp; Issuance</h1>
     <p class="sub">
-      Zcash consensus issuance logic with optional <b>ZIP 234</b> smooth-issuance overlay.<br>
+      Zcash consensus issuance with optional <b>ZIP 234</b> and <b>NSMalt</b> overlays.<br>
       <b>Scroll</b> to pan, <b>Ctrl/⌘+scroll</b> (or pinch) to zoom, <b>drag</b> to pan, <b>double-click</b> to reset.
     </p>
     <div class="chart-wrap" id="chartWrap">
@@ -475,7 +496,7 @@
       <div id="actHandle">
         <div class="act-nub">⋯</div>
         <div class="act-pill">
-          <span class="act-title">ZIP 234 activation</span>
+          <span class="act-title" id="actTitle">ZIP 234 activation</span>
           <div class="act-content">
             <div class="act-left">
               <span class="field-chip">Block #</span>
@@ -485,7 +506,7 @@
               <input id="actDateInput" class="act-date ctrl-input ctrl-input-date" type="text" value="">
             </div>
             <div class="act-right">
-              <span class="act-label">Smooth issuance</span>
+              <span class="act-label" id="actLabel">Smooth issuance</span>
             </div>
           </div>
           <span class="act-collapse-icon" title="Collapse">▾</span>
@@ -499,8 +520,8 @@
         <span class="sw" style="background:var(--supplyObs)"></span>Default</span>
         <span class="ltoggle active" data-future="zip234">
           <span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
-          <span class="ltoggle" data-future="lts">
-            <span class="sw" style="background:var(--lts)"></span>LTS</span>
+          <span class="ltoggle" data-future="nsmalt">
+            <span class="sw" style="background:var(--nsmaltSupply)"></span>NSMalt</span>
             <span style="color:var(--muted)">│</span>
             <span class="ltoggle active" data-series="supply">
               <span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
@@ -518,7 +539,8 @@
       <button id="btnAddBurn">+ Add burn event</button>
     </div>
     <script>
-
+     const DEFAULT_STATE_HASH = 'z=BNn_8LWE5yrFwbadmEHTheEBBO35uwKA7v-LUAO1pYYCgODu4uSGEQK3quACgK6y2YsBA7SFuQOAgL-1ndINAgCAgIbUtpz0A4CA3Z2kF7DqAQ';
+     
      function min(a, b) { return a < b ? a : b; }
      function max(a, b) { return a > b ? a : b; }
      function abs(a) { return a < 0 ? - a : a; }
@@ -527,16 +549,16 @@
         Toggle state
         ================================================================ */
      const show = {supply:true, issDay:true, annPct:false};
-     const showFuture = { default: true, zip234: true, lts: false };
+     const showFuture = { default: true, zip234: true, nsmalt: false };
      function showDefaultFuture() { return showFuture.default; }
      function showZip234() { return showFuture.zip234; }
-     function showLts() { return showFuture.lts; }
+     function showNsmalt() { return showFuture.nsmalt; }
 
      /* ================================================================
         Handle stacking (expanded to front, collapsed to back)
         ================================================================ */
-     let nextExpandedZ = 200; // grows upward
-     let nextCollapsedZ = 80; // walks downward
+     let nextExpandedZ = 200;
+     let nextCollapsedZ = 80;
 
      function bringHandleToFront(el) {
        el.style.zIndex = String(nextExpandedZ++);
@@ -559,7 +581,7 @@
          if (force || prev !== "expanded" || justExpanded) bringHandleToFront(el);
        }
      }
-     
+
      function createBurnHandleElement(burn) {
        const el = document.createElement('div');
        el.className = 'burn-handle';
@@ -599,10 +621,7 @@
        wireUpBurnHandle(burn);
        return el;
      }
-     
 
-     // For display: BigInt zats → formatted string (no floats involved)
-     // Extended zatToZecString with precision control
      function zatToZecString(zat, maxDec = 8, minDec = 0) {
        if (zat < 0n) return "-" + zatToZecString(-zat, maxDec, minDec);
        const w = zat / 100_000_000n, f = zat % 100_000_000n;
@@ -617,7 +636,6 @@
        return fs ? out + '.' + fs : out;
      }
 
-     // For "% of 21M cap": BigInt zats → string like "83.77"
      function pctOfCapStr(zat) {
        const scaled = zat * 10000n / MAX_MONEY_ZAT;
        const whole = scaled / 100n;
@@ -664,8 +682,8 @@
      const BLOSSOM_ACTIVATION_HEIGHT=653_600n;
      const WRITTEN_HEIGHT=3_234_946n;
 
-     const DEFAULT_BURN_ONCE_ZAT = 750_000n * 100_000_000n;   // 750,000 ZEC
-     const DEFAULT_BURN_PERDAY_ZAT = 100n * 100_000_000n;      // 100 ZEC/day
+     const DEFAULT_BURN_ONCE_ZAT = 750_000n * 100_000_000n;
+     const DEFAULT_BURN_PERDAY_ZAT = 100n * 100_000_000n;
 
      function activeBurnZat(b) {
        return b.mode === 'perday' ? b.perdayZat : b.onceZat;
@@ -685,10 +703,10 @@
        return {
          id: burnIdCounter++,
          h,
-         mode,                    // 'once' | 'perday'
+         mode,
          onceZat,
          perdayZat,
-         zat: activeZat,          // currently-active amount for simulation/display
+         zat: activeZat,
          label: formatBurnLabel(activeZat, mode),
          collapsed: false,
          el: null,
@@ -696,8 +714,8 @@
      }
      const BURN_EVENTS = [makeBurn(4_500_000n, DEFAULT_BURN_ONCE_ZAT, 'once')];
 
-     const ONE_YEAR_NUM = 365.25*86400*1000;          // Number, for timestamp math
-     const ONE_YEAR_MS  = BigInt(Math.round(ONE_YEAR_NUM)); // BigInt, for block math
+     const ONE_YEAR_NUM = 365.25*86400*1000;
+     const ONE_YEAR_MS  = BigInt(Math.round(ONE_YEAR_NUM));
 
      const SEGMENTS=[];
      for(let i=0;i<TIME_ANCHORS.length-1;i++){
@@ -766,7 +784,7 @@
            G_SLOW_RATE=62500n,G_BLOSSOM_H=653600n,G_RATIO=2n,G_POST_HALV=1680000n,G_HALV_OFF=633600n;
 
      function sumArith(a,b){if(b<a)return 0n;const A=BigInt(a),B=BigInt(b),n=B-A+1n;return(A+B)*n/2n;}
-     function halvIdxPost(h){return (h+G_HALV_OFF)/G_POST_HALV;}  // BigInt division = floor
+     function halvIdxPost(h){return (h+G_HALV_OFF)/G_POST_HALV;}
      function nextHalvPost(h){return(halvIdxPost(h)+1n)*G_POST_HALV - G_HALV_OFF;}
 
      function sumIssuanceRangeClean(startInc,endExc){
@@ -788,9 +806,10 @@
      const MAX_MONEY_ZEC=21_000_000n;
      const MAX_MONEY_ZAT = 2_100_000_000_000_000n;
      const _kFloat = 1 - Math.pow(2, -1/1680000);
-     const ZIP234_K = _kFloat; // kept for test compat
+     const ZIP234_K = _kFloat;
      const ZIP234_K_NUM = BigInt(Math.round(_kFloat * (2**32))) * (1n << 32n);
      const ZIP234_K_SHIFT = 64n;
+     // Shared activation height for ZIP 234 and NSMalt
      let zip234ActivationHeight=3_687_123n;
 
      function defaultIssuanceZat(h, supZat, remZat) { return issuance_per_block(h); }
@@ -798,10 +817,12 @@
        if (h < zip234ActivationHeight) return issuance_per_block(h);
        return (remZat * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
      }
+     // NSMalt issuance is handled specially in the simulation loop (needs fund state)
 
      const scenarios={
        default:{fn:defaultIssuanceZat,data:[]},
-       zip234:{fn:zip234IssuanceZat,data:[]}
+       zip234:{fn:zip234IssuanceZat,data:[]},
+       nsmalt:{fn:null,data:[]}
      };
      let simVersion=0n,simRunning=false,simComputedVer=-1n,simComputedMaxH=-1n;
 
@@ -826,7 +847,6 @@
        let lo=0,hi=arr.length-1;
        while(lo<hi){const mid=(lo+hi)>>1;arr[mid].h<h?lo=mid+1:hi=mid;}
        if(lo>0 && (h - arr[lo-1].h) < (arr[lo].h - h)) lo--;
-
        return arr[lo];
      }
 
@@ -847,7 +867,7 @@
      }
 
      function invalidateAllFrom(fromH) {
-       for (const n of ['default', 'zip234']) truncateScenarioData(n, fromH);
+       for (const n of ['default', 'zip234', 'nsmalt']) truncateScenarioData(n, fromH);
        invalidateSimulation();
      }
 
@@ -863,25 +883,24 @@
          const maxH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
          let cancelled=false;
 
-         // Initialize per-scenario running state
-         const names=['default','zip234'];
+         const names=['default','zip234','nsmalt'];
          const st={};
          for(const name of names){
            const result=scenarios[name].data,fn=scenarios[name].fn;
-           let startH,supZat,cumIssZat,remZat;
+           let startH,supZat,cumIssZat,remZat,fundZat=0n;
            if(result.length>0){
              const last=result[result.length-1];
              startH=last.h+1n;
              supZat=last.supplyZat;
              cumIssZat=last.cumIssZat;
              remZat=MAX_MONEY_ZAT-supZat;
+             if(name==='nsmalt') fundZat=last.fundZat||0n;
            }else{
              startH=0n;supZat=0n;cumIssZat=0n;remZat=MAX_MONEY_ZAT;
            }
-           st[name]={result,fn,h:startH,supZat,cumIssZat,remZat};
+           st[name]={result,fn,h:startH,supZat,cumIssZat,remZat,fundZat};
          }
 
-         // Advance both scenarios in lockstep batches
          while(!cancelled){
            let anyAdvanced=false;
            for(const name of names){
@@ -904,13 +923,30 @@
                  if (burnThisBlock > 0n) {
                    s.supZat -= burnThisBlock;
                    s.remZat += burnThisBlock;
+                   // NSMalt: burned ZEC goes into the fund
+                   if (name === 'nsmalt') s.fundZat += burnThisBlock;
                  }
                }
-               const issZat=s.fn(h,s.supZat,s.remZat);
+
+               // Calculate issuance
+               let issZat;
+               if (name === 'nsmalt') {
+                 // NSMalt: default halving issuance + fund payout after activation
+                 const defaultIss = issuance_per_block(h);
+                 let fundPayout = 0n;
+                 if (h >= zip234ActivationHeight && s.fundZat > 0n) {
+                   fundPayout = (s.fundZat * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
+                   s.fundZat -= fundPayout;
+                 }
+                 issZat = defaultIss + fundPayout;
+               } else {
+                 issZat = s.fn(h, s.supZat, s.remZat);
+               }
+
                s.supZat+=issZat;s.cumIssZat+=issZat;s.remZat-=issZat;
                if(h%SAMPLE_EVERY===0n){
                  const spb=BigInt(h<BLOSSOM_ACTIVATION_HEIGHT?150n:75n);
-                 s.result.push({
+                 const pt={
                    h,time:blockToTime(h),
                    supplyZat:s.supZat,
                    cumIssZat:s.cumIssZat,
@@ -918,7 +954,9 @@
                    issDayZat:issZat*86400n/spb,
                    annualPctX1M:-1n,
                    annualPctIsExpected:false
-                 });
+                 };
+                 if(name==='nsmalt') pt.fundZat=s.fundZat;
+                 s.result.push(pt);
                }
              }
              s.h=batchEnd;
@@ -1013,7 +1051,7 @@
      }
 
      /* ================================================================
-        Y-axis helpers (all monetary math in BigInt zats)
+        Y-axis helpers
         ================================================================ */
      function bigPow10(n) { const bn = BigInt(n); let r = 1n; for (let i = 0n; i < bn; i++) r *= 10n; return r; }
      function ceilDivBig(a, b) { return (a + b - 1n) / b; }
@@ -1090,7 +1128,6 @@
      const FIXED_ANN_MAX = 30;
      const FIXED_ANN_STEP = 5;
 
-     /* Y-axis animation state */
      const yTarget = {
        supMinZat: FIXED_SUP_MIN_ZAT, supMaxZat: FIXED_SUP_MAX_ZAT, supStepZat: FIXED_SUP_STEP_ZAT,
        issMaxZat: FIXED_ISS_MAX_ZAT, issStepZat: FIXED_ISS_STEP_ZAT,
@@ -1104,7 +1141,7 @@
      let yDirty = true;
      let ySnapOnFirstData = false;
      let yLockedFromURL = false;
-     let yPinnedFromURL = false; // keep URL-restored Y until user changes view/data
+     let yPinnedFromURL = false;
 
      function lerpZat(cur, tgt) {
        if (cur === tgt) return cur;
@@ -1126,20 +1163,28 @@
      }
 
      function updateYTargets() {
-       const cutH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
+       const hasAltFuture = showZip234() || showNsmalt();
+       const cutH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (hasAltFuture ? zip234ActivationHeight : WRITTEN_HEIGHT);
        let sMin = MAX_MONEY_ZAT, sMax = 0n, iMax = 0n, aMax = 0n;
+
+       function scanArr(arr, minH) {
+         for (const p of arr) {
+           if (p.time < view.tMin || p.time > view.tMax || p.h < minH) continue;
+           if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
+           if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
+           if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
+         }
+       }
+
        for (const p of scenarios.default.data) {
          if (p.time < view.tMin || p.time > view.tMax || p.h > cutH) continue;
          if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
          if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
          if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
        }
-       if (showZip234()) for (const p of scenarios.zip234.data) {
-         if (p.time < view.tMin || p.time > view.tMax || p.h < zip234ActivationHeight) continue;
-         if (show.supply) { if (p.supplyZat < sMin) sMin = p.supplyZat; if (p.supplyZat > sMax) sMax = p.supplyZat; }
-         if (show.issDay && p.issDayZat > iMax) iMax = p.issDayZat;
-         if (show.annPct && p.annualPctX1M > 0n && p.annualPctX1M < 200_000_000n && p.annualPctX1M > aMax) aMax = p.annualPctX1M;
-       }
+       if (showZip234()) scanArr(scenarios.zip234.data, zip234ActivationHeight);
+       if (showNsmalt()) scanArr(scenarios.nsmalt.data, zip234ActivationHeight);
+
        if (show.supply && sMax > 0n && MAX_MONEY_ZAT * 10n <= sMax * 12n) sMax = max(sMax, MAX_MONEY_ZAT);
 
        if (show.supply && sMax > sMin && (sMax - sMin) * 100n < FIXED_SUP_MAX_ZAT * 40n) {
@@ -1196,25 +1241,30 @@
                 gridLine:cv("--gridLine"),capLine:cv("--capLine"),frameBorder:cv("--frameBorder"),
                 zip234Supply:cv("--zip234Supply"),zip234Iss:cv("--zip234Iss"),zip234Ann:cv("--zip234Ann"),
                 zip234Act:cv("--zip234Act"),
+                nsmaltSupply:cv("--nsmaltSupply"),nsmaltIss:cv("--nsmaltIss"),nsmaltAnn:cv("--nsmaltAnn"),
                 burnEvent:cv("--burnEvent"),
-                supplyFillObs:getTheme()==="dark"?"rgba(245,158,11,0.14)":"rgba(217,119,6,0.10)",
-                supplyFillExp:getTheme()==="dark"?"rgba(245,158,11,0.06)":"rgba(217,119,6,0.05)",
-                zip234FillObs: getTheme()==="dark" ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)",
-                zip234FillExp: getTheme()==="dark" ? "rgba(56,189,248,0.06)" : "rgba(2,132,199,0.04)",
+                supplyFillObs:getTheme()==="dark"?"rgba(148,163,184,0.10)":"rgba(100,116,139,0.07)",
+                supplyFillExp:getTheme()==="dark"?"rgba(148,163,184,0.05)":"rgba(100,116,139,0.03)",
+                zip234FillObs:getTheme()==="dark"?"rgba(59,130,246,0.14)":"rgba(29,78,216,0.10)",
+                zip234FillExp:getTheme()==="dark"?"rgba(59,130,246,0.07)":"rgba(29,78,216,0.05)",
+                nsmaltFill:getTheme()==="dark"?"rgba(245,158,11,0.10)":"rgba(217,119,6,0.07)",
        };
 
        ctx.fillStyle=T.panel;ctx.fillRect(0,0,CSS_W,CSS_H);
 
        const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
 
-       // Determine how much default data to show
-       const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (showZip234() ? zip234ActivationHeight : WRITTEN_HEIGHT);
+       const hasAltFuture = showZip234() || showNsmalt();
+       const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (hasAltFuture ? zip234ActivationHeight : WRITTEN_HEIGHT);
        const D = scenarios.default.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h <= defaultCutoffH);
        const Z = (showZip234() && scenarios.zip234.data.length >= 1)
                ? scenarios.zip234.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
                : [];
+       const N = (showNsmalt() && scenarios.nsmalt.data.length >= 1)
+               ? scenarios.nsmalt.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
+               : [];
 
-       if (yDirty && (D.length >= 2 || Z.length >= 1)) {
+       if (yDirty && (D.length >= 2 || Z.length >= 1 || N.length >= 1)) {
          updateYTargets(); yDirty = false;
          if (ySnapOnFirstData) {
            yDisp.supMinZat = yTarget.supMinZat;
@@ -1225,10 +1275,8 @@
          }
        }
 
-       // Animate Y axes toward targets
        const yAnimating = animateYAxes();
 
-       // Pixel mapping from animated display values
        const ySupRange = yDisp.supMaxZat - yDisp.supMinZat;
        const ySP = zat => {
          if (ySupRange <= 0n) return MG.top + PH / 2;
@@ -1240,7 +1288,6 @@
        };
        const yAP = p => MG.top + PH - (p / yDisp.annMax) * PH;
 
-       // Compute display steps for grid/ticks
        const dispSupStep = niceStepZat(ySupRange, 6);
        const dispIssStep = niceStepZat(yDisp.issMaxZat, 5);
        const dispAnnStep = niceStepNum(yDisp.annMax, 5);
@@ -1255,7 +1302,7 @@
          }
        }
 
-       // 21M cap (only draw if within visible Y range)
+       // 21M cap
        if(show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat){
          ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=T.capLine;ctx.lineWidth=1;
          ctx.beginPath();ctx.moveTo(MG.left,ySP(MAX_MONEY_ZAT));ctx.lineTo(MG.left+PW,ySP(MAX_MONEY_ZAT));ctx.stroke();ctx.setLineDash([]);
@@ -1265,23 +1312,19 @@
        // Event verticals
        ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=1;
 
-       // Blossom
        {const t=blockToTime(BLOSSOM_ACTIVATION_HEIGHT);
          if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventObs;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
 
-       // Halvings (only up to defaultCutoffH)
        {const halvMax = min(defaultCutoffH, timeToHeight(view.tMax) + 200_000n);
          for(const hh of halvingHeights(halvMax)){
            const t=blockToTime(hh);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.eventHalv;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}}
 
-       // Written ("Sim written")
        {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.written;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
 
-       // Burn events
        for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.burnEvent;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}}
 
-       // ZIP 234 activation
-       if(showZip234()){
+       // Activation line (shared by ZIP 234 and NSMalt)
+       if(hasAltFuture){
          const t=blockToTime(zip234ActivationHeight);
          if(t>=view.tMin&&t<=view.tMax){ctx.strokeStyle=T.zip234Act;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);
            ctx.beginPath();ctx.moveTo(xP(t),MG.top);ctx.lineTo(xP(t),MG.top+PH);ctx.stroke();}
@@ -1292,7 +1335,6 @@
        // Clip to plot area
        ctx.save();ctx.beginPath();ctx.rect(MG.left,MG.top,PW,PH);ctx.clip();
 
-       // Helper: draw split line (observed solid / expected dashed)
        function drawSplit(pts,splitH,yFn,obsC,expC,lw){
          ctx.beginPath();ctx.strokeStyle=obsC;ctx.lineWidth=lw;ctx.setLineDash([]);
          let started=false;
@@ -1346,6 +1388,24 @@
          if(show.annPct)drawZ234Line(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.zip234Ann,1.8);
        }
 
+       // NSMalt curves (distinct dash pattern: short dashes)
+       if(showNsmalt()&&N.length>=1){
+         if(show.supply&&N.length>=2){
+           fillAreaAlways(N,p=>ySP(p.supplyZat),T.nsmaltFill);
+         }
+
+         function drawNsmaltLine(yFn,color,lw){
+           if(N.length<1)return;ctx.beginPath();ctx.setLineDash([3,4]);ctx.strokeStyle=color;ctx.lineWidth=lw;
+           let started=false;for(const p of N){const py=yFn(p);if(!isFinite(py))continue;
+             const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+           ctx.stroke();ctx.setLineDash([]);
+         }
+
+         if(show.supply)drawNsmaltLine(p=>ySP(p.supplyZat),T.nsmaltSupply,2.5);
+         if(show.issDay)drawNsmaltLine(p=>yIP(p.issDayZat),T.nsmaltIss,2.5);
+         if(show.annPct)drawNsmaltLine(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.nsmaltAnn,1.8);
+       }
+
        ctx.restore();// end clip
 
        // Event labels
@@ -1362,16 +1422,20 @@
          for(const hh of halvingHeights(halvMax)){
            const idx=Number((hh-1_046_400n)/1_680_000n)+1;eventLabel(hh,"Halving "+idx,T.eventHalv);}}
 
-       // "Sim written" label
        {const t=writtenTime;if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=T.written;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText("Sim written",0,0);ctx.restore();}}
 
-       // Burn event labels
        for(const b of BURN_EVENTS){const t=blockToTime(b.h);if(t>=view.tMin&&t<=view.tMax){ctx.fillStyle=cv("--burnEvent");ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(b.label,0,0);ctx.restore();}}
 
-       // ZIP 234 activation label
-       if(showZip234()){const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
-         ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
-         ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText("ZIP 234 activation",0,0);ctx.restore();}}
+       // Activation label (dynamic based on what's shown)
+       if(hasAltFuture){
+         const parts=[];
+         if(showZip234())parts.push('ZIP 234');
+         if(showNsmalt())parts.push('NSMalt');
+         const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
+           ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
+           ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(parts.join(' / ')+' activation',0,0);ctx.restore();
+         }
+       }
 
        // Left axis 1 (Issuance/Day)
        if(show.issDay&&axL.issDay){const ax=axL.issDay,bx=MG.left-ax.tickX;
@@ -1381,7 +1445,6 @@
            if (py >= MG.top - 5 && py <= MG.top + PH + 5)
              ctx.fillText(formatZatForAxis(v, dispIssStep, isNarrow, false),bx,py+4);
          }
-
          if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left-ax.titleX,MG.top+PH/2);ctx.rotate(-Math.PI/2);
            ctx.fillStyle=T.issObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Issuance per Day (ⓩ)",0,0);ctx.restore();}}
 
@@ -1407,7 +1470,6 @@
            if (py >= MG.top - 5 && py <= MG.top + PH + 5)
              ctx.fillText(formatZatForAxis(s, dispSupStep, isNarrow, supUseMSuffix),bx,py+4);
          }
-
          if(!isNarrow&&ax.titleX!=null){ctx.save();ctx.translate(MG.left+PW+ax.titleX,MG.top+PH/2);ctx.rotate(Math.PI/2);
            ctx.fillStyle=T.supplyObs;ctx.font="12px system-ui";ctx.textAlign="center";ctx.fillText("Cumulative Supply (ⓩ)",0,0);ctx.restore();}}
 
@@ -1429,18 +1491,13 @@
        // Frame
        ctx.strokeStyle=T.frameBorder;ctx.lineWidth=1;ctx.strokeRect(MG.left,MG.top,PW,PH);
 
-       // Stem target for handles: cap line if visible, else plot top
        layout.stemTargetY = (show.supply && MAX_MONEY_ZAT >= yDisp.supMinZat && MAX_MONEY_ZAT <= yDisp.supMaxZat)
                           ? ySP(MAX_MONEY_ZAT) : MG.top;
 
-       // Position activation handle
        updateActHandle();
-       // Position burn handle
        updateAllBurnHandles();
-       // Continue animating if Y axes haven't converged
        if (yAnimating) requestDraw();
 
-       // Keep URL in sync with current state
        syncURL();
      }
 
@@ -1452,23 +1509,18 @@
      }
 
      function measureActHandleGeometry({ actHandle, wrapEl, actCollapsed, MG }){
-       // Apply state before measuring so we measure the actual visible element
        actHandle.classList.toggle("collapsed", actCollapsed);
-       actHandle.offsetHeight; // force layout
-
+       actHandle.offsetHeight;
        const visibleEl = actCollapsed
                        ? actHandle.querySelector(".act-nub")
                        : actHandle.querySelector(".act-pill");
-
        const visibleRect = visibleEl.getBoundingClientRect();
        const wrapRect = wrapEl.getBoundingClientRect();
-
        const visibleBottomInWrap = visibleRect.bottom - wrapRect.top;
        const stemHeight = computeStemHeightFromBottom(visibleBottomInWrap, MG.top);
-
        return { visibleBottomInWrap, stemHeight };
      }
-     
+
      /* ================================================================
         Activation handle positioning
         ================================================================ */
@@ -1476,12 +1528,22 @@
      const actBlockInput=document.getElementById("actBlockInput");
      const actDateInput=document.getElementById("actDateInput");
      const actCollapseIcon = actHandle.querySelector('.act-collapse-icon');
+     const actTitleEl = document.getElementById("actTitle");
+     const actLabelEl = document.getElementById("actLabel");
 
      function updateActHandle(){
        if (!actHandle.dataset.stackState) {
          applyHandleStackState(actHandle, actCollapsed, { force: true });
        }
-       if(!showZip234()){actHandle.style.display="none";return null;}
+       const anyAlt = showZip234() || showNsmalt();
+       if(!anyAlt){actHandle.style.display="none";return null;}
+
+       // Dynamic title and subtitle
+       const z234 = showZip234(), nsm = showNsmalt();
+       if (z234 && nsm) { actTitleEl.textContent = 'Activation'; actLabelEl.textContent = 'ZIP 234 · NSMalt'; }
+       else if (z234) { actTitleEl.textContent = 'ZIP 234 activation'; actLabelEl.textContent = 'Smooth issuance'; }
+       else { actTitleEl.textContent = 'NSMalt activation'; actLabelEl.textContent = 'Default + burn fund'; }
+
        const{CSS_W,CSS_H,MG,PW,PH}=layout;
        if(!PW){actHandle.style.display="none";return null;}
        const t=blockToTime(zip234ActivationHeight);
@@ -1490,27 +1552,21 @@
        const xPx=MG.left+frac*PW;
        actHandle.style.display="block";
        actHandle.style.left=xPx+"px";
-       // Apply collapsed state
        actHandle.classList.toggle("collapsed", actCollapsed);
-
-       // Zero out stem and reset top before measuring
        const stem=actHandle.querySelector('.act-stem');
        stem.style.height="0px";
        actHandle.style.top="0px";
        actHandle.offsetHeight;
-       // Center the visible element at y=0 (top of chart-wrap)
        const visibleEl=actCollapsed
                      ? actHandle.querySelector('.act-nub')
                      : actHandle.querySelector('.act-pill');
        const visH=visibleEl.offsetHeight;
        actHandle.style.top=(-visH/2)+"px";
        actHandle.offsetHeight;
-       // Measure where content ends
        const wrapEl=document.getElementById("chartWrap");
        const wrapRect=wrapEl.getBoundingClientRect();
        const handleRect=actHandle.getBoundingClientRect();
        const handleBottom=handleRect.bottom-wrapRect.top;
-       // Stem reaches the 21M cap line (ySupMax is 22M, so capY = MG.top + PH/22)
        const stemTargetY=layout.stemTargetY||MG.top;
        const stemHeight=max(0, stemTargetY-handleBottom);
        stem.style.height=stemHeight+"px";
@@ -1539,8 +1595,6 @@
            e.target.closest('.burn-collapse-icon')
          ) return;
 
-         // Commit pending edits NOW, before blur/redraw can
-         // overwrite inputs with stale values
          if (!burn.collapsed) {
            commitBlock();
            commitAmt();
@@ -1605,7 +1659,6 @@
        const burnCollapseIcon = el.querySelector('.burn-collapse-icon');
        burnCollapseIcon.addEventListener('mousedown', e => {
          e.stopPropagation();
-         // Commit pending edits before blur/redraw can overwrite input values
          if (!burn.collapsed) {
            commitBlock();
            commitAmt();
@@ -1653,7 +1706,7 @@
          if (z !== null) {
            if (burn.mode === 'once') burn.onceZat = z;
            else burn.perdayZat = z;
-           
+
            if (z !== burn.zat) {
              burn.zat = z;
              burn.label = formatBurnLabel(z, burn.mode);
@@ -1703,8 +1756,7 @@
            const newMode = btn.dataset.burnMode;
            if (newMode === burn.mode) return;
            yLockedFromURL = false;
-           
-           // Capture uncommitted typed amount into current mode bucket
+
            const typedZat = parseZecToZat(amtIn.value);
            if (typedZat !== null) {
              if (burn.mode === 'once') burn.onceZat = typedZat;
@@ -1715,7 +1767,7 @@
            burn.zat = (newMode === 'once') ? burn.onceZat : burn.perdayZat;
            burn.label = formatBurnLabel(burn.zat, burn.mode);
            amtIn.value = zatToZecString(burn.zat);
-           
+
            invalidateAllFrom(burn.h);
            requestDraw();
          });
@@ -1744,7 +1796,6 @@
      });
 
      document.getElementById('btnAddBurn').addEventListener('click', () => {
-       // Default: at the midpoint of current view, 1M ZEC once
        const midTime = (view.tMin + view.tMax) / 2;
        const h = max(WRITTEN_HEIGHT, timeToHeight(midTime));
        const b = makeBurn(h, DEFAULT_BURN_ONCE_ZAT, 'once');
@@ -1809,7 +1860,7 @@
        el.querySelectorAll('.burn-mode-btn').forEach(b =>
          b.classList.toggle('active', b.dataset.burnMode === burn.mode));
      }
-     
+
      /* ================================================================
         Extracted handler: activation drag (shared by mouse & touch)
         ================================================================ */
@@ -1831,7 +1882,9 @@
        const oldH = zip234ActivationHeight;
        if (oldH !== clampedH) {
          zip234ActivationHeight = clampedH;
-         invalidateScenarioFrom('zip234', min(oldH, clampedH));
+         // Invalidate both alternative scenarios that share this activation height
+         for (const n of ['zip234', 'nsmalt']) truncateScenarioData(n, min(oldH, clampedH));
+         invalidateSimulation();
          requestDraw();
        }
      }
@@ -1983,7 +2036,8 @@
        let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
                 `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-       const defaultCutoffH2=showDefaultFuture()?0x7FFFFFFFFFFFFFn:(showZip234()?zip234ActivationHeight:-1n);
+       const hasAltFuture2 = showZip234() || showNsmalt();
+       const defaultCutoffH2=showDefaultFuture()?0x7FFFFFFFFFFFFFn:(hasAltFuture2?zip234ActivationHeight:-1n);
        const showDefHere=d.h<=defaultCutoffH2;
 
        if(showDefHere){
@@ -2004,6 +2058,19 @@
          html+=`<div style="margin-top:4px" class="tt-muted"><i>ZIP 234 activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
        }
 
+       if(showNsmalt()&&d.h>=zip234ActivationHeight){
+         const n=lookupScenario(scenarios.nsmalt.data,d.h);
+         if(n){
+           html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:var(--nsmaltSupply)">NSMalt (default + fund):</b></div>`;
+           if(show.supply){const np=pctOfCapStr(n.supplyZat);html+=`<div><span style="color:var(--nsmaltSupply)">Supply:</span> ${zatToZecString(n.supplyZat, 2)} ⓩ <span class="tt-muted">(${np}%)</span></div>`;}
+           if(show.issDay)html+=`<div><span style="color:var(--nsmaltIss)">Issuance:</span> ${zatToZecString(n.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(n.issBlockZat, 8, 8)} ⓩ</div>`;
+           if(show.annPct){const av=isFinite(annPctVal(n))?annPctVal(n).toFixed(2)+"%":"—";html+=`<div><span style="color:var(--nsmaltAnn)">Annual:</span> ${av}</div>`;}
+           if(n.fundZat !== undefined) html+=`<div class="tt-muted">Fund: ${zatToZecString(n.fundZat, 2)} ⓩ</div>`;
+         }
+       }else if(showNsmalt()&&d.h<zip234ActivationHeight){
+         html+=`<div style="margin-top:4px" class="tt-muted"><i>NSMalt activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
+       }
+
        tooltip.innerHTML=html;tooltip.style.display="block";
        const tipW=min(400,window.innerWidth-20);
        tooltip.style.left=min(e.clientX+14,window.innerWidth-tipW-10)+"px";
@@ -2018,7 +2085,7 @@
      const writtenTip=document.getElementById("writtenTip");
 
      let actPointerDown = false;
-     let actDragging = false; // only true after drag threshold
+     let actDragging = false;
      let actDragOffsetX = 0;
      let actPointerStart = { x: 0, y: 0, time: 0 };
      const ACT_DRAG_START_PX = 6;
@@ -2130,7 +2197,7 @@
        requestDraw();
        computeAllScenarios();
      });
-     
+
      // --- Activation handle: block input ---
      actBlockInput.addEventListener("keydown",e=>{
        if(e.key==="Enter"){handleActBlockInput();}
@@ -2224,13 +2291,13 @@
      canvas.style.cursor="crosshair";
 
      /* ================================================================
-        URL state sharing (compact bundle, strict parser, no back-compat)
+        URL state sharing (compact bundle, strict parser)
         ================================================================ */
      let urlSyncEnabled = false;
      let lastUrlSyncTime = 0;
 
-     const STATE_BUNDLE_KEY = "z";   // hash format: #z=<base64url>
-     const STATE_BUNDLE_VER = 3;     // bump if format changes
+     const STATE_BUNDLE_KEY = "z";
+     const STATE_BUNDLE_VER = 4;  // bumped: bit2 is now nsmalt (was lts)
 
      function b64urlFromBytes(bytes) {
        let bin = "";
@@ -2239,7 +2306,7 @@
      }
 
      function bytesFromB64url(s) {
-       if (!/^[A-Za-z0-9\-_]+$/.test(s)) return null; // strict alphabet
+       if (!/^[A-Za-z0-9\-_]+$/.test(s)) return null;
        const pad = (4 - (s.length % 4)) % 4;
        const b64 = s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat(pad);
        let bin;
@@ -2260,7 +2327,6 @@
 
      function readVarUint(bytes, st) {
        let shift = 0n, v = 0n;
-       // strict upper bound to avoid malformed infinitely-long varints
        for (let k = 0; k < 20; k++) {
          if (st.i >= bytes.length) throw new Error("truncated varuint");
          const b = BigInt(bytes[st.i++]);
@@ -2275,15 +2341,15 @@
        const out = [];
        out.push(STATE_BUNDLE_VER);
 
-       // v3 flags byte:
+       // v4 flags byte:
        // bit0 showFuture.default, bit1 showFuture.zip234,
-       // bit2 showFuture.lts,
+       // bit2 showFuture.nsmalt,
        // bit3 supply, bit4 issDay, bit5 annPct,
        // bit6 themeLight, bit7 actCollapsed
        let flags = 0;
        if (showFuture.default) flags |= (1 << 0);
        if (showFuture.zip234)  flags |= (1 << 1);
-       if (showFuture.lts)     flags |= (1 << 2);
+       if (showFuture.nsmalt)  flags |= (1 << 2);
        if (show.supply)        flags |= (1 << 3);
        if (show.issDay)        flags |= (1 << 4);
        if (show.annPct)        flags |= (1 << 5);
@@ -2300,10 +2366,6 @@
          writeVarUint(out, b.h);
          writeVarUint(out, b.zat);
 
-         // burn meta byte:
-         // bit0 mode (0 once, 1 perday)
-         // bit1 collapsed (0 expanded, 1 collapsed)
-         // bits2..7 reserved 0
          let meta = 0;
          if (b.mode === "perday") meta |= 1;
          if (b.collapsed) meta |= 2;
@@ -2322,8 +2384,8 @@
        return "#" + STATE_BUNDLE_KEY + "=" + payload;
      }
 
-     function loadStateFromHash() {
-       const raw = location.hash.slice(1);
+     function loadStateFromHash(rawOverride) {
+       const raw = rawOverride || location.hash.slice(1);
        if (!raw) return false;
        if (!raw.startsWith(STATE_BUNDLE_KEY + "=")) return false;
 
@@ -2343,7 +2405,7 @@
          const newShowFuture = {
            default: !!(flags & (1 << 0)),
            zip234:  !!(flags & (1 << 1)),
-           lts:     !!(flags & (1 << 2)),
+           nsmalt:  !!(flags & (1 << 2)),
          };
          const newShow = {
            supply: !!(flags & (1 << 3)),
@@ -2369,7 +2431,6 @@
            if (st.i >= bytes.length) return false;
            const meta = bytes[st.i++];
 
-           // strict: only bits 0..1 allowed
            if (meta & 0b11111100) return false;
 
            const mode = (meta & 1) ? "perday" : "once";
@@ -2398,7 +2459,7 @@
          view.tMax = tMax;
          showFuture.default = newShowFuture.default;
          showFuture.zip234 = newShowFuture.zip234;
-         showFuture.lts = newShowFuture.lts;
+         showFuture.nsmalt = newShowFuture.nsmalt;
          show.supply = newShow.supply;
          show.issDay = newShow.issDay;
          show.annPct = newShow.annPct;
@@ -2413,7 +2474,6 @@
 
          setTheme(newTheme);
          actCollapsed = newActCollapsed;
-         burnCollapsed = false; // legacy global no longer used
 
          yTarget.supMinZat = ysMin; yDisp.supMinZat = ysMin;
          yTarget.supMaxZat = ysMax; yDisp.supMaxZat = ysMax;
@@ -2482,12 +2542,10 @@
      initTheme();
      zip234ActivationHeight=3_687_123n;
      actCollapsed=false;
-     burnCollapsed=false;
      view.tMin=genTime;
      view.tMax=blockToTime(6_000_000n);
 
-     // Load state from URL hash (overrides defaults for shared links)
-     const loadedFromURL = loadStateFromHash();
+     const loadedFromURL = loadStateFromHash() || loadStateFromHash(DEFAULT_STATE_HASH);
      if (loadedFromURL && !yLockedFromURL) { yDirty = true; ySnapOnFirstData = true; }
 
      clampView();
@@ -2497,6 +2555,8 @@
      document.querySelectorAll('.ltoggle').forEach(el=>{
        const key=el.dataset.series;
        if(key&&show[key]!==undefined)el.classList.toggle('active',show[key]);
+       const fkey=el.dataset.future;
+       if(fkey&&showFuture[fkey]!==undefined)el.classList.toggle('active',showFuture[fkey]);
      });
 
      function bigPowFP64(base, exp) {
@@ -2511,13 +2571,11 @@
 
      function getZip234At(h) {
        if (h < zip234ActivationHeight) return null;
-       // First try precomputed data
        if (scenarios.zip234.data.length > 0) {
          const z = lookupScenario(scenarios.zip234.data, h);
          if (z && abs(z.h - h) <= SAMPLE_EVERY)
            return { supply: z.supplyZat, issBlock: z.issBlockZat };
        }
-       // Analytical fallback: closed-form exponential decay
        const supAtAct = sumIssuanceRangeClean(0n, zip234ActivationHeight);
        const remAtAct = MAX_MONEY_ZAT - supAtAct;
        const ONE_MINUS_K = (1n << 64n) - ZIP234_K_NUM;
@@ -2644,6 +2702,38 @@
          return z !== null && z.supply <= MAX_MONEY_ZAT;
        });
 
+       // --- NSMalt scenario ---
+
+       test("NSMalt scenario data array exists", () => {
+         return Array.isArray(scenarios.nsmalt.data);
+       });
+
+       test("NSMalt pre-activation issuance matches default", () => {
+         // Before activation, NSMalt should have the same issuance as default
+         const nd = scenarios.nsmalt.data;
+         const dd = scenarios.default.data;
+         if (nd.length < 2 || dd.length < 2) return true; // not enough data yet
+         // Check a point before activation
+         const preActH = zip234ActivationHeight - 10000n;
+         const nPre = lookupScenario(nd, preActH);
+         const dPre = lookupScenario(dd, preActH);
+         if (!nPre || !dPre) return true;
+         // Supply should be identical before activation (same issuance, same burns)
+         return nPre.supplyZat === dPre.supplyZat;
+       });
+
+       test("NSMalt post-activation supply >= default supply (fund adds issuance)", () => {
+         const nd = scenarios.nsmalt.data;
+         const dd = scenarios.default.data;
+         if (nd.length < 2 || dd.length < 2) return true;
+         const postH = zip234ActivationHeight + 100000n;
+         const nPost = lookupScenario(nd, postH);
+         const dPost = lookupScenario(dd, postH);
+         if (!nPost || !dPost) return true;
+         // NSMalt supply should be >= default (it adds fund payout on top)
+         return nPost.supplyZat >= dPost.supplyZat;
+       });
+
        // --- sumIssuanceRangeClean ---
 
        test("sumIssuanceRangeClean(0,0) is 0", () => {
@@ -2663,12 +2753,12 @@
        // --- View state ---
 
        test("view.tMin is at or near genesis at boot", () => {
-         return Math.abs(view.tMin - genTime) < 86_400_000; // within 1 day
+         return Math.abs(view.tMin - genTime) < 86_400_000;
        });
 
        test("view.tMax corresponds to roughly block 6M", () => {
          const expected = blockToTime(6_000_000n);
-         return Math.abs(view.tMax - expected) < 86_400_000 * 30; // within 30 days
+         return Math.abs(view.tMax - expected) < 86_400_000 * 30;
        });
 
        // --- CSS / styling checks ---
