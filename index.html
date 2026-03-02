@@ -61,9 +61,9 @@
      .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
        border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
      .controls button:hover{background:var(--btnHover)}
-     .chart-wrap{position:relative;display:inline-block}
+     .chart-wrap{position:relative;display:inline-block;margin-bottom:10px}
      canvas{border-radius:8px;background:var(--panel);display:block}
-     .legend{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:.78rem;align-items:center;justify-content:center;color:var(--muted)}
+     .legend{margin-top:8px;position:relative;z-index:1}
      .legend span{display:flex;align-items:center;gap:5px}
      .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
      .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
@@ -74,73 +74,143 @@
      .ltoggle:not(.active) .sw{background:var(--muted)!important}
      .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
      /* Draggable activation handle — ABOVE the chart with gap */
-     #actHandle{position:absolute;display:none;z-index:20;cursor:ew-resize;
-       transform:translateX(-50%);pointer-events:auto;top:-8px}
+     #actHandle{
+       position:absolute;
+       display:none;
+       z-index:var(--z,20);
+       cursor:ew-resize;
+       transform:translateX(-50%);
+       pointer-events:auto;
+       top:-8px;
+     }
 
      #actHandle .act-pill{
-       background:var(--handleBg);color:#fff;font:600 .68rem/1 system-ui;
-       padding:5px 8px;border-radius:6px;border:1.5px solid var(--handleBorder);
-       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
-       box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
-       transition:opacity 0.15s,filter 0.15s}
-     #actHandle .act-content{display:flex;align-items:stretch;gap:8px;width:100%}
-     #actHandle .act-left{display:flex;flex-direction:column;align-items:center;
-       justify-content:center;gap:3px}
-     #actHandle .act-pill .act-label { opacity: 0.85; font-size: .66rem; }
-     #actHandle .act-collapse-icon {
-       width: 18px;
-       height: 18px;
-       border-radius: 50%;
-       background: rgba(255,255,255,0.15);
-       color: rgba(255,255,255,0.8);
-       font: 600 11px/18px system-ui;
-       text-align: center;
-       cursor: pointer;
-       transition: background 0.12s;
+       background:var(--handleBg);
+       color:#fff;
+       font:600 .68rem/1 system-ui;
+       padding:5px 8px;
+       border-radius:6px;
+       border:1.5px solid var(--handleBorder);
+       white-space:nowrap;
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       gap:4px;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);
+       user-select:none;
+       opacity:0.9;
+       transition:opacity 0.15s, filter 0.15s;
      }
-     #actHandle .act-collapse-icon:hover {
-       background: rgba(255,255,255,0.3);
-     }
-     #actHandle .act-right {
-       display: flex;
-       flex-direction: column;
-       align-items: flex-end;
-       gap: 3px;
-     }
-     #actHandle .act-pill input{width:80px;padding:2px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.3);
-       background:rgba(0,0,0,.25);color:#fff;font:600 .66rem/1 system-ui;text-align:center}
-     #actHandle .act-pill input.act-date{width:88px}
 
-     #actHandle .act-stem{width:2px;background:var(--handleBg);margin:0 auto}
+     #actHandle .act-content{
+       display:flex;
+       align-items:stretch;
+       gap:8px;
+       width:100%;
+       min-height:74px;
+     }
 
-     #actHandle .act-nub {
-       display: none;
-       width: 44px;
-       height: 16px;
-       border-radius: 8px;
-       background: var(--handleBg);
-       border: 1.5px solid var(--handleBorder);
-       cursor: ew-resize;
-       margin: 0 auto;
-       box-shadow: 0 1px 4px rgba(0,0,0,.3);
-       color: #fff;
-       font: 600 11px/16px system-ui;
-       text-align: center;
-       letter-spacing: 2px;
-       user-select: none;
-       opacity: 0.85;
-       transition: opacity 0.15s;
+     #actHandle .act-left{
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       justify-content:center;
+       gap:3px;
+       min-width:90px;
+       text-align:center;
      }
-     #actHandle .act-pill:hover {
-       opacity: 1;
-       filter: brightness(1.15);
+
+     #actHandle .act-pill .act-label{
+       opacity:0.85;
+       font-size:.66rem;
      }
-     #actHandle .act-nub:hover {
-       opacity: 1;
+
+     #actHandle .act-right{
+       display:flex;
+       flex-direction:column;
+       align-items:flex-end;
+       gap:3px;
+       justify-content:center;
      }
-     #actHandle.collapsed .act-nub { display: block; }
-     #actHandle.collapsed .act-pill { display: none; }
-     [data-theme="light"] #actHandle .act-pill input{background:rgba(255,255,255,.5);color:#1e293b;border-color:rgba(0,0,0,.2)}
+
+     #actHandle .act-pill input{
+       width:80px;
+       padding:2px 4px;
+       border-radius:3px;
+       border:1px solid rgba(255,255,255,.3);
+       background:rgba(0,0,0,.25);
+       color:#fff;
+       font:600 .66rem/1 system-ui;
+       text-align:center;
+     }
+
+     #actHandle .act-pill input.act-date{
+       width:88px;
+     }
+
+     #actHandle .act-collapse-icon{
+       width:18px;
+       height:18px;
+       border-radius:50%;
+       background:rgba(255,255,255,0.15);
+       color:rgba(255,255,255,0.8);
+       font:600 11px/18px system-ui;
+       text-align:center;
+       cursor:pointer;
+       transition:background 0.12s;
+     }
+
+     #actHandle .act-collapse-icon:hover{
+       background:rgba(255,255,255,0.3);
+     }
+
+     #actHandle .act-stem{
+       width:2px;
+       background:var(--handleBg);
+       margin:0 auto;
+     }
+
+     #actHandle .act-nub{
+       display:none;
+       width:44px;
+       height:16px;
+       border-radius:8px;
+       background:var(--handleBg);
+       border:1.5px solid var(--handleBorder);
+       cursor:ew-resize;
+       margin:0 auto;
+       box-shadow:0 1px 4px rgba(0,0,0,.3);
+       color:#fff;
+       font:600 11px/16px system-ui;
+       text-align:center;
+       letter-spacing:2px;
+       user-select:none;
+       opacity:0.85;
+       transition:opacity 0.15s;
+     }
+
+     #actHandle .act-pill:hover{
+       opacity:1;
+       filter:brightness(1.15);
+     }
+
+     #actHandle .act-nub:hover{
+       opacity:1;
+     }
+
+     #actHandle.collapsed .act-nub{
+       display:block;
+     }
+
+     #actHandle.collapsed .act-pill{
+       display:none;
+     }
+
+     [data-theme="light"] #actHandle .act-pill input{
+       background:rgba(255,255,255,.5);
+       color:#1e293b;
+       border-color:rgba(0,0,0,.2);
+     }
      /* Written tooltip */
      #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
        background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
@@ -166,46 +236,227 @@
      .seg.active[data-mode="default"] { background: rgba(245,158,11,0.25); color: var(--supplyObs); }
      .seg.active[data-mode="zip234"]  { background: rgba(56,189,248,0.25); color: var(--zip234Supply); }
 
-     .burn-handle .burn-delete {
-       position:absolute; right:-8px; bottom:-8px;
-       width:18px; height:18px; border-radius:50%;
-       background:rgba(0,0,0,0.5); color:#fff;
-       font:600 11px/18px system-ui; text-align:center;
-       cursor:pointer; border:1.5px solid rgba(255,255,255,0.3);
-       transition:background 0.12s;
+     /* Burn handle (single canonical section) */
+     .burn-handle{
+       position:absolute;
+       display:none;
+       cursor:ew-resize;
+       transform:translateX(-50%);
+       pointer-events:auto;
+       top:-8px;
+       z-index:var(--z,21);
      }
-     .burn-handle .burn-delete:hover { background:rgba(220,38,38,0.9); }
-     .burn-handle.collapsed .burn-delete { display:none; }
-     .burn-handle .burn-nub{display:none;width:24px;height:16px;border-radius:8px;
-       background:var(--burnHandleBg);color:#fff;font:600 11px/16px system-ui;text-align:center;
-       border:1.5px solid var(--burnHandleBorder);cursor:ew-resize;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-     .burn-handle.collapsed .burn-nub{display:block}
-     .burn-handle.collapsed .burn-pill{display:none}
+
+     .burn-handle .burn-nub{
+       display:none;
+       width:24px;
+       height:16px;
+       border-radius:8px;
+       background:var(--burnHandleBg);
+       color:#fff;
+       font:600 11px/16px system-ui;
+       text-align:center;
+       border:1.5px solid var(--burnHandleBorder);
+       box-shadow:0 2px 8px rgba(0,0,0,.3);
+       opacity:.9;
+     }
+
+     .burn-handle.collapsed .burn-nub{
+       display:block;
+     }
+
+     .burn-handle.collapsed .burn-pill{
+       display:none;
+     }
+
      .burn-handle .burn-pill{
-       background:var(--burnHandleBg);color:#fff;font:600 .68rem/1 system-ui;
-       padding:5px 8px;border-radius:6px;border:1.5px solid var(--burnHandleBorder);
-       white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;
-       box-shadow:0 2px 8px rgba(0,0,0,.3);user-select:none;opacity:0.9;
-       transition:opacity 0.15s,filter 0.15s;position:relative}
-     .burn-handle .burn-content{display:flex;align-items:stretch;gap:8px;width:100%}
-     .burn-handle .burn-left{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-     .burn-handle .burn-pill .burn-label{opacity:0.85;font-size:.66rem}
-     .burn-handle .burn-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-     .burn-handle .burn-pill input{width:80px;padding:2px 4px;border-radius:3px;
-       border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);color:#fff;
-       font:600 .66rem/1 system-ui;text-align:center}
-     .burn-handle .burn-pill input.burn-date{width:88px}
-     .burn-handle .burn-amt-row{display:flex;align-items:center;gap:3px}
-     .burn-handle .burn-pill .burn-unit{opacity:0.7;font-size:.62rem}
-     .burn-handle .burn-stem{width:2px;background:var(--burnEvent);margin:0 auto}
-     .burn-handle .burn-mode-row{display:flex;align-items:center;gap:4px;margin-top:3px}
-     .burn-handle .burn-mode-group{display:inline-flex;border:1px solid rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
-     .burn-handle .burn-mode-btn{padding:1px 6px;font:600 .58rem/1.2 system-ui;border:none;
-       border-right:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.55);
-       cursor:pointer;transition:all 0.12s}
-     .burn-handle .burn-mode-btn:last-child{border-right:none}
-     .burn-handle .burn-mode-btn.active{background:rgba(255,255,255,.2);color:#fff}
-     .burn-handle .burn-mode-btn:hover{background:rgba(255,255,255,.12)}
+       background:var(--burnHandleBg);
+       color:#fff;
+       font:600 .68rem/1 system-ui;
+       padding:6px 8px;
+       border-radius:6px;
+       border:1.5px solid var(--burnHandleBorder);
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       gap:5px;
+       position:relative;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);
+       opacity:.92;
+       transition:opacity .15s,filter .15s;
+     }
+
+     .burn-handle .burn-pill:hover{
+       opacity:1;
+       filter:brightness(1.1);
+     }
+
+     .burn-handle .burn-title{
+       width:100%;
+       text-align:center;
+       font-size:.70rem;
+       opacity:.92;
+     }
+
+     .burn-handle .burn-content{
+       display:flex;
+       align-items:stretch;
+       justify-content:center;
+       gap:10px;
+       width:100%;
+       min-height:74px;
+     }
+
+     .burn-handle .burn-left,
+     .burn-handle .burn-right{
+       display:flex;
+       flex-direction:column;
+       justify-content:center;
+       align-items:center;
+       gap:3px;
+     }
+
+     .field-chip{
+       font:600 .55rem/1 system-ui;
+       letter-spacing:.03em;
+       opacity:.78;
+       text-transform:uppercase;
+     }
+
+     .field-chain{
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       gap:2px;
+     }
+
+     .field-chain span{
+       width:2px;
+       height:6px;
+       border-radius:2px;
+       background:rgba(255,255,255,.55);
+     }
+
+     .ctrl-input{
+       padding:2px 4px;
+       border-radius:3px;
+       border:1px solid rgba(255,255,255,.3);
+       background:rgba(0,0,0,.25);
+       color:#fff;
+       font:600 .66rem/1 system-ui;
+       text-align:center;
+     }
+
+     .ctrl-input-block{
+       width:80px;
+     }
+
+     .ctrl-input-date{
+       width:88px;
+     }
+
+     .burn-handle .burn-amt-row{
+       display:flex;
+       align-items:center;
+       gap:4px;
+     }
+
+     .burn-handle .burn-amt-input{
+       width:88px;
+     }
+
+     .burn-handle .burn-unit{
+       opacity:.75;
+       font-size:.62rem;
+     }
+
+     .burn-handle .burn-mode-row{
+       display:flex;
+       align-items:center;
+       gap:4px;
+       margin-top:2px;
+     }
+
+     .burn-handle .burn-mode-group{
+       display:inline-flex;
+       border:1px solid rgba(255,255,255,.25);
+       border-radius:4px;
+       overflow:hidden;
+     }
+
+     .burn-handle .burn-mode-btn{
+       padding:1px 6px;
+       font:600 .58rem/1.2 system-ui;
+       border:none;
+       border-right:1px solid rgba(255,255,255,.2);
+       background:transparent;
+       color:rgba(255,255,255,.62);
+       cursor:pointer;
+     }
+
+     .burn-handle .burn-mode-btn:last-child{
+       border-right:none;
+     }
+
+     .burn-handle .burn-mode-btn:hover{
+       background:rgba(255,255,255,.12);
+     }
+
+     .burn-handle .burn-mode-btn.active{
+       background:rgba(255,255,255,.2);
+       color:#fff;
+     }
+
+     .burn-handle .burn-collapse-icon{
+       width:18px;
+       height:18px;
+       border-radius:50%;
+       background:rgba(255,255,255,.15);
+       color:rgba(255,255,255,.9);
+       font:600 11px/18px system-ui;
+       text-align:center;
+       cursor:pointer;
+     }
+
+     .burn-handle .burn-collapse-icon:hover{
+       background:rgba(255,255,255,.28);
+     }
+
+     .burn-handle .burn-delete{
+       position:absolute;
+       right:-8px;
+       bottom:-8px;
+       width:18px;
+       height:18px;
+       border-radius:50%;
+       background:rgba(0,0,0,.5);
+       color:#fff;
+       font:600 11px/18px system-ui;
+       text-align:center;
+       cursor:pointer;
+       border:1.5px solid rgba(255,255,255,.3);
+     }
+
+     .burn-handle .burn-delete:hover{
+       background:rgba(220,38,38,.9);
+     }
+
+     .burn-handle.collapsed .burn-delete{
+       display:none;
+     }
+
+     .burn-handle .burn-stem{
+       width:2px;
+       background:var(--burnEvent);
+       margin:0 auto;
+     }
+
+     [data-theme="light"] .ctrl-input{
+       background:rgba(255,255,255,.5);
+       color:#1e293b;
+       border-color:rgba(0,0,0,.2);
+     }
+
     </style>
   </head>
   <body>
@@ -219,16 +470,20 @@
       <div id="actHandle">
         <div class="act-nub">⋯</div>
         <div class="act-pill">
+          <span class="act-title">ZIP 234 activation</span>
           <div class="act-content">
             <div class="act-left">
-              <span class="act-label">ZIP 234 activation</span>
+              <span class="field-chip">Block #</span>
+              <input id="actBlockInput" class="ctrl-input ctrl-input-block" type="text" value="3687123">
+              <div class="field-chain" aria-hidden="true"><span></span><span></span></div>
+              <span class="field-chip">Date</span>
+              <input id="actDateInput" class="act-date ctrl-input ctrl-input-date" type="text" value="">
             </div>
             <div class="act-right">
-              <input id="actBlockInput" type="text" value="3687123">
-              <input id="actDateInput" type="text" class="act-date" value="">
+              <span class="act-label">Smooth issuance</span>
             </div>
           </div>
-          <span class="act-collapse-icon" title="Click to collapse">▾</span>
+          <span class="act-collapse-icon" title="Collapse">▾</span>
         </div>
         <div class="act-stem"></div>
       </div>
@@ -266,6 +521,35 @@
         ================================================================ */
      const show = {supply:true, issDay:true, annPct:false};
      let futureMode = 'both'; // 'default' | 'zip234' | 'both'
+
+     /* ================================================================
+        Handle stacking (expanded to front, collapsed to back)
+        ================================================================ */
+     let nextExpandedZ = 200; // grows upward
+     let nextCollapsedZ = 80; // walks downward
+
+     function bringHandleToFront(el) {
+       el.style.zIndex = String(nextExpandedZ++);
+       el.dataset.stackState = "expanded";
+     }
+
+     function sendHandleToBack(el) {
+       el.style.zIndex = String(nextCollapsedZ--);
+       el.dataset.stackState = "collapsed";
+     }
+
+     function applyHandleStackState(el, isCollapsed, opts = {}) {
+       const force = !!opts.force;
+       const justExpanded = !!opts.justExpanded;
+       const prev = el.dataset.stackState || "";
+
+       if (isCollapsed) {
+         if (force || prev !== "collapsed") sendHandleToBack(el);
+       } else {
+         if (force || prev !== "expanded" || justExpanded) bringHandleToFront(el);
+       }
+     }
+     
      function showDefaultFuture() { return futureMode !== 'zip234'; }
      function showZip234() { return futureMode !== 'default'; }
 
@@ -276,15 +560,18 @@
        el.innerHTML = `
          <div class="burn-nub">⋯</div>
          <div class="burn-pill">
+           <span class="burn-title">Burn</span>
            <div class="burn-content">
              <div class="burn-left">
-               <span class="burn-label">Burn</span>
-               <input class="burn-block-input" type="text" value="">
-               <input class="burn-date-input burn-date" type="text" value="">
+               <span class="field-chip">Block #</span>
+               <input class="burn-block-input ctrl-input ctrl-input-block" type="text" value="">
+               <div class="field-chain" aria-hidden="true"><span></span><span></span></div>
+               <span class="field-chip">Date</span>
+               <input class="burn-date-input burn-date ctrl-input ctrl-input-date" type="text" value="">
              </div>
              <div class="burn-right">
                <div class="burn-amt-row">
-                 <input class="burn-amt-input" type="text" value="">
+                 <input class="burn-amt-input ctrl-input" type="text" value="">
                  <span class="burn-unit">ⓩ</span>
                </div>
                <div class="burn-mode-row">
@@ -295,6 +582,7 @@
                </div>
              </div>
            </div>
+           <span class="burn-collapse-icon" title="Collapse">▾</span>
            <span class="burn-delete" title="Delete burn">✕</span>
          </div>
          <div class="burn-stem"></div>
@@ -369,19 +657,38 @@
      const BLOSSOM_ACTIVATION_HEIGHT=653_600n;
      const WRITTEN_HEIGHT=3_234_946n;
 
+     const DEFAULT_BURN_ONCE_ZAT = 750_000n * 100_000_000n;   // 750,000 ZEC
+     const DEFAULT_BURN_PERDAY_ZAT = 10n * 100_000_000n;      // 10 ZEC/day
+
+     function activeBurnZat(b) {
+       return b.mode === 'perday' ? b.perdayZat : b.onceZat;
+     }
+
+     function syncBurnActiveAmount(b) {
+       b.zat = activeBurnZat(b);
+       b.label = formatBurnLabel(b.zat, b.mode);
+     }
+
      let burnIdCounter = 0;
      function makeBurn(h, zat, mode) {
-       return {
+       const safeMode = mode === 'perday' ? 'perday' : 'once';
+       const onceZat = safeMode === 'once' ? zat : DEFAULT_BURN_ONCE_ZAT;
+       const perdayZat = safeMode === 'perday' ? zat : DEFAULT_BURN_PERDAY_ZAT;
+       const b = {
          id: burnIdCounter++,
-         h: h,
-         zat: zat,
-         mode: mode,           // 'once' or 'perday'
-         label: formatBurnLabel(zat, mode),
+         h,
+         mode: safeMode,
+         onceZat,
+         perdayZat,
+         zat: 0n,
+         label: '',
          collapsed: false,
-         el: null,             // DOM handle element, created later
+         el: null
        };
+       syncBurnActiveAmount(b);
+       return b;
      }
-     const BURN_EVENTS = [makeBurn(4_500_000n, 200_000_000_000_000n, 'once')];
+     const BURN_EVENTS = [makeBurn(4_500_000n, DEFAULT_BURN_ONCE_ZAT, 'once')];
 
      const ONE_YEAR_NUM = 365.25*86400*1000;          // Number, for timestamp math
      const ONE_YEAR_MS  = BigInt(Math.round(ONE_YEAR_NUM)); // BigInt, for block math
@@ -579,14 +886,13 @@
              for(let h=s.h;h<batchEnd;h++){
                for (const b of BURN_EVENTS) {
                  let burnThisBlock = 0n;
+                 const burnAmt = activeBurnZat(b);
+
                  if (b.mode === 'once' && b.h === h) {
-                   burnThisBlock = b.zat < s.supZat ? b.zat : s.supZat;
+                   burnThisBlock = burnAmt < s.supZat ? burnAmt : s.supZat;
                  } else if (b.mode === 'perday' && h >= b.h) {
-                   // spb = seconds per block for this height
                    const spb = h < BLOSSOM_ACTIVATION_HEIGHT ? 150n : 75n;
-                   // per-block burn = dailyZat * spb / 86400
-                   // All BigInt, no floats
-                   const perBlock = b.zat * spb / 86400n;
+                   const perBlock = burnAmt * spb / 86400n;
                    burnThisBlock = perBlock < s.supZat ? perBlock : s.supZat;
                  }
                  if (burnThisBlock > 0n) {
@@ -1158,8 +1464,12 @@
      const actHandle=document.getElementById("actHandle");
      const actBlockInput=document.getElementById("actBlockInput");
      const actDateInput=document.getElementById("actDateInput");
+     const actCollapseIcon = actHandle.querySelector('.act-collapse-icon');
 
      function updateActHandle(){
+       if (!actHandle.dataset.stackState) {
+         applyHandleStackState(actHandle, actCollapsed, { force: true });
+       }
        if(!showZip234()){actHandle.style.display="none";return null;}
        const{CSS_W,CSS_H,MG,PW,PH}=layout;
        if(!PW){actHandle.style.display="none";return null;}
@@ -1171,6 +1481,7 @@
        actHandle.style.left=xPx+"px";
        // Apply collapsed state
        actHandle.classList.toggle("collapsed", actCollapsed);
+
        // Zero out stem and reset top before measuring
        const stem=actHandle.querySelector('.act-stem');
        stem.style.height="0px";
@@ -1201,30 +1512,31 @@
         Burn handle state & positioning
         ================================================================ */
      function wireUpBurnHandle(burn) {
-       console.log('wireUpBurnHandle called for burn id:', burn.id);
-       setTimeout(() => {
-         const a = el.querySelector('.burn-amt-input');
-         console.log('amtIn element:', a, 'in DOM:', document.contains(a));
-         a.addEventListener('keydown', e => console.log('RAW keydown on amtIn:', e.key));
-       }, 100);
        const el = burn.el;
-
        // --- Drag ---
        let dragging = false, dragOffsetX = 0;
        let pointerStart = {x:0, time:0};
        el.addEventListener("mousedown", e => {
-         if (e.target.tagName === "INPUT" || e.target.classList.contains('burn-delete')
-             || e.target.classList.contains('burn-mode-btn')) return;
+         if (
+           e.target.tagName === "INPUT" ||
+           e.target.closest('.burn-delete') ||
+           e.target.closest('.burn-mode-btn') ||
+           e.target.closest('.burn-collapse-icon')
+         ) return;
+
          dragging = true;
          const hr = el.getBoundingClientRect();
          dragOffsetX = e.clientX - (hr.left + hr.right) / 2;
          pointerStart = {x: e.clientX, time: Date.now()};
-         e.preventDefault(); e.stopPropagation();
+         e.preventDefault();
+         e.stopPropagation();
        });
        window.addEventListener("mouseup", e => {
          if (!dragging) return;
          if (abs(e.clientX - pointerStart.x) < 4 && Date.now() - pointerStart.time < 300) {
-           burn.collapsed = !burn.collapsed; requestDraw();
+           burn.collapsed = !burn.collapsed;
+           applyHandleStackState(el, burn.collapsed, { justExpanded: !burn.collapsed });
+           requestDraw();
          }
          dragging = false;
        });
@@ -1235,9 +1547,11 @@
          const {MG, PW} = layout;
          const cssW = parseInt(canvasEl.style.width);
          const mx = (e.clientX - dragOffsetX - rect.left) * (cssW / rect.width);
+
          const frac = max(0, min(1, (mx - MG.left) / PW));
          const t = view.tMin + frac * (view.tMax - view.tMin);
          const newH = max(WRITTEN_HEIGHT, timeToHeight(t));
+
          if (newH !== burn.h) {
            const oldH = burn.h;
            burn.h = newH;
@@ -1251,6 +1565,25 @@
        const blockIn = el.querySelector('.burn-block-input');
        const dateIn = el.querySelector('.burn-date-input');
        const amtIn = el.querySelector('.burn-amt-input');
+
+       const burnCollapseIcon = el.querySelector('.burn-collapse-icon');
+       burnCollapseIcon.addEventListener('mousedown', e => e.stopPropagation());
+       burnCollapseIcon.addEventListener('click', e => {
+         e.stopPropagation();
+         burn.collapsed = !burn.collapsed;
+         applyHandleStackState(el, burn.collapsed, { justExpanded: !burn.collapsed });
+         requestDraw();
+       });
+
+       if (document.activeElement !== blockIn) {
+         blockIn.value = burn.h.toLocaleString();
+       }
+       if (document.activeElement !== dateIn) {
+         dateIn.value = fmtDate(blockToTime(burn.h));
+       }
+       if (document.activeElement !== amtIn) {
+         amtIn.value = zatToZecString(burn.zat);
+       }
 
        function commitBlock() {
          try {
@@ -1269,12 +1602,16 @@
          dateIn.blur();
        }
        function commitAmt() {
-         console.log('commitAmt called, value:', amtIn.value);
          const z = parseZecToZat(amtIn.value);
-         console.log('parsed zat:', z, 'current burn.zat:', burn.zat, 'equal:', z === burn.zat);
-         if (z !== null && z !== burn.zat) {
-           burn.zat = z; burn.label = formatBurnLabel(z, burn.mode);
-           invalidateAllFrom(burn.h); requestDraw();
+         if (z !== null) {
+           if (burn.mode === 'once') burn.onceZat = z;
+           else burn.perdayZat = z;
+           const prev = burn.zat;
+           syncBurnActiveAmount(burn);
+           if (burn.zat !== prev) {
+             invalidateAllFrom(burn.h);
+             requestDraw();
+           }
          }
          amtIn.blur();
        }
@@ -1304,20 +1641,37 @@
            e.stopPropagation();
            const newMode = btn.dataset.burnMode;
            if (newMode === burn.mode) return;
-           // Capture any un-committed edits from the inputs
+
            const typedZat = parseZecToZat(amtIn.value);
-           if (typedZat !== null) burn.zat = typedZat;
+           if (typedZat !== null) {
+             if (burn.mode === 'once') burn.onceZat = typedZat;
+             else burn.perdayZat = typedZat;
+           }
+
            burn.mode = newMode;
+           syncBurnActiveAmount(burn);
+           invalidateAllFrom(burn.h);
+           requestDraw();
          });
-         btn.addEventListener('mousedown', e => e.stopPropagation());
        });
      }
+
+     actCollapseIcon.addEventListener('click', e => {
+       e.stopPropagation();
+       actCollapsed = !actCollapsed;
+       applyHandleStackState(actHandle, actCollapsed, {
+         justExpanded: !actCollapsed
+       });
+       requestDraw();
+     });
+
+     actCollapseIcon.addEventListener('mousedown', e => e.stopPropagation());
 
      document.getElementById('btnAddBurn').addEventListener('click', () => {
        // Default: at the midpoint of current view, 1M ZEC once
        const midTime = (view.tMin + view.tMax) / 2;
        const h = max(WRITTEN_HEIGHT, timeToHeight(midTime));
-       const b = makeBurn(h, 100_000_000_000_000n, 'once'); // 1M ZEC
+       const b = makeBurn(h, DEFAULT_BURN_ONCE_ZAT, 'once');
        BURN_EVENTS.push(b);
        createBurnHandleElement(b);
        invalidateAllFrom(h);
@@ -1338,6 +1692,9 @@
      function updateSingleBurnHandle(burn) {
        const el = burn.el;
        if (!el) return;
+       if (!el.dataset.stackState) {
+         applyHandleStackState(el, burn.collapsed, { force: true });
+       }
        const {CSS_W, CSS_H, MG, PW, PH} = layout;
        if (!PW) { el.style.display = "none"; return; }
        const t = blockToTime(burn.h);
@@ -1579,13 +1936,33 @@
      let actPointerStart = { x: 0, y: 0, time: 0 };
 
      actHandle.addEventListener("mousedown",e=>{
-       if(e.target.tagName==="INPUT")return;
+       if (
+         e.target.tagName === "INPUT" ||
+         e.target.closest('.act-collapse-icon')
+       ) return;
        actDragging=true;
        const hr=actHandle.getBoundingClientRect();
        actDragOffsetX=e.clientX-(hr.left+hr.right)/2;
        actPointerStart={x: e.clientX,y: e.clientY,time: Date.now()};
        e.preventDefault();
        e.stopPropagation();
+     });
+
+     document.addEventListener('visibilitychange', () => {
+       if (!document.hidden) {
+         requestDraw();
+         computeAllScenarios();
+       }
+     });
+
+     window.addEventListener('pageshow', () => {
+       requestDraw();
+       computeAllScenarios();
+     });
+
+     window.addEventListener('focus', () => {
+       requestDraw();
+       computeAllScenarios();
      });
 
      window.addEventListener("mouseup", e => {
@@ -1595,6 +1972,7 @@
          // If barely moved and quick, it's a click → toggle collapsed
          if (dx < 4 && dt < 300) {
            actCollapsed = !actCollapsed;
+           applyHandleStackState(actHandle, actCollapsed, { justExpanded: !actCollapsed });
            requestDraw();
          }
          actDragging = false;
@@ -1609,6 +1987,7 @@
      // --- Activation handle: touch drag ---
      actHandle.addEventListener("touchstart",e=>{
        if(e.target.tagName==="INPUT")return;
+       if (e.target.closest('.act-collapse-icon')) return;
        actDragging=true;
        const t=e.touches[0];
        const hr=actHandle.getBoundingClientRect();
@@ -1624,6 +2003,7 @@
          const dt = Date.now() - actPointerStart.time;
          if (dx < 4 && dt < 300) {
            actCollapsed = !actCollapsed;
+           applyHandleStackState(actHandle, actCollapsed, { justExpanded: !actCollapsed });
            requestDraw();
          }
          actDragging = false;
@@ -1666,11 +2046,31 @@
      let lastTouchDist=0;
      canvas.addEventListener("touchstart",e=>{if(e.touches.length===1){handleChartDragStart(e.touches[0].clientX);}
        else if(e.touches.length===2){dragging=false;lastTouchDist=abs(e.touches[0].clientX-e.touches[1].clientX);}},{passive:true});
-     canvas.addEventListener("touchmove",e=>{if(e.touches.length===1&&dragging&&!actDragging){handleChartDragMove(e.touches[0].clientX);}
-       else if(e.touches.length===2){const dist=abs(e.touches[0].clientX-e.touches[1].clientX),mid=(e.touches[0].clientX+e.touches[1].clientX)/2;
-         if(lastTouchDist>0){yDirty=true;const zf=lastTouchDist/dist,rect=canvas.getBoundingClientRect(),
-                                               span=view.tMax-view.tMin,pivot=view.tMin+frac*span;view.tMin=pivot-(pivot-view.tMin)*zf;view.tMax=pivot+(view.tMax-pivot)*zf;
-           clampView();requestDraw();computeAllScenarios();}lastTouchDist=dist;}},{passive:true});
+     canvas.addEventListener("touchmove", e => {
+       if (e.touches.length === 1 && dragging && !actDragging) {
+         handleChartDragMove(e.touches[0].clientX);
+       } else if (e.touches.length === 2) {
+         const dist = abs(e.touches[0].clientX - e.touches[1].clientX);
+         const mid = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+
+         if (lastTouchDist > 0 && dist > 0) {
+           yDirty = true;
+           const zf = lastTouchDist / dist;
+           const rect = canvas.getBoundingClientRect();
+           const frac = max(0, min(1, (mid - rect.left) / rect.width));
+           const span = view.tMax - view.tMin;
+           const pivot = view.tMin + frac * span;
+
+           view.tMin = pivot - (pivot - view.tMin) * zf;
+           view.tMax = pivot + (view.tMax - pivot) * zf;
+
+           clampView();
+           requestDraw();
+           computeAllScenarios();
+         }
+         lastTouchDist = dist;
+       }
+     }, {passive:true});
      canvas.addEventListener("touchend",()=>{dragging=false;lastTouchDist=0;});
 
      // --- Chart: hover (tooltip) ---
@@ -1714,7 +2114,7 @@
        p.set('s', (show.supply?1:0) + '' + (show.issDay?1:0) + '' + (show.annPct?1:0));
        p.set('a', String(zip234ActivationHeight));
        const burnStr = BURN_EVENTS.map(b =>
-         String(b.h) + '.' + String(b.zat) + '.' + b.mode
+         String(b.h) + '.' + String(b.onceZat) + '.' + String(b.perdayZat) + '.' + b.mode
        ).join('|');
        p.set('burns', burnStr);
        
@@ -1729,72 +2129,98 @@
      function loadStateFromHash() {
        const hash = location.hash.slice(1);
        if (!hash) return false;
-       try {
-         const p = new URLSearchParams(hash);
-         if (p.has('v')) {
-           const parts = p.get('v').split(/[_,]/);
-           if (parts.length === 2) {
-             const tMin = Number(parts[0]), tMax = Number(parts[1]);
-             if (isFinite(tMin) && isFinite(tMax) && tMax > tMin) {
-               view.tMin = tMin; view.tMax = tMax;
-             }
+       const p = new URLSearchParams(hash);
+       if (p.has('v')) {
+         const parts = p.get('v').split(/[_,]/);
+         if (parts.length === 2) {
+           const tMin = Number(parts[0]), tMax = Number(parts[1]);
+           if (isFinite(tMin) && isFinite(tMax) && tMax > tMin) {
+             view.tMin = tMin; view.tMax = tMax;
            }
          }
-         if (p.has('f') && ['both','default','zip234'].includes(p.get('f')))
-           futureMode = p.get('f');
-         if (p.has('s') && p.get('s').length === 3) {
-           const s = p.get('s');
-           show.supply = s[0]==='1'; show.issDay = s[1]==='1'; show.annPct = s[2]==='1';
+       }
+       if (p.has('f') && ['both','default','zip234'].includes(p.get('f')))
+         futureMode = p.get('f');
+       if (p.has('s') && p.get('s').length === 3) {
+         const s = p.get('s');
+         show.supply = s[0]==='1'; show.issDay = s[1]==='1'; show.annPct = s[2]==='1';
+       }
+       if (p.has('a')) {
+         try { const ah = BigInt(p.get('a'));
+           if (ah >= WRITTEN_HEIGHT) zip234ActivationHeight = ah;
+         } catch(e) {}
+       }
+       if (p.has('bh') && p.has('bz') && p.has('bm')) {
+         try {
+           const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
+         } catch(e) {}
+       }
+       if (p.has('burns')) {
+         BURN_EVENTS.length = 0;
+
+         const rawBurns = p.get('burns');
+         if (rawBurns.length === 0) {
+           throw new Error("Malformed hash: 'burns' is empty");
          }
-         if (p.has('a')) {
-           try { const ah = BigInt(p.get('a'));
-             if (ah >= WRITTEN_HEIGHT) zip234ActivationHeight = ah;
-           } catch(e) {}
-         }
-         if (p.has('bh') && p.has('bz') && p.has('bm')) {
-           try {
-             const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
-           } catch(e) {}
-         }
-         if (p.has('burns')) {
-           BURN_EVENTS.length = 0;
-           for (const seg of p.get('burns').split('|')) {
-             const parts = seg.split('.');
-             if (parts.length === 3) {
-               try {
-                 const bh = BigInt(parts[0]), bz = BigInt(parts[1]);
-                 const bm = ['once','perday'].includes(parts[2]) ? parts[2] : 'once';
-                 if (bh >= WRITTEN_HEIGHT && bz >= 0n)
-                   BURN_EVENTS.push(makeBurn(bh, bz, bm));
-               } catch(e) {}
-             }
+
+         for (const seg of rawBurns.split('|')) {
+           if (!seg) {
+             throw new Error("Malformed hash: empty burn segment");
            }
+
+           const parts = seg.split('.');
+           if (parts.length !== 4) {
+             throw new Error(
+               `Malformed hash: burn segment must have 4 parts, got ${parts.length} in '${seg}'`
+             );
+           }
+
+           const bh = BigInt(parts[0]);
+           const once = BigInt(parts[1]);
+           const perday = BigInt(parts[2]);
+           const mode = parts[3];
+
+           if (mode !== 'once' && mode !== 'perday') {
+             throw new Error(`Malformed hash: invalid burn mode '${mode}'`);
+           }
+           if (bh < WRITTEN_HEIGHT) {
+             throw new Error(`Malformed hash: burn height ${bh} < WRITTEN_HEIGHT`);
+           }
+           if (once < 0n || perday < 0n) {
+             throw new Error("Malformed hash: burn amounts must be non-negative");
+           }
+
+           const b = makeBurn(bh, mode === 'once' ? once : perday, mode);
+           b.onceZat = once;
+           b.perdayZat = perday;
+           syncBurnActiveAmount(b);
+           BURN_EVENTS.push(b);
          }
-         if (p.has('t') && ['light','dark'].includes(p.get('t')))
-           setTheme(p.get('t'));
-         if (p.has('c') && p.get('c').length === 2) {
-           const c = p.get('c');
-           actCollapsed = c[0]==='1';
-           burnCollapsed = c[1]==='1';
-         }
-         if (p.has('ys') && p.has('yi')) {
-           try {
-             const yp = p.get('ys').split('_');
-             if (yp.length === 2) {
-               const smin = BigInt(yp[0]), smax = BigInt(yp[1]);
-               const imax = BigInt(p.get('yi'));
-               const amax = p.has('ya') ? Number(p.get('ya')) : FIXED_ANN_MAX;
-               yTarget.supMinZat = smin; yTarget.supMaxZat = smax;
-               yTarget.issMaxZat = imax; yTarget.annMax = amax;
-               yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
-               yDisp.issMaxZat = imax; yDisp.annMax = amax;
-               yDirty = false;
-               yLockedFromURL = true;
-             }
-           } catch(e) {}
-         }
-         return true;
-       } catch(e) { return false; }
+       }
+       if (p.has('t') && ['light','dark'].includes(p.get('t')))
+         setTheme(p.get('t'));
+       if (p.has('c') && p.get('c').length === 2) {
+         const c = p.get('c');
+         actCollapsed = c[0]==='1';
+         burnCollapsed = c[1]==='1';
+       }
+       if (p.has('ys') && p.has('yi')) {
+         try {
+           const yp = p.get('ys').split('_');
+           if (yp.length === 2) {
+             const smin = BigInt(yp[0]), smax = BigInt(yp[1]);
+             const imax = BigInt(p.get('yi'));
+             const amax = p.has('ya') ? Number(p.get('ya')) : FIXED_ANN_MAX;
+             yTarget.supMinZat = smin; yTarget.supMaxZat = smax;
+             yTarget.issMaxZat = imax; yTarget.annMax = amax;
+             yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
+             yDisp.issMaxZat = imax; yDisp.annMax = amax;
+             yDirty = false;
+             yLockedFromURL = true;
+           }
+         } catch(e) {}
+       }
+       return true;
      }
 
      function syncURL(force) {
@@ -2034,12 +2460,12 @@
        // --- View state ---
 
        test("view.tMin is at or near genesis at boot", () => {
-         return abs(view.tMin - genTime) < 86400000n; // within 1 day
+         return Math.abs(view.tMin - genTime) < 86_400_000; // within 1 day
        });
 
        test("view.tMax corresponds to roughly block 6M", () => {
          const expected = blockToTime(6_000_000n);
-         return abs(view.tMax - expected) < 86400000n * 30n; // within 30 days
+         return Math.abs(view.tMax - expected) < 86_400_000 * 30; // within 30 days
        });
 
        // --- CSS / styling checks ---
