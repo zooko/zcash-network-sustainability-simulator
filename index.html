@@ -2102,125 +2102,219 @@
      canvas.style.cursor="crosshair";
 
      /* ================================================================
-        URL state sharing
+        URL state sharing (compact bundle, strict parser, no back-compat)
         ================================================================ */
      let urlSyncEnabled = false;
      let lastUrlSyncTime = 0;
 
+     const STATE_BUNDLE_KEY = "z";   // hash format: #z=<base64url>
+     const STATE_BUNDLE_VER = 2;     // bump if format changes
+
+     function b64urlFromBytes(bytes) {
+       let bin = "";
+       for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+       return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+     }
+
+     function bytesFromB64url(s) {
+       if (!/^[A-Za-z0-9\-_]+$/.test(s)) return null; // strict alphabet
+       const pad = (4 - (s.length % 4)) % 4;
+       const b64 = s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat(pad);
+       let bin;
+       try { bin = atob(b64); } catch (e) { return null; }
+       const out = new Uint8Array(bin.length);
+       for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+       return out;
+     }
+
+     function writeVarUint(out, n) {
+       if (typeof n !== "bigint" || n < 0n) throw new Error("varuint expects non-negative bigint");
+       while (n >= 0x80n) {
+         out.push(Number((n & 0x7Fn) | 0x80n));
+         n >>= 7n;
+       }
+       out.push(Number(n));
+     }
+
+     function readVarUint(bytes, st) {
+       let shift = 0n, v = 0n;
+       // strict upper bound to avoid malformed infinitely-long varints
+       for (let k = 0; k < 20; k++) {
+         if (st.i >= bytes.length) throw new Error("truncated varuint");
+         const b = BigInt(bytes[st.i++]);
+         v |= (b & 0x7Fn) << shift;
+         if ((b & 0x80n) === 0n) return v;
+         shift += 7n;
+       }
+       throw new Error("varuint too long");
+     }
+
+     function futureModeToBits(m) {
+       if (m === "both") return 0;
+       if (m === "default") return 1;
+       if (m === "zip234") return 2;
+       throw new Error("invalid futureMode");
+     }
+
+     function bitsToFutureMode(v) {
+       if (v === 0) return "both";
+       if (v === 1) return "default";
+       if (v === 2) return "zip234";
+       throw new Error("invalid futureMode bits");
+     }
+
      function stateToHash() {
-       const p = new URLSearchParams();
-       p.set('v', Math.round(view.tMin) + '_' + Math.round(view.tMax));
-       p.set('f', futureMode);
-       p.set('s', (show.supply?1:0) + '' + (show.issDay?1:0) + '' + (show.annPct?1:0));
-       p.set('a', String(zip234ActivationHeight));
-       const burnStr = BURN_EVENTS.map(b =>
-         String(b.h) + '.' + String(b.onceZat) + '.' + String(b.perdayZat) + '.' + b.mode
-       ).join('|');
-       p.set('burns', burnStr);
-       
-       p.set('t', getTheme());
-       p.set('ys', String(yDisp.supMinZat) + '_' + String(yDisp.supMaxZat));
-       p.set('yi', String(yDisp.issMaxZat));
-       p.set('ya', String(yDisp.annMax));
-       p.set('c', (actCollapsed?1:0) + '' + (burnCollapsed?1:0));
-       return '#' + p.toString();
+       const out = [];
+       out.push(STATE_BUNDLE_VER);
+
+       // flags byte
+       // bits 0..1 future mode (0 both,1 default,2 zip234)
+       // bit 2 supply, bit 3 issDay, bit 4 annPct
+       // bit 5 themeLight
+       // bit 6 actCollapsed
+       // bit 7 reserved (must be 0)
+       let flags = 0;
+       flags |= futureModeToBits(futureMode);
+       if (show.supply) flags |= (1 << 2);
+       if (show.issDay) flags |= (1 << 3);
+       if (show.annPct) flags |= (1 << 4);
+       if (getTheme() === "light") flags |= (1 << 5);
+       if (actCollapsed) flags |= (1 << 6);
+       out.push(flags);
+
+       writeVarUint(out, BigInt(Math.round(view.tMin)));
+       writeVarUint(out, BigInt(Math.round(view.tMax)));
+       writeVarUint(out, zip234ActivationHeight);
+
+       writeVarUint(out, BigInt(BURN_EVENTS.length));
+       for (const b of BURN_EVENTS) {
+         writeVarUint(out, b.h);
+         writeVarUint(out, b.zat);
+
+         // burn meta byte:
+         // bit0 mode (0 once, 1 perday)
+         // bit1 collapsed (0 expanded, 1 collapsed)
+         // bits2..7 reserved 0
+         let meta = 0;
+         if (b.mode === "perday") meta |= 1;
+         if (b.collapsed) meta |= 2;
+         out.push(meta);
+       }
+
+       writeVarUint(out, yDisp.supMinZat);
+       writeVarUint(out, yDisp.supMaxZat);
+       writeVarUint(out, yDisp.issMaxZat);
+
+       const yaMilli = Math.round(yDisp.annMax * 1000);
+       if (!Number.isFinite(yaMilli) || yaMilli < 0) throw new Error("invalid annMax");
+       writeVarUint(out, BigInt(yaMilli));
+
+       const payload = b64urlFromBytes(Uint8Array.from(out));
+       return "#" + STATE_BUNDLE_KEY + "=" + payload;
      }
 
      function loadStateFromHash() {
-       const hash = location.hash.slice(1);
-       if (!hash) return false;
-       const p = new URLSearchParams(hash);
-       if (p.has('v')) {
-         const parts = p.get('v').split(/[_,]/);
-         if (parts.length === 2) {
-           const tMin = Number(parts[0]), tMax = Number(parts[1]);
-           if (isFinite(tMin) && isFinite(tMax) && tMax > tMin) {
-             view.tMin = tMin; view.tMax = tMax;
-           }
+       const raw = location.hash.slice(1);
+       if (!raw) return false;
+       if (!raw.startsWith(STATE_BUNDLE_KEY + "=")) return false;
+
+       const payload = raw.slice((STATE_BUNDLE_KEY + "=").length);
+       if (!payload) return false;
+
+       const bytes = bytesFromB64url(payload);
+       if (!bytes) return false;
+
+       try {
+         const st = { i: 0 };
+
+         const ver = bytes[st.i++];
+         if (ver !== STATE_BUNDLE_VER) return false;
+
+         const flags = bytes[st.i++];
+         if (flags & (1 << 7)) return false; // strict: reserved bit must be 0
+
+         const fmBits = flags & 0b11;
+         const newFutureMode = bitsToFutureMode(fmBits);
+
+         const newShow = {
+           supply: !!(flags & (1 << 2)),
+           issDay: !!(flags & (1 << 3)),
+           annPct: !!(flags & (1 << 4)),
+         };
+         const newTheme = (flags & (1 << 5)) ? "light" : "dark";
+         const newActCollapsed = !!(flags & (1 << 6));
+
+         const tMin = Number(readVarUint(bytes, st));
+         const tMax = Number(readVarUint(bytes, st));
+         const actH = readVarUint(bytes, st);
+
+         const burnCount = Number(readVarUint(bytes, st));
+         if (!Number.isInteger(burnCount) || burnCount < 0 || burnCount > 10000) {
+           return false;
          }
-       }
-       if (p.has('f') && ['both','default','zip234'].includes(p.get('f')))
-         futureMode = p.get('f');
-       if (p.has('s') && p.get('s').length === 3) {
-         const s = p.get('s');
-         show.supply = s[0]==='1'; show.issDay = s[1]==='1'; show.annPct = s[2]==='1';
-       }
-       if (p.has('a')) {
-         try { const ah = BigInt(p.get('a'));
-           if (ah >= WRITTEN_HEIGHT) zip234ActivationHeight = ah;
-         } catch(e) {}
-       }
-       if (p.has('bh') && p.has('bz') && p.has('bm')) {
-         try {
-           const bh = BigInt(p.get('bh')), bz = BigInt(p.get('bz')), bm = p.get('bm');
-         } catch(e) {}
-       }
-       if (p.has('burns')) {
+
+         const burns = [];
+         for (let i = 0; i < burnCount; i++) {
+           const bh = readVarUint(bytes, st);
+           const bz = readVarUint(bytes, st);
+           if (st.i >= bytes.length) return false;
+           const meta = bytes[st.i++];
+
+           // strict: only bits 0..1 allowed
+           if (meta & 0b11111100) return false;
+
+           const mode = (meta & 1) ? "perday" : "once";
+           const collapsed = !!(meta & 2);
+
+           burns.push({ h: bh, zat: bz, mode, collapsed });
+         }
+
+         const ysMin = readVarUint(bytes, st);
+         const ysMax = readVarUint(bytes, st);
+         const yi = readVarUint(bytes, st);
+         const yaMilli = readVarUint(bytes, st);
+         const ya = Number(yaMilli) / 1000;
+
+         if (st.i !== bytes.length) return false;
+
+         if (!Number.isFinite(tMin) || !Number.isFinite(tMax) || !(tMax > tMin)) return false;
+         if (actH < WRITTEN_HEIGHT) return false;
+         if (ysMin > ysMax) return false;
+         if (!Number.isFinite(ya) || ya < 0) return false;
+         for (const b of burns) {
+           if (b.h < WRITTEN_HEIGHT || b.zat < 0n) return false;
+         }
+
+         view.tMin = tMin;
+         view.tMax = tMax;
+         futureMode = newFutureMode;
+         show.supply = newShow.supply;
+         show.issDay = newShow.issDay;
+         show.annPct = newShow.annPct;
+         zip234ActivationHeight = actH;
+
          BURN_EVENTS.length = 0;
-
-         const rawBurns = p.get('burns');
-         if (rawBurns.length === 0) {
-           throw new Error("Malformed hash: 'burns' is empty");
+         for (const b of burns) {
+           const nb = makeBurn(b.h, b.zat, b.mode);
+           nb.collapsed = b.collapsed;
+           BURN_EVENTS.push(nb);
          }
 
-         for (const seg of rawBurns.split('|')) {
-           if (!seg) {
-             throw new Error("Malformed hash: empty burn segment");
-           }
+         setTheme(newTheme);
+         actCollapsed = newActCollapsed;
+         burnCollapsed = false; // legacy global no longer used
 
-           const parts = seg.split('.');
-           if (parts.length !== 4) {
-             throw new Error(
-               `Malformed hash: burn segment must have 4 parts, got ${parts.length} in '${seg}'`
-             );
-           }
+         yTarget.supMinZat = ysMin; yDisp.supMinZat = ysMin;
+         yTarget.supMaxZat = ysMax; yDisp.supMaxZat = ysMax;
+         yTarget.issMaxZat = yi;    yDisp.issMaxZat = yi;
+         yTarget.annMax = ya;       yDisp.annMax = ya;
 
-           const bh = BigInt(parts[0]);
-           const once = BigInt(parts[1]);
-           const perday = BigInt(parts[2]);
-           const mode = parts[3];
-
-           if (mode !== 'once' && mode !== 'perday') {
-             throw new Error(`Malformed hash: invalid burn mode '${mode}'`);
-           }
-           if (bh < WRITTEN_HEIGHT) {
-             throw new Error(`Malformed hash: burn height ${bh} < WRITTEN_HEIGHT`);
-           }
-           if (once < 0n || perday < 0n) {
-             throw new Error("Malformed hash: burn amounts must be non-negative");
-           }
-
-           const b = makeBurn(bh, mode === 'once' ? once : perday, mode);
-           b.onceZat = once;
-           b.perdayZat = perday;
-           syncBurnActiveAmount(b);
-           BURN_EVENTS.push(b);
-         }
+         yDirty = false;
+         yLockedFromURL = true;
+         return true;
+       } catch (e) {
+         return false;
        }
-       if (p.has('t') && ['light','dark'].includes(p.get('t')))
-         setTheme(p.get('t'));
-       if (p.has('c') && p.get('c').length === 2) {
-         const c = p.get('c');
-         actCollapsed = c[0]==='1';
-         burnCollapsed = c[1]==='1';
-       }
-       if (p.has('ys') && p.has('yi')) {
-         try {
-           const yp = p.get('ys').split('_');
-           if (yp.length === 2) {
-             const smin = BigInt(yp[0]), smax = BigInt(yp[1]);
-             const imax = BigInt(p.get('yi'));
-             const amax = p.has('ya') ? Number(p.get('ya')) : FIXED_ANN_MAX;
-             yTarget.supMinZat = smin; yTarget.supMaxZat = smax;
-             yTarget.issMaxZat = imax; yTarget.annMax = amax;
-             yDisp.supMinZat = smin; yDisp.supMaxZat = smax;
-             yDisp.issMaxZat = imax; yDisp.annMax = amax;
-             yDirty = false;
-             yLockedFromURL = true;
-           }
-         } catch(e) {}
-       }
-       return true;
      }
 
      function syncURL(force) {
@@ -2230,43 +2324,8 @@
        lastUrlSyncTime = now;
        const newHash = stateToHash();
        if (location.hash !== newHash) {
-         try { history.replaceState(null, '', newHash); }
-         catch(e) { try { location.hash = newHash.slice(1); } catch(e2) {} }
-       }
-     }
-
-     async function handleShare() {
-       syncURL(true);
-       const url = location.href;
-       if (navigator.share && location.protocol !== 'file:') {
-         try { await navigator.share({ title: 'Zcash Supply & Issuance', url }); return;
-         } catch(e) { if (e.name === 'AbortError') return; }
-       }
-       // Try clipboard API first, fall back to execCommand, then prompt
-       let copied = false;
-       try {
-         await navigator.clipboard.writeText(url);
-         copied = true;
-       } catch(e) {
-         // Clipboard API failed (e.g. file:// origin) — try execCommand fallback
-         try {
-           const ta = document.createElement('textarea');
-           ta.value = url;
-           ta.style.position = 'fixed';
-           ta.style.left = '-9999px';
-           document.body.appendChild(ta);
-           ta.select();
-           copied = document.execCommand('copy');
-           document.body.removeChild(ta);
-         } catch(e2) {}
-       }
-       if (copied) {
-         const btn = document.getElementById('btnShare');
-         const orig = btn.textContent;
-         btn.textContent = '✓ Copied!';
-         setTimeout(() => { btn.textContent = orig; }, 1500);
-       } else {
-         prompt('Copy this URL:', url);
+         try { history.replaceState(null, "", newHash); }
+         catch (e) { try { location.hash = newHash.slice(1); } catch (e2) {} }
        }
      }
 
