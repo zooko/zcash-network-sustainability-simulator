@@ -61,9 +61,17 @@
      .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
        border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
      .controls button:hover{background:var(--btnHover)}
-     .chart-wrap{position:relative;display:inline-block;margin-bottom:10px}
+     .chart-wrap{
+       position:relative;display:inline-block;
+       margin-top:65px;margin-bottom:10px;
+     }
      canvas{border-radius:8px;background:var(--panel);display:block}
-     .legend{margin-top:8px;position:relative;z-index:1}
+     .legend{
+       display:flex;flex-wrap:wrap;gap:10px 20px;
+       font-size:.78rem;align-items:center;
+       justify-content:center;color:var(--muted);
+       margin-top:8px;position:relative;z-index:1;
+     }
      .legend span{display:flex;align-items:center;gap:5px}
      .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
      .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
@@ -496,7 +504,6 @@
         <button class="seg" data-mode="default">Default</button>
         <button class="seg" data-mode="zip234">ZIP 234</button>
       </span>
-      <span>|</span>
       <span style="color:var(--muted)">│</span>
       <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
       <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
