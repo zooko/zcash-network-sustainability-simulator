@@ -5,483 +5,567 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zcash Supply & Issuance</title>
     <style>
-     :root{
-       --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
-       /* Default scenario: muted slate — "status quo" */
-       --supplyObs:#94a3b8;          /* slate-400 */
-       --issObs:#cbd5e1;             /* slate-300 */
-       --supplyExp:rgba(148,163,184,0.38);
-       --issExp:rgba(203,213,225,0.38);
-       --annualObs:#94a3b8;
-       --annualExp:rgba(148,163,184,0.38);
-       /* Events & chrome */
-       --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
-       --written:rgba(167,139,250,0.65);
-       /* ZIP 234: deep trustworthy blue — the hero */
-       --zip234Supply:#3b82f6;       /* blue-500 */
-       --zip234Iss:#93c5fd;          /* blue-300 */
-       --zip234Ann:#3b82f6;
-       --zip234Act:rgba(59,130,246,0.50);
-       /* NSMalt: warm amber — energetic but secondary */
-       --nsmaltSupply:#f59e0b;       /* amber-500 */
-       --nsmaltIss:#fcd34d;          /* amber-300 */
-       --nsmaltAnn:#f59e0b;
-       --nsmaltAct:rgba(245,158,11,0.50);
-       /* Handles */
-       --handleBg:rgba(59,130,246,0.92);
-       --handleBorder:#fff;
-       --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
-       --burnEvent:rgba(255,80,80,0.70);
-       /* Chrome */
-       --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
-       --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
-       --btnHover:rgba(148,163,184,0.4);
-       --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
-       --gridLine:rgba(148,163,184,0.08); --capLine:rgba(148,163,184,0.28);
-       --frameBorder:rgba(148,163,184,0.10);
-       --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
-     }
-     [data-theme="light"]{
-       --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
-       /* Default scenario: darker slate */
-       --supplyObs:#64748b;           /* slate-500 */
-       --issObs:#94a3b8;              /* slate-400 */
-       --supplyExp:rgba(100,116,139,0.38);
-       --issExp:rgba(148,163,184,0.38);
-       --annualObs:#64748b;
-       --annualExp:rgba(100,116,139,0.38);
-       /* Events */
-       --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
-       --written:rgba(124,58,237,0.55);
-       /* ZIP 234: deep authoritative blue */
-       --zip234Supply:#1d4ed8;        /* blue-700 */
-       --zip234Iss:#3b82f6;           /* blue-500 */
-       --zip234Ann:#1d4ed8;
-       --zip234Act:rgba(29,78,216,0.40);
-       /* NSMalt: warm amber */
-       --nsmaltSupply:#d97706;        /* amber-600 */
-       --nsmaltIss:#f59e0b;           /* amber-500 */
-       --nsmaltAnn:#d97706;
-       --nsmaltAct:rgba(217,119,6,0.40);
-       /* Handles */
-       --handleBg:rgba(29,78,216,0.92);
-       --handleBorder:#1e293b;
-       --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
-       --burnEvent:rgba(220,38,38,0.60);
-       /* Chrome */
-       --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
-       --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
-       --btnHover:rgba(148,163,184,0.55);
-       --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
-       --gridLine:rgba(148,163,184,0.12); --capLine:rgba(100,116,139,0.28);
-       --frameBorder:rgba(148,163,184,0.18);
-       --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
-     }
-     *{margin:0;padding:0;box-sizing:border-box}
-     body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
-       display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
-     h1{font-size:1.35rem;color:var(--zip234Supply);margin-bottom:2px}
-     .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
-     .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
-       background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
-     .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
-       border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
-     .controls button:hover{background:var(--btnHover)}
-     .chart-wrap{
-       position:relative;display:inline-block;
-       margin-top:65px;margin-bottom:10px;
-     }
-     canvas{border-radius:8px;background:var(--panel);display:block}
-     .legend{
-       display:flex;flex-wrap:wrap;gap:10px 20px;
-       font-size:.78rem;align-items:center;
-       justify-content:center;color:var(--muted);
-       margin-top:8px;position:relative;z-index:1;
-     }
-     .legend span{display:flex;align-items:center;gap:5px}
-     .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
-     .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
-     .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
-       border:1.5px solid transparent;transition:opacity .15s,border-color .15s,background .15s}
-     .ltoggle.active{border-color:var(--btnBorder);background:var(--toggleActiveBg);opacity:1}
-     .ltoggle:not(.active){opacity:.38}
-     .ltoggle:not(.active) .sw{background:var(--muted)!important}
-     .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
-     #actHandle{
-       position:absolute;
-       display:none;
-       z-index:var(--z,20);
-       cursor:ew-resize;
-       transform:translateX(-50%);
-       pointer-events:auto;
-       top:-8px;
-     }
+      :root{
+      --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
+      /* Default scenario: muted slate — "status quo" */
+      --supplyObs:#94a3b8;          /* slate-400 */
+      --issObs:#cbd5e1;             /* slate-300 */
+      --supplyExp:rgba(148,163,184,0.38);
+      --issExp:rgba(203,213,225,0.38);
+      --annualObs:#94a3b8;
+      --annualExp:rgba(148,163,184,0.38);
+      /* Events & chrome */
+      --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
+      --written:rgba(167,139,250,0.65);
+      /* ZIP 234: deep trustworthy blue — the hero */
+      --zip234Supply:#3b82f6;       /* blue-500 */
+      --zip234Iss:#93c5fd;          /* blue-300 */
+      --zip234Ann:#3b82f6;
+      --zip234Act:rgba(59,130,246,0.50);
+      /* NSMalt: warm amber — energetic but secondary */
+      --nsmaltSupply:#f59e0b;       /* amber-500 */
+      --nsmaltIss:#fcd34d;          /* amber-300 */
+      --nsmaltAnn:#f59e0b;
+      --nsmaltAct:rgba(245,158,11,0.50);
+      /* Handles */
+      --handleBg:rgba(59,130,246,0.92);
+      --handleBorder:#fff;
+      --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
+      --burnEvent:rgba(255,80,80,0.70);
+      /* Chrome */
+      --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
+      --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
+      --btnHover:rgba(148,163,184,0.4);
+      --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
+      --gridLine:rgba(148,163,184,0.08); --capLine:rgba(148,163,184,0.28);
+      --frameBorder:rgba(148,163,184,0.10);
+      --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
+      }
+      [data-theme="light"]{
+      --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
+      /* Default scenario: darker slate */
+      --supplyObs:#64748b;           /* slate-500 */
+      --issObs:#94a3b8;              /* slate-400 */
+      --supplyExp:rgba(100,116,139,0.38);
+      --issExp:rgba(148,163,184,0.38);
+      --annualObs:#64748b;
+      --annualExp:rgba(100,116,139,0.38);
+      /* Events */
+      --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
+      --written:rgba(124,58,237,0.55);
+      /* ZIP 234: deep authoritative blue */
+      --zip234Supply:#1d4ed8;        /* blue-700 */
+      --zip234Iss:#3b82f6;           /* blue-500 */
+      --zip234Ann:#1d4ed8;
+      --zip234Act:rgba(29,78,216,0.40);
+      /* NSMalt: warm amber */
+      --nsmaltSupply:#d97706;        /* amber-600 */
+      --nsmaltIss:#f59e0b;           /* amber-500 */
+      --nsmaltAnn:#d97706;
+      --nsmaltAct:rgba(217,119,6,0.40);
+      /* Handles */
+      --handleBg:rgba(29,78,216,0.92);
+      --handleBorder:#1e293b;
+      --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
+      --burnEvent:rgba(220,38,38,0.60);
+      /* Chrome */
+      --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
+      --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
+      --btnHover:rgba(148,163,184,0.55);
+      --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
+      --gridLine:rgba(148,163,184,0.12); --capLine:rgba(100,116,139,0.28);
+      --frameBorder:rgba(148,163,184,0.18);
+      --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
+      }
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
+      display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
+      h1{font-size:1.35rem;color:var(--zip234Supply);margin-bottom:2px}
+      .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
+      .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
+      background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
+      .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
+      border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
+      .controls button:hover{background:var(--btnHover)}
+      .chart-wrap{
+      position:relative;display:inline-block;
+      margin-top:65px;margin-bottom:10px;
+      }
+      canvas{border-radius:8px;background:var(--panel);display:block}
+      .legend{
+      display:flex;flex-direction:column;gap:8px;align-items:stretch;
+      justify-content:center;color:var(--muted);margin-top:8px;position:relative;z-index:1;
+      width:min(960px,calc(100vw - 24px));
+      }
+      .future-row{
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+      }
+      .future-code{
+      min-width:260px;max-width:min(680px,calc(100vw - 64px));width:52vw;
+      font:600 .68rem/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;
+      color:var(--fg);background:var(--btnBg);border:1px solid var(--btnBorder);
+      border-radius:6px;padding:6px 8px;
+      }
+      .future-code[readonly]{opacity:.9}
+      .future-code.error{border-color:rgba(220,38,38,.7);box-shadow:0 0 0 1px rgba(220,38,38,.35) inset;}
+      .legend{
+      display:flex;flex-wrap:wrap;gap:10px 20px;
+      font-size:.78rem;align-items:center;
+      justify-content:center;color:var(--muted);
+      margin-top:8px;position:relative;z-index:1;
+      }
+      .legend span{display:flex;align-items:center;gap:5px}
+      .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+      .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
+      .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
+      border:1.5px solid transparent;transition:opacity .15s,border-color .15s,background .15s}
+      .ltoggle.active{border-color:var(--btnBorder);background:var(--toggleActiveBg);opacity:1}
+      .ltoggle:not(.active){opacity:.38}
+      .ltoggle:not(.active) .sw{background:var(--muted)!important}
+      .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
+      #actHandle{
+      position:absolute;
+      display:none;
+      z-index:var(--z,20);
+      cursor:ew-resize;
+      transform:translateX(-50%);
+      pointer-events:auto;
+      top:-8px;
+      }
 
-     #actHandle .act-pill{
-       background:var(--handleBg);
-       color:#fff;
-       font:600 .68rem/1 system-ui;
-       padding:5px 8px;
-       border-radius:6px;
-       border:1.5px solid var(--handleBorder);
-       white-space:nowrap;
-       display:flex;
-       flex-direction:column;
-       align-items:center;
-       gap:4px;
-       box-shadow:0 2px 8px rgba(0,0,0,.3);
-       user-select:none;
-       opacity:0.9;
-       transition:opacity 0.15s, filter 0.15s;
-     }
+      #actHandle .act-pill{
+      background:var(--handleBg);
+      color:#fff;
+      font:600 .68rem/1 system-ui;
+      padding:5px 8px;
+      border-radius:6px;
+      border:1.5px solid var(--handleBorder);
+      white-space:nowrap;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+      user-select:none;
+      opacity:0.9;
+      transition:opacity 0.15s, filter 0.15s;
+      }
 
-     #actHandle .act-content{
-       display:flex;
-       align-items:stretch;
-       gap:8px;
-       width:100%;
-       min-height:74px;
-     }
+      #actHandle .act-content{
+      display:flex;
+      align-items:stretch;
+      gap:8px;
+      width:100%;
+      min-height:74px;
+      }
 
-     #actHandle .act-left{
-       display:flex;
-       flex-direction:column;
-       align-items:center;
-       justify-content:center;
-       gap:3px;
-       min-width:90px;
-       text-align:center;
-     }
+      #actHandle .act-left{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      min-width:90px;
+      text-align:center;
+      }
 
-     #actHandle .act-pill .act-label{
-       opacity:0.85;
-       font-size:.66rem;
-     }
+      #actHandle .act-pill .act-label{
+      opacity:0.85;
+      font-size:.66rem;
+      }
 
-     #actHandle .act-right{
-       display:flex;
-       flex-direction:column;
-       align-items:flex-end;
-       gap:3px;
-       justify-content:center;
-     }
+      #actHandle .act-right{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:3px;
+      justify-content:center;
+      }
 
-     #actHandle .act-pill input{
-       width:80px;
-       padding:2px 4px;
-       border-radius:3px;
-       border:1px solid rgba(255,255,255,.3);
-       background:rgba(0,0,0,.25);
-       color:#fff;
-       font:600 .66rem/1 system-ui;
-       text-align:center;
-     }
+      #actHandle .act-pill input{
+      width:80px;
+      padding:2px 4px;
+      border-radius:3px;
+      border:1px solid rgba(255,255,255,.3);
+      background:rgba(0,0,0,.25);
+      color:#fff;
+      font:600 .66rem/1 system-ui;
+      text-align:center;
+      }
 
-     #actHandle .act-pill input.act-date{
-       width:88px;
-     }
+      #actHandle .act-pill input.act-date{
+      width:88px;
+      }
 
-     #actHandle .act-collapse-icon{
-       width:18px;
-       height:18px;
-       border-radius:50%;
-       background:rgba(255,255,255,0.15);
-       color:rgba(255,255,255,0.8);
-       font:600 11px/18px system-ui;
-       text-align:center;
-       cursor:pointer;
-       transition:background 0.12s;
-     }
+      #actHandle .act-collapse-icon{
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.15);
+      color:rgba(255,255,255,0.8);
+      font:600 11px/18px system-ui;
+      text-align:center;
+      cursor:pointer;
+      transition:background 0.12s;
+      }
 
-     #actHandle .act-collapse-icon:hover{
-       background:rgba(255,255,255,0.3);
-     }
+      #actHandle .act-collapse-icon:hover{
+      background:rgba(255,255,255,0.3);
+      }
 
-     #actHandle .act-stem{
-       width:2px;
-       background:var(--handleBg);
-       margin:0 auto;
-     }
+      #actHandle .act-stem{
+      width:2px;
+      background:var(--handleBg);
+      margin:0 auto;
+      }
 
-     #actHandle .act-nub{
-       display:none;
-       width:44px;
-       height:16px;
-       border-radius:8px;
-       background:var(--handleBg);
-       border:1.5px solid var(--handleBorder);
-       cursor:ew-resize;
-       margin:0 auto;
-       box-shadow:0 1px 4px rgba(0,0,0,.3);
-       color:#fff;
-       font:600 11px/16px system-ui;
-       text-align:center;
-       letter-spacing:2px;
-       user-select:none;
-       opacity:0.85;
-       transition:opacity 0.15s;
-     }
+      #actHandle .act-nub{
+      display:none;
+      width:44px;
+      height:16px;
+      border-radius:8px;
+      background:var(--handleBg);
+      border:1.5px solid var(--handleBorder);
+      cursor:ew-resize;
+      margin:0 auto;
+      box-shadow:0 1px 4px rgba(0,0,0,.3);
+      color:#fff;
+      font:600 11px/16px system-ui;
+      text-align:center;
+      letter-spacing:2px;
+      user-select:none;
+      opacity:0.85;
+      transition:opacity 0.15s;
+      }
 
-     #actHandle .act-pill:hover{
-       opacity:1;
-       filter:brightness(1.15);
-     }
+      #actHandle .act-pill:hover{
+      opacity:1;
+      filter:brightness(1.15);
+      }
 
-     #actHandle .act-nub:hover{
-       opacity:1;
-     }
+      #actHandle .act-nub:hover{
+      opacity:1;
+      }
 
-     #actHandle.collapsed .act-nub{
-       display:block;
-     }
+      #actHandle.collapsed .act-nub{
+      display:block;
+      }
 
-     #actHandle.collapsed .act-pill{
-       display:none;
-     }
+      #actHandle.collapsed .act-pill{
+      display:none;
+      }
 
-     [data-theme="light"] #actHandle .act-pill input{
-       background:rgba(255,255,255,.5);
-       color:#1e293b;
-       border-color:rgba(0,0,0,.2);
-     }
-     #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
-       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-       border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
-       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;
-       transform:translateX(-50%)}
-     #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
-       pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
-       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-     #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#60a5fa;font-weight:600}
-     #tooltip .tt-exp{color:var(--written);font-weight:600}
-     @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
-       .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
-       .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
-     .seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
-       background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-     .seg:last-child { border-right: none; }
-     .seg:hover { opacity: 0.85; }
+      [data-theme="light"] #actHandle .act-pill input{
+      background:rgba(255,255,255,.5);
+      color:#1e293b;
+      border-color:rgba(0,0,0,.2);
+      }
+      #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
+      background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+      border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;
+      transform:translateX(-50%)}
+      #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
+      pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
+      background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+      #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#60a5fa;font-weight:600}
+      #tooltip .tt-exp{color:var(--written);font-weight:600}
+      @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
+      .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
+      .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
+      .seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
+      background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+      .seg:last-child { border-right: none; }
+      .seg:hover { opacity: 0.85; }
 
-     .burn-handle{
-       position:absolute;
-       display:none;
-       cursor:ew-resize;
-       transform:translateX(-50%);
-       pointer-events:auto;
-       top:-8px;
-       z-index:var(--z,21);
-     }
+      .burn-handle{
+      position:absolute;
+      display:none;
+      cursor:ew-resize;
+      transform:translateX(-50%);
+      pointer-events:auto;
+      top:-8px;
+      z-index:var(--z,21);
+      }
 
-     .burn-handle .burn-nub{
-       display:none;
-       width:24px;
-       height:16px;
-       border-radius:8px;
-       background:var(--burnHandleBg);
-       color:#fff;
-       font:600 11px/16px system-ui;
-       text-align:center;
-       border:1.5px solid var(--burnHandleBorder);
-       box-shadow:0 2px 8px rgba(0,0,0,.3);
-       opacity:.9;
-     }
+      .burn-handle .burn-nub{
+      display:none;
+      width:24px;
+      height:16px;
+      border-radius:8px;
+      background:var(--burnHandleBg);
+      color:#fff;
+      font:600 11px/16px system-ui;
+      text-align:center;
+      border:1.5px solid var(--burnHandleBorder);
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+      opacity:.9;
+      }
 
-     .burn-handle.collapsed .burn-nub{
-       display:block;
-     }
+      .burn-handle.collapsed .burn-nub{
+      display:block;
+      }
 
-     .burn-handle.collapsed .burn-pill{
-       display:none;
-     }
+      .burn-handle.collapsed .burn-pill{
+      display:none;
+      }
 
-     .burn-handle .burn-pill{
-       background:var(--burnHandleBg);
-       color:#fff;
-       font:600 .68rem/1 system-ui;
-       padding:6px 8px;
-       border-radius:6px;
-       border:1.5px solid var(--burnHandleBorder);
-       display:flex;
-       flex-direction:column;
-       align-items:center;
-       gap:5px;
-       position:relative;
-       box-shadow:0 2px 8px rgba(0,0,0,.3);
-       opacity:.92;
-       transition:opacity .15s,filter .15s;
-     }
+      .burn-handle .burn-pill{
+      background:var(--burnHandleBg);
+      color:#fff;
+      font:600 .68rem/1 system-ui;
+      padding:6px 8px;
+      border-radius:6px;
+      border:1.5px solid var(--burnHandleBorder);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:5px;
+      position:relative;
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+      opacity:.92;
+      transition:opacity .15s,filter .15s;
+      }
 
-     .burn-handle .burn-pill:hover{
-       opacity:1;
-       filter:brightness(1.1);
-     }
+      .burn-handle .burn-pill:hover{
+      opacity:1;
+      filter:brightness(1.1);
+      }
 
-     .burn-handle .burn-title{
-       width:100%;
-       text-align:center;
-       font-size:.70rem;
-       opacity:.92;
-     }
+      .burn-handle .burn-title{
+      width:100%;
+      text-align:center;
+      font-size:.70rem;
+      opacity:.92;
+      }
 
-     .burn-handle .burn-content{
-       display:flex;
-       align-items:stretch;
-       justify-content:center;
-       gap:10px;
-       width:100%;
-       min-height:74px;
-     }
+      .burn-handle .burn-content{
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      gap:10px;
+      width:100%;
+      min-height:74px;
+      }
 
-     .burn-handle .burn-left,
-     .burn-handle .burn-right{
-       display:flex;
-       flex-direction:column;
-       justify-content:center;
-       align-items:center;
-       gap:3px;
-     }
+      .burn-handle .burn-left,
+      .burn-handle .burn-right{
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      gap:3px;
+      }
 
-     .field-chip{
-       font:600 .55rem/1 system-ui;
-       letter-spacing:.03em;
-       opacity:.78;
-       text-transform:uppercase;
-     }
+      .field-chip{
+      font:600 .55rem/1 system-ui;
+      letter-spacing:.03em;
+      opacity:.78;
+      text-transform:uppercase;
+      }
 
-     .field-chain{
-       display:flex;
-       flex-direction:column;
-       align-items:center;
-       gap:2px;
-     }
+      .field-chain{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:2px;
+      }
 
-     .field-chain span{
-       width:2px;
-       height:6px;
-       border-radius:2px;
-       background:rgba(255,255,255,.55);
-     }
+      .field-chain span{
+      width:2px;
+      height:6px;
+      border-radius:2px;
+      background:rgba(255,255,255,.55);
+      }
 
-     .ctrl-input{
-       padding:2px 4px;
-       border-radius:3px;
-       border:1px solid rgba(255,255,255,.3);
-       background:rgba(0,0,0,.25);
-       color:#fff;
-       font:600 .66rem/1 system-ui;
-       text-align:center;
-     }
+      .ctrl-input{
+      padding:2px 4px;
+      border-radius:3px;
+      border:1px solid rgba(255,255,255,.3);
+      background:rgba(0,0,0,.25);
+      color:#fff;
+      font:600 .66rem/1 system-ui;
+      text-align:center;
+      }
 
-     .ctrl-input-block{
-       width:80px;
-     }
+      .ctrl-input-block{
+      width:80px;
+      }
 
-     .ctrl-input-date{
-       width:88px;
-     }
+      .ctrl-input-date{
+      width:88px;
+      }
 
-     .burn-handle .burn-amt-row{
-       display:flex;
-       align-items:center;
-       gap:4px;
-     }
+      .burn-handle .burn-amt-row{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      }
 
-     .burn-handle .burn-amt-input{
-       width:88px;
-     }
+      .burn-handle .burn-amt-input{
+      width:88px;
+      }
 
-     .burn-handle .burn-unit{
-       opacity:.75;
-       font-size:.62rem;
-     }
+      .burn-handle .burn-unit{
+      opacity:.75;
+      font-size:.62rem;
+      }
 
-     .burn-handle .burn-mode-row{
-       display:flex;
-       align-items:center;
-       gap:4px;
-       margin-top:2px;
-     }
+      .burn-handle .burn-mode-row{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      margin-top:2px;
+      }
 
-     .burn-handle .burn-mode-group{
-       display:inline-flex;
-       border:1px solid rgba(255,255,255,.25);
-       border-radius:4px;
-       overflow:hidden;
-     }
+      .burn-handle .burn-mode-group{
+      display:inline-flex;
+      border:1px solid rgba(255,255,255,.25);
+      border-radius:4px;
+      overflow:hidden;
+      }
 
-     .burn-handle .burn-mode-btn{
-       padding:1px 6px;
-       font:600 .58rem/1.2 system-ui;
-       border:none;
-       border-right:1px solid rgba(255,255,255,.2);
-       background:transparent;
-       color:rgba(255,255,255,.62);
-       cursor:pointer;
-     }
+      .burn-handle .burn-mode-btn{
+      padding:1px 6px;
+      font:600 .58rem/1.2 system-ui;
+      border:none;
+      border-right:1px solid rgba(255,255,255,.2);
+      background:transparent;
+      color:rgba(255,255,255,.62);
+      cursor:pointer;
+      }
 
-     .burn-handle .burn-mode-btn:last-child{
-       border-right:none;
-     }
+      .burn-handle .burn-mode-btn:last-child{
+      border-right:none;
+      }
 
-     .burn-handle .burn-mode-btn:hover{
-       background:rgba(255,255,255,.12);
-     }
+      .burn-handle .burn-mode-btn:hover{
+      background:rgba(255,255,255,.12);
+      }
 
-     .burn-handle .burn-mode-btn.active{
-       background:rgba(255,255,255,.2);
-       color:#fff;
-     }
+      .burn-handle .burn-mode-btn.active{
+      background:rgba(255,255,255,.2);
+      color:#fff;
+      }
 
-     .burn-handle .burn-collapse-icon{
-       width:18px;
-       height:18px;
-       border-radius:50%;
-       background:rgba(255,255,255,.15);
-       color:rgba(255,255,255,.9);
-       font:600 11px/18px system-ui;
-       text-align:center;
-       cursor:pointer;
-     }
+      .burn-handle .burn-collapse-icon{
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      background:rgba(255,255,255,.15);
+      color:rgba(255,255,255,.9);
+      font:600 11px/18px system-ui;
+      text-align:center;
+      cursor:pointer;
+      }
 
-     .burn-handle .burn-collapse-icon:hover{
-       background:rgba(255,255,255,.28);
-     }
+      .burn-handle .burn-collapse-icon:hover{
+      background:rgba(255,255,255,.28);
+      }
 
-     .burn-handle .burn-delete{
-       position:absolute;
-       right:-8px;
-       bottom:-8px;
-       width:18px;
-       height:18px;
-       border-radius:50%;
-       background:rgba(0,0,0,.5);
-       color:#fff;
-       font:600 11px/18px system-ui;
-       text-align:center;
-       cursor:pointer;
-       border:1.5px solid rgba(255,255,255,.3);
-     }
+      .burn-handle .burn-delete{
+      position:absolute;
+      right:-8px;
+      bottom:-8px;
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      background:rgba(0,0,0,.5);
+      color:#fff;
+      font:600 11px/18px system-ui;
+      text-align:center;
+      cursor:pointer;
+      border:1.5px solid rgba(255,255,255,.3);
+      }
 
-     .burn-handle .burn-delete:hover{
-       background:rgba(220,38,38,.9);
-     }
+      .burn-handle .burn-delete:hover{
+      background:rgba(220,38,38,.9);
+      }
 
-     .burn-handle.collapsed .burn-delete{
-       display:none;
-     }
+      .burn-handle.collapsed .burn-delete{
+      display:none;
+      }
 
-     .burn-handle .burn-stem{
-       width:2px;
-       background:var(--burnEvent);
-       margin:0 auto;
-     }
+      .burn-handle .burn-stem{
+      width:2px;
+      background:var(--burnEvent);
+      margin:0 auto;
+      }
 
-     [data-theme="light"] .ctrl-input{
-       background:rgba(255,255,255,.5);
-       color:#1e293b;
-       border-color:rgba(0,0,0,.2);
-     }
+      [data-theme="light"] .ctrl-input{
+      background:rgba(255,255,255,.5);
+      color:#1e293b;
+      border-color:rgba(0,0,0,.2);
+      }
+
+      
+      /* BYOI compile-error UX */
+      .code-field-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex:1 1 auto;
+      min-width:260px;
+      max-width:min(680px,calc(100vw - 64px));
+      }
+
+      .code-field-wrap .future-code{
+      flex:1 1 auto;
+      min-width:0;
+      }
+
+      .code-field-wrap .future-code.compile-error{
+      border-color:#ef4444 !important;
+      box-shadow:0 0 0 2px rgba(239,68,68,0.18);
+      outline:none;
+      }
+
+      .compile-warn{
+      position:relative;
+      flex:0 0 auto;
+      width:18px;
+      height:18px;
+      border:none;
+      border-radius:50%;
+      background:transparent;
+      padding:0;
+      cursor:pointer;
+      display:none;
+      color:#ef4444;
+      font:700 14px/18px system-ui;
+      }
+
+      .compile-warn.show{
+      display:inline-block;
+      }
+
+      .compile-warn-tip{
+      position:absolute;
+      right:0;
+      top:24px;
+      min-width:260px;
+      max-width:520px;
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid rgba(239,68,68,0.55);
+      background:var(--tooltipBg);
+      color:var(--fg);
+      font:500 .72rem/1.35 system-ui;
+      box-shadow:0 8px 24px rgba(0,0,0,.25);
+      white-space:normal;
+      z-index:50;
+      display:none;
+      }
+
+      .compile-warn-tip.show{
+      display:block;
+      }
+
+      .compile-warn-tip .muted{
+      color:var(--muted);
+      }
 
     </style>
   </head>
@@ -516,20 +600,32 @@
       <div id="writtenTip"></div>
     </div>
     <div class="legend" id="legend">
-      <span class="ltoggle active" data-future="default">
-        <span class="sw" style="background:var(--supplyObs)"></span>Default</span>
-        <span class="ltoggle active" data-future="zip234">
-          <span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
-          <span class="ltoggle" data-future="nsmalt">
-            <span class="sw" style="background:var(--nsmaltSupply)"></span>NSMalt</span>
-            <span style="color:var(--muted)">│</span>
-            <span class="ltoggle active" data-series="supply">
-              <span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
-              <span class="ltoggle active" data-series="issDay">
-                <span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
-                <span class="ltoggle" data-series="annPct">
-                  <span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
-                  <span><span class="dash"></span> Dashed = <b>Expected</b></span>
+      <div class="future-row">
+        <span class="ltoggle active" data-future="default"><span class="sw" style="background:var(--supplyObs)"></span>Default</span>
+        <input id="codeDefault" class="future-code" type="text" readonly>
+      </div>
+      <div class="future-row">
+        <span class="ltoggle active" data-future="zip234"><span class="sw" style="background:var(--zip234Supply)"></span>ZIP 234</span>
+        <input id="codeZip234" class="future-code" type="text" readonly>
+      </div>
+      <div class="future-row">
+        <span class="ltoggle" data-future="nsmalt"><span class="sw" style="background:var(--nsmaltSupply)"></span>NSMalt</span>
+        <input id="codeNsmalt" class="future-code" type="text" readonly>
+      </div>
+      <div class="future-row">
+        <span class="ltoggle" data-future="byoi"><span class="sw" style="background:#22c55e"></span>BYOI</span>
+        <div class="code-field-wrap" id="byoiFieldWrap">
+          <input id="codeByoi" class="future-code" type="text">
+          <button id="byoiWarnBtn" class="compile-warn" type="button" title="BYOI compile error" aria-label="BYOI compile error">⚠</button>
+          <div id="byoiWarnTip" class="compile-warn-tip"></div>
+        </div>
+      </div>
+      <div class="future-row">
+        <span class="ltoggle active" data-series="supply"><span class="sw" style="background:var(--supplyObs)"></span>Supply</span>
+        <span class="ltoggle active" data-series="issDay"><span class="sw" style="background:var(--issObs)"></span>Issuance / Day</span>
+        <span class="ltoggle" data-series="annPct"><span class="sw" style="background:var(--annualObs)"></span>Annual %</span>
+        <span><span class="dash"></span> Dashed = <b>Expected</b></span>
+      </div>
     </div>
     <div id="tooltip"></div>
     <div class="controls">
@@ -549,10 +645,11 @@
         Toggle state
         ================================================================ */
      const show = {supply:true, issDay:true, annPct:false};
-     const showFuture = { default: true, zip234: true, nsmalt: false };
+     const showFuture = { default: true, zip234: true, nsmalt: false, byoi: false };
      function showDefaultFuture() { return showFuture.default; }
      function showZip234() { return showFuture.zip234; }
      function showNsmalt() { return showFuture.nsmalt; }
+     function showByoi() { return showFuture.byoi; }
 
      /* ================================================================
         Handle stacking (expanded to front, collapsed to back)
@@ -812,17 +909,114 @@
      // Shared activation height for ZIP 234 and NSMalt
      let zip234ActivationHeight=3_687_123n;
 
-     function defaultIssuanceZat(h, supZat, remZat) { return issuance_per_block(h); }
-     function zip234IssuanceZat(h, supZat, remZat) {
-       if (h < zip234ActivationHeight) return issuance_per_block(h);
-       return (remZat * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
+     // --- Minimal snippets (future direction; h >= WRITTEN_HEIGHT) ---
+     function defaultFutureIssuanceFromH(h) {
+       return 625000000n >> ((h + 633600n) / 1680000n);
      }
-     // NSMalt issuance is handled specially in the simulation loop (needs fund state)
+     function zip234IssuanceFromS(s) {
+       return ((MAX_MONEY_ZAT - s) * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
+     }
+     function nsmaltIssuanceFromHS(h, s) {
+       // Default cumulative supply at block h (no function calls; depends only on h)
+       // Valid for this future sim path where h >= WRITTEN_HEIGHT (> 2,726,400).
+       let d = 1_575_000_000_000_000n; // default supply at block 2,726,399
+       let i = 0n;
+       const e = (h - 2_726_400n) / 1_680_000n;
+       for (; i < e; i++) d += (156_250_000n >> i) * 1_680_000n;
+       d += (156_250_000n >> e) * ((h - 2_726_400n) % 1_680_000n + 1n);
+       d -= s; // deficit/fund-equivalent
+       return defaultFutureIssuanceFromH(h)
+            + (d > 0n ? ((d * ZIP234_K_NUM) >> ZIP234_K_SHIFT) : 0n);
+     }
+     function defaultIssuanceZat(h, s) {
+       return h >= WRITTEN_HEIGHT ? defaultFutureIssuanceFromH(h) : issuance_per_block(h);
+     }
+     function zip234IssuanceZat(h, s) {
+       return h >= zip234ActivationHeight ? zip234IssuanceFromS(s) : defaultIssuanceZat(h, s);
+     }
+     function nsmaltIssuanceZat(h, s) {
+       return h >= zip234ActivationHeight ? nsmaltIssuanceFromHS(h, s) : defaultIssuanceZat(h, s);
+     }
+
+     const DEFAULT_CODE = "return 625000000n >> ((h + 633600n) / 1680000n);";
+     const ZIP234_CODE = "return ((2100000000000000n - s) * " + ZIP234_K_NUM.toString() + "n) >> 64n;";
+     const NSMALT_CODE = "let d=1575000000000000n,i=0n,e=(h-2726400n)/1680000n;for(;i<e;i++)d+=(156250000n>>i)*1680000n;d+=(156250000n>>e)*((h-2726400n)%1680000n+1n);d-=s;return (625000000n>>((h+633600n)/1680000n))+(d>0n?((d*" + ZIP234_K_NUM.toString() + "n)>>64n):0n);";
+
+     const DEFAULT_BYOI_CODE = ZIP234_CODE;
+
+     let byoiCode = DEFAULT_BYOI_CODE;
+     let byoiFn = null;
+     let byoiError = "";
+     function compileByoi(code) {
+       const src = String(code || "").trim();
+       if (!src) throw new Error("BYOI code is empty");
+       const expr = src.replace(/^return\s+/,"").replace(/;$/,"");
+       if (/[.[\]'"`\\]/.test(expr)) throw new Error("property/string/index access is not allowed");
+       if (/\b(function|class|new|this|globalThis|window|document|eval|Function|import)\b/.test(expr)) {
+         throw new Error("disallowed keyword");
+       }
+       const exprNoNums = expr.replace(/\b\d[\d_]*n?\b/g, "0");
+       const ids = exprNoNums.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) || [];
+       for (const id of ids) if (id !== "h" && id !== "s") throw new Error("identifier not allowed: " + id);
+       const fn = new Function("h","s","\"use strict\"; return (" + expr + ");");
+       const test = fn(WRITTEN_HEIGHT, 1_000_000_000_000_000n);
+       if (typeof test !== "bigint" && typeof test !== "number") {
+         throw new Error("result must be bigint or number");
+       }
+       if (typeof test === "number" && !Number.isFinite(test)) {
+         throw new Error("number result must be finite");
+       }
+       return fn;
+     }
+     function byoiIssuanceZat(h, s) {
+       if (h < zip234ActivationHeight) return defaultIssuanceZat(h, s);
+       if (!byoiFn) return 0n;
+       let out = byoiFn(h, s);
+       if (typeof out === "number") {
+         if (!Number.isFinite(out)) throw new Error("BYOI number result must be finite");
+         out = BigInt(Math.trunc(out));
+       }
+       if (typeof out !== "bigint") throw new Error("BYOI result must be bigint or number");
+       return out < 0n ? 0n : out;
+     }
+
+     const byoiWarnBtn = document.getElementById("byoiWarnBtn");
+     const byoiWarnTip = document.getElementById("byoiWarnTip");
+
+     function escapeHtml(s){
+       return String(s).replace(/[&<>"']/g, ch =>
+         ch === "&" ? "&amp;" :
+         ch === "<" ? "&lt;" :
+         ch === ">" ? "&gt;" :
+         ch === '"' ? "&quot;" : "&#39;"
+       );
+     }
+
+     function clearByoiCompileErrorUI() {
+       codeByoiEl.classList.remove("compile-error");
+       codeByoiEl.classList.remove("error");
+       codeByoiEl.title = "";
+       byoiWarnBtn.classList.remove("show");
+       byoiWarnTip.classList.remove("show");
+       byoiWarnTip.innerHTML = "";
+     }
+
+     function setByoiCompileErrorUI(msg) {
+       const safeMsg = escapeHtml(msg || "BYOI compile error");
+       codeByoiEl.classList.add("compile-error");
+       codeByoiEl.classList.add("error");
+       codeByoiEl.title = msg || "BYOI compile error";
+       byoiWarnBtn.classList.add("show");
+       byoiWarnTip.innerHTML =
+         `<div><b>BYOI compile error</b></div>` +
+         `<div class="muted" style="margin-top:4px;">${safeMsg}</div>`;
+     }
 
      const scenarios={
        default:{fn:defaultIssuanceZat,data:[]},
        zip234:{fn:zip234IssuanceZat,data:[]},
-       nsmalt:{fn:null,data:[]}
+       nsmalt:{fn:nsmaltIssuanceZat,data:[]},
+       byoi:{fn:byoiIssuanceZat,data:[]}
      };
      let simVersion=0n,simRunning=false,simComputedVer=-1n,simComputedMaxH=-1n;
 
@@ -867,7 +1061,7 @@
      }
 
      function invalidateAllFrom(fromH) {
-       for (const n of ['default', 'zip234', 'nsmalt']) truncateScenarioData(n, fromH);
+       for (const n of ['default', 'zip234', 'nsmalt', 'byoi']) truncateScenarioData(n, fromH);
        invalidateSimulation();
      }
 
@@ -883,22 +1077,22 @@
          const maxH=max(0,timeToHeight(view.tMax+ONE_YEAR_NUM)+10_000n);
          let cancelled=false;
 
-         const names=['default','zip234','nsmalt'];
+         const names=['default','zip234','nsmalt','byoi'];
+
          const st={};
          for(const name of names){
            const result=scenarios[name].data,fn=scenarios[name].fn;
-           let startH,supZat,cumIssZat,remZat,fundZat=0n;
+           let startH,supZat,cumIssZat,remZat;
            if(result.length>0){
              const last=result[result.length-1];
              startH=last.h+1n;
              supZat=last.supplyZat;
              cumIssZat=last.cumIssZat;
              remZat=MAX_MONEY_ZAT-supZat;
-             if(name==='nsmalt') fundZat=last.fundZat||0n;
            }else{
              startH=0n;supZat=0n;cumIssZat=0n;remZat=MAX_MONEY_ZAT;
            }
-           st[name]={result,fn,h:startH,supZat,cumIssZat,remZat,fundZat};
+           st[name]={result,fn,h:startH,supZat,cumIssZat,remZat};
          }
 
          while(!cancelled){
@@ -923,25 +1117,10 @@
                  if (burnThisBlock > 0n) {
                    s.supZat -= burnThisBlock;
                    s.remZat += burnThisBlock;
-                   // NSMalt: burned ZEC goes into the fund
-                   if (name === 'nsmalt') s.fundZat += burnThisBlock;
                  }
                }
 
-               // Calculate issuance
-               let issZat;
-               if (name === 'nsmalt') {
-                 // NSMalt: default halving issuance + fund payout after activation
-                 const defaultIss = issuance_per_block(h);
-                 let fundPayout = 0n;
-                 if (h >= zip234ActivationHeight && s.fundZat > 0n) {
-                   fundPayout = (s.fundZat * ZIP234_K_NUM) >> ZIP234_K_SHIFT;
-                   s.fundZat -= fundPayout;
-                 }
-                 issZat = defaultIss + fundPayout;
-               } else {
-                 issZat = s.fn(h, s.supZat, s.remZat);
-               }
+               const issZat = s.fn(h, s.supZat, s.remZat);
 
                s.supZat+=issZat;s.cumIssZat+=issZat;s.remZat-=issZat;
                if(h%SAMPLE_EVERY===0n){
@@ -955,7 +1134,6 @@
                    annualPctX1M:-1n,
                    annualPctIsExpected:false
                  };
-                 if(name==='nsmalt') pt.fundZat=s.fundZat;
                  s.result.push(pt);
                }
              }
@@ -1163,7 +1341,7 @@
      }
 
      function updateYTargets() {
-       const hasAltFuture = showZip234() || showNsmalt();
+       const hasAltFuture = showZip234() || showNsmalt() || showByoi();
        const cutH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (hasAltFuture ? zip234ActivationHeight : WRITTEN_HEIGHT);
        let sMin = MAX_MONEY_ZAT, sMax = 0n, iMax = 0n, aMax = 0n;
 
@@ -1184,6 +1362,7 @@
        }
        if (showZip234()) scanArr(scenarios.zip234.data, zip234ActivationHeight);
        if (showNsmalt()) scanArr(scenarios.nsmalt.data, zip234ActivationHeight);
+       if (showByoi()) scanArr(scenarios.byoi.data, zip234ActivationHeight);
 
        if (show.supply && sMax > 0n && MAX_MONEY_ZAT * 10n <= sMax * 12n) sMax = max(sMax, MAX_MONEY_ZAT);
 
@@ -1263,8 +1442,11 @@
        const N = (showNsmalt() && scenarios.nsmalt.data.length >= 1)
                ? scenarios.nsmalt.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
                : [];
+       const B = (showByoi() && scenarios.byoi.data.length >= 1)
+               ? scenarios.byoi.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h >= zip234ActivationHeight)
+               : [];
 
-       if (yDirty && (D.length >= 2 || Z.length >= 1 || N.length >= 1)) {
+       if (yDirty && (D.length >= 2 || Z.length >= 1 || N.length >= 1 || B.length >= 1)) {
          updateYTargets(); yDirty = false;
          if (ySnapOnFirstData) {
            yDisp.supMinZat = yTarget.supMinZat;
@@ -1406,6 +1588,18 @@
          if(show.annPct)drawNsmaltLine(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},T.nsmaltAnn,1.8);
        }
 
+       if(showByoi()&&B.length>=1){
+         function drawByoiLine(yFn,color,lw){
+           if(B.length<1)return;ctx.beginPath();ctx.setLineDash([10,3,2,3]);ctx.strokeStyle=color;ctx.lineWidth=lw;
+           let started=false;for(const p of B){const py=yFn(p);if(!isFinite(py))continue;
+             const px=xP(p.time);if(!started){ctx.moveTo(px,py);started=true;}else ctx.lineTo(px,py);}
+           ctx.stroke();ctx.setLineDash([]);
+         }
+         if(show.supply)drawByoiLine(p=>ySP(p.supplyZat),"#22c55e",2.5);
+         if(show.issDay)drawByoiLine(p=>yIP(p.issDayZat),"#86efac",2.5);
+         if(show.annPct)drawByoiLine(p=>{const v=annPctVal(p);if(!isFinite(v)||v>200)return NaN;return yAP(v);},"#22c55e",1.8);
+       }
+
        ctx.restore();// end clip
 
        // Event labels
@@ -1535,14 +1729,16 @@
        if (!actHandle.dataset.stackState) {
          applyHandleStackState(actHandle, actCollapsed, { force: true });
        }
-       const anyAlt = showZip234() || showNsmalt();
+       const anyAlt = showZip234() || showNsmalt() || showByoi();
        if(!anyAlt){actHandle.style.display="none";return null;}
 
        // Dynamic title and subtitle
        const z234 = showZip234(), nsm = showNsmalt();
-       if (z234 && nsm) { actTitleEl.textContent = 'Activation'; actLabelEl.textContent = 'ZIP 234 · NSMalt'; }
-       else if (z234) { actTitleEl.textContent = 'ZIP 234 activation'; actLabelEl.textContent = 'Smooth issuance'; }
-       else { actTitleEl.textContent = 'NSMalt activation'; actLabelEl.textContent = 'Default + burn fund'; }
+       if (z234 && nsm && showByoi()) { actTitleEl.textContent='Activation'; actLabelEl.textContent='ZIP 234 · NSMalt · BYOI'; }
+       else if (z234 && nsm) { actTitleEl.textContent='Activation'; actLabelEl.textContent='ZIP 234 · NSMalt'; }
+       else if (z234) { actTitleEl.textContent='ZIP 234 activation'; actLabelEl.textContent='Smooth issuance'; }
+       else if (nsm) { actTitleEl.textContent='NSMalt activation'; actLabelEl.textContent='Default + deficit release'; }
+       else { actTitleEl.textContent='BYOI activation'; actLabelEl.textContent='Custom issuance code'; }
 
        const{CSS_W,CSS_H,MG,PW,PH}=layout;
        if(!PW){actHandle.style.display="none";return null;}
@@ -1883,7 +2079,7 @@
        if (oldH !== clampedH) {
          zip234ActivationHeight = clampedH;
          // Invalidate both alternative scenarios that share this activation height
-         for (const n of ['zip234', 'nsmalt']) truncateScenarioData(n, min(oldH, clampedH));
+         for (const n of ['zip234', 'nsmalt', 'byoi']) truncateScenarioData(n, min(oldH, clampedH));
          invalidateSimulation();
          requestDraw();
        }
@@ -1976,7 +2172,10 @@
      function handleChartHover(e){
        const tooltip=document.getElementById("tooltip");
        const writtenTipEl=document.getElementById("writtenTip");
-       const tooltipData=scenarios.default.data.length>=2?scenarios.default.data:scenarios.zip234.data;
+       const tooltipData =
+         scenarios.default.data.length>=2 ? scenarios.default.data :
+         (scenarios.zip234.data.length>=2 ? scenarios.zip234.data :
+          (scenarios.nsmalt.data.length>=2 ? scenarios.nsmalt.data : scenarios.byoi.data));
        if(dragging||actDragging||tooltipData.length<2){tooltip.style.display="none";writtenTipEl.style.display="none";return;}
        const canvasEl=document.getElementById("chart");
        const rect=canvasEl.getBoundingClientRect();
@@ -2036,7 +2235,7 @@
        let html=`<div><b>Block ${d.h.toLocaleString()}</b> · <span class="${sc}">${status}</span></div>`+
                 `<div class="tt-muted">${fmtDate(d.time)} (UTC)</div>`;
 
-       const hasAltFuture2 = showZip234() || showNsmalt();
+       const hasAltFuture2 = showZip234() || showNsmalt() || showByoi();
        const defaultCutoffH2=showDefaultFuture()?0x7FFFFFFFFFFFFFn:(hasAltFuture2?zip234ActivationHeight:-1n);
        const showDefHere=d.h<=defaultCutoffH2;
 
@@ -2069,6 +2268,18 @@
          }
        }else if(showNsmalt()&&d.h<zip234ActivationHeight){
          html+=`<div style="margin-top:4px" class="tt-muted"><i>NSMalt activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
+       }
+
+       if(showByoi()&&d.h>=zip234ActivationHeight){
+         const b=lookupScenario(scenarios.byoi.data,d.h);
+         if(b){
+           html+=`<div style="margin-top:6px;border-top:1px solid rgba(148,163,184,0.2);padding-top:4px"><b style="color:#22c55e">BYOI:</b></div>`;
+           if(show.supply){const bp=pctOfCapStr(b.supplyZat);html+=`<div><span style="color:#22c55e">Supply:</span> ${zatToZecString(b.supplyZat, 2)} ⓩ <span class="tt-muted">(${bp}%)</span></div>`;}
+           if(show.issDay)html+=`<div><span style="color:#86efac">Issuance:</span> ${zatToZecString(b.issDayZat, 1)} ⓩ/day</div><div class="tt-muted">Per block: ${zatToZecString(b.issBlockZat, 8, 8)} ⓩ</div>`;
+           if(show.annPct){const av=isFinite(annPctVal(b))?annPctVal(b).toFixed(2)+"%":"—";html+=`<div><span style="color:#22c55e">Annual:</span> ${av}</div>`;}
+         }
+       }else if(showByoi()&&d.h<zip234ActivationHeight){
+         html+=`<div style="margin-top:4px" class="tt-muted"><i>BYOI activates at block ${zip234ActivationHeight.toLocaleString()}</i></div>`;
        }
 
        tooltip.innerHTML=html;tooltip.style.display="block";
@@ -2297,7 +2508,7 @@
      let lastUrlSyncTime = 0;
 
      const STATE_BUNDLE_KEY = "z";
-     const STATE_BUNDLE_VER = 4;  // bumped: bit2 is now nsmalt (was lts)
+     const STATE_BUNDLE_VER = 5;
 
      function b64urlFromBytes(bytes) {
        let bin = "";
@@ -2343,19 +2554,19 @@
 
        // v4 flags byte:
        // bit0 showFuture.default, bit1 showFuture.zip234,
-       // bit2 showFuture.nsmalt,
-       // bit3 supply, bit4 issDay, bit5 annPct,
-       // bit6 themeLight, bit7 actCollapsed
+       // bit2 showFuture.nsmalt, bit3 showFuture.byoi,
+       // bit4 supply, bit5 issDay, bit6 annPct, bit7 themeLight
        let flags = 0;
        if (showFuture.default) flags |= (1 << 0);
        if (showFuture.zip234)  flags |= (1 << 1);
        if (showFuture.nsmalt)  flags |= (1 << 2);
-       if (show.supply)        flags |= (1 << 3);
-       if (show.issDay)        flags |= (1 << 4);
-       if (show.annPct)        flags |= (1 << 5);
-       if (getTheme() === "light") flags |= (1 << 6);
-       if (actCollapsed)       flags |= (1 << 7);
+       if (showFuture.byoi)    flags |= (1 << 3);
+       if (show.supply)        flags |= (1 << 4);
+       if (show.issDay)        flags |= (1 << 5);
+       if (show.annPct)        flags |= (1 << 6);
+       if (getTheme() === "light") flags |= (1 << 7);
        out.push(flags);
+       out.push(actCollapsed ? 1 : 0);
 
        writeVarUint(out, BigInt(Math.round(view.tMin)));
        writeVarUint(out, BigInt(Math.round(view.tMax)));
@@ -2401,19 +2612,23 @@
          const ver = bytes[st.i++];
          if (ver !== STATE_BUNDLE_VER) return false;
 
+         if (ver !== STATE_BUNDLE_VER) return false;
          const flags = bytes[st.i++];
+         if (st.i >= bytes.length) return false;
+         const flags2 = bytes[st.i++];
          const newShowFuture = {
            default: !!(flags & (1 << 0)),
            zip234:  !!(flags & (1 << 1)),
            nsmalt:  !!(flags & (1 << 2)),
+           byoi:    !!(flags & (1 << 3)),
          };
          const newShow = {
-           supply: !!(flags & (1 << 3)),
-           issDay: !!(flags & (1 << 4)),
-           annPct: !!(flags & (1 << 5)),
+           supply: !!(flags & (1 << 4)),
+           issDay: !!(flags & (1 << 5)),
+           annPct: !!(flags & (1 << 6)),
          };
-         const newTheme = (flags & (1 << 6)) ? "light" : "dark";
-         const newActCollapsed = !!(flags & (1 << 7));
+         const newTheme = (flags & (1 << 7)) ? "light" : "dark";
+         const newActCollapsed = !!(flags2 & 1);
 
          const tMin = Number(readVarUint(bytes, st));
          const tMax = Number(readVarUint(bytes, st));
@@ -2460,6 +2675,7 @@
          showFuture.default = newShowFuture.default;
          showFuture.zip234 = newShowFuture.zip234;
          showFuture.nsmalt = newShowFuture.nsmalt;
+         showFuture.byoi = newShowFuture.byoi;
          show.supply = newShow.supply;
          show.issDay = newShow.issDay;
          show.annPct = newShow.annPct;
@@ -2588,6 +2804,65 @@
      }
 
      urlSyncEnabled = true;
+
+     document.getElementById("codeDefault").value = DEFAULT_CODE;
+     document.getElementById("codeZip234").value = ZIP234_CODE;
+     document.getElementById("codeNsmalt").value = NSMALT_CODE;
+     const codeByoiEl = document.getElementById("codeByoi");
+     codeByoiEl.value = byoiCode;
+     function applyByoiCode() {
+       yLockedFromURL = false;
+       try {
+         byoiFn = compileByoi(codeByoiEl.value);
+         byoiCode = codeByoiEl.value.trim();
+         byoiError = "";
+         clearByoiCompileErrorUI();
+         truncateScenarioData("byoi", zip234ActivationHeight);
+         invalidateSimulation();
+         requestDraw();
+       } catch (e) {
+         byoiFn = null;
+         byoiError = e.message || "BYOI compile error";
+         setByoiCompileErrorUI(byoiError);
+         truncateScenarioData("byoi", zip234ActivationHeight);
+         invalidateSimulation();
+         requestDraw();
+       }
+     }
+     applyByoiCode();
+     codeByoiEl.addEventListener("change", applyByoiCode);
+     codeByoiEl.addEventListener("blur", applyByoiCode);
+     codeByoiEl.addEventListener("keydown", e => {
+       if (e.key === "Enter") {
+         e.preventDefault();
+         applyByoiCode();
+         codeByoiEl.blur();
+       }
+     });
+
+     let byoiTipPinned = false;
+     function showByoiWarnTip() { byoiWarnTip.classList.add("show"); }
+     function hideByoiWarnTip() { byoiWarnTip.classList.remove("show"); }
+
+     byoiWarnBtn.addEventListener("mouseenter", () => { if (!byoiTipPinned) showByoiWarnTip(); });
+     byoiWarnBtn.addEventListener("mouseleave", () => { if (!byoiTipPinned) hideByoiWarnTip(); });
+     byoiWarnBtn.addEventListener("click", e => {
+       e.stopPropagation();
+       if (!byoiWarnBtn.classList.contains("show")) return;
+       byoiTipPinned = !byoiTipPinned;
+       byoiWarnTip.classList.toggle("show", byoiTipPinned);
+     });
+     byoiWarnTip.addEventListener("click", e => e.stopPropagation());
+     document.addEventListener("click", () => {
+       byoiTipPinned = false;
+       hideByoiWarnTip();
+     });
+
+     codeByoiEl.addEventListener("input", () => {
+       // clear stale visual error while editing; actual compile still on blur/change/Enter
+       clearByoiCompileErrorUI();
+     });
+     
      requestDraw();computeAllScenarios();
      /* ================
         REGRESSION TESTS
