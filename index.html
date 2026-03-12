@@ -5,567 +5,567 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zcash Supply & Issuance</title>
     <style>
-      :root{
-      --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
-      /* Default scenario: muted slate — "status quo" */
-      --supplyObs:#94a3b8;          /* slate-400 */
-      --issObs:#cbd5e1;             /* slate-300 */
-      --supplyExp:rgba(148,163,184,0.38);
-      --issExp:rgba(203,213,225,0.38);
-      --annualObs:#94a3b8;
-      --annualExp:rgba(148,163,184,0.38);
-      /* Events & chrome */
-      --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
-      --written:rgba(167,139,250,0.65);
-      /* ZIP 234: deep trustworthy blue — the hero */
-      --zip234Supply:#3b82f6;       /* blue-500 */
-      --zip234Iss:#93c5fd;          /* blue-300 */
-      --zip234Ann:#3b82f6;
-      --zip234Act:rgba(59,130,246,0.50);
-      /* NSMalt: warm amber — energetic but secondary */
-      --nsmaltSupply:#f59e0b;       /* amber-500 */
-      --nsmaltIss:#fcd34d;          /* amber-300 */
-      --nsmaltAnn:#f59e0b;
-      --nsmaltAct:rgba(245,158,11,0.50);
-      /* Handles */
-      --handleBg:rgba(59,130,246,0.92);
-      --handleBorder:#fff;
-      --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
-      --burnEvent:rgba(255,80,80,0.70);
-      /* Chrome */
-      --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
-      --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
-      --btnHover:rgba(148,163,184,0.4);
-      --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
-      --gridLine:rgba(148,163,184,0.08); --capLine:rgba(148,163,184,0.28);
-      --frameBorder:rgba(148,163,184,0.10);
-      --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
-      }
-      [data-theme="light"]{
-      --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
-      /* Default scenario: darker slate */
-      --supplyObs:#64748b;           /* slate-500 */
-      --issObs:#94a3b8;              /* slate-400 */
-      --supplyExp:rgba(100,116,139,0.38);
-      --issExp:rgba(148,163,184,0.38);
-      --annualObs:#64748b;
-      --annualExp:rgba(100,116,139,0.38);
-      /* Events */
-      --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
-      --written:rgba(124,58,237,0.55);
-      /* ZIP 234: deep authoritative blue */
-      --zip234Supply:#1d4ed8;        /* blue-700 */
-      --zip234Iss:#3b82f6;           /* blue-500 */
-      --zip234Ann:#1d4ed8;
-      --zip234Act:rgba(29,78,216,0.40);
-      /* NSMalt: warm amber */
-      --nsmaltSupply:#d97706;        /* amber-600 */
-      --nsmaltIss:#f59e0b;           /* amber-500 */
-      --nsmaltAnn:#d97706;
-      --nsmaltAct:rgba(217,119,6,0.40);
-      /* Handles */
-      --handleBg:rgba(29,78,216,0.92);
-      --handleBorder:#1e293b;
-      --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
-      --burnEvent:rgba(220,38,38,0.60);
-      /* Chrome */
-      --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
-      --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
-      --btnHover:rgba(148,163,184,0.55);
-      --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
-      --gridLine:rgba(148,163,184,0.12); --capLine:rgba(100,116,139,0.28);
-      --frameBorder:rgba(148,163,184,0.18);
-      --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
-      }
-      *{margin:0;padding:0;box-sizing:border-box}
-      body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
-      display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
-      h1{font-size:1.35rem;color:var(--zip234Supply);margin-bottom:2px}
-      .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
-      .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
-      background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
-      .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
-      border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
-      .controls button:hover{background:var(--btnHover)}
-      .chart-wrap{
-      position:relative;display:inline-block;
-      margin-top:65px;margin-bottom:10px;
-      }
-      canvas{border-radius:8px;background:var(--panel);display:block}
-      .legend{
-      display:flex;flex-direction:column;gap:8px;align-items:stretch;
-      justify-content:center;color:var(--muted);margin-top:8px;position:relative;z-index:1;
-      width:min(960px,calc(100vw - 24px));
-      }
-      .future-row{
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
-      }
-      .future-code{
-      min-width:260px;max-width:min(680px,calc(100vw - 64px));width:52vw;
-      font:600 .68rem/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;
-      color:var(--fg);background:var(--btnBg);border:1px solid var(--btnBorder);
-      border-radius:6px;padding:6px 8px;
-      }
-      .future-code[readonly]{opacity:.9}
-      .future-code.error{border-color:rgba(220,38,38,.7);box-shadow:0 0 0 1px rgba(220,38,38,.35) inset;}
-      .legend{
-      display:flex;flex-wrap:wrap;gap:10px 20px;
-      font-size:.78rem;align-items:center;
-      justify-content:center;color:var(--muted);
-      margin-top:8px;position:relative;z-index:1;
-      }
-      .legend span{display:flex;align-items:center;gap:5px}
-      .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
-      .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
-      .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
-      border:1.5px solid transparent;transition:opacity .15s,border-color .15s,background .15s}
-      .ltoggle.active{border-color:var(--btnBorder);background:var(--toggleActiveBg);opacity:1}
-      .ltoggle:not(.active){opacity:.38}
-      .ltoggle:not(.active) .sw{background:var(--muted)!important}
-      .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
-      #actHandle{
-      position:absolute;
-      display:none;
-      z-index:var(--z,20);
-      cursor:ew-resize;
-      transform:translateX(-50%);
-      pointer-events:auto;
-      top:-8px;
-      }
+     :root{
+       --bg:#0f172a; --fg:#e2e8f0; --muted:#94a3b8; --panel:#0b1224;
+       /* Default scenario: muted slate — "status quo" */
+       --supplyObs:#94a3b8;          /* slate-400 */
+       --issObs:#cbd5e1;             /* slate-300 */
+       --supplyExp:rgba(148,163,184,0.38);
+       --issExp:rgba(203,213,225,0.38);
+       --annualObs:#94a3b8;
+       --annualExp:rgba(148,163,184,0.38);
+       /* Events & chrome */
+       --eventObs:rgba(96,165,250,0.45); --eventHalv:rgba(239,68,68,0.35);
+       --written:rgba(167,139,250,0.65);
+       /* ZIP 234: deep trustworthy blue — the hero */
+       --zip234Supply:#3b82f6;       /* blue-500 */
+       --zip234Iss:#93c5fd;          /* blue-300 */
+       --zip234Ann:#3b82f6;
+       --zip234Act:rgba(59,130,246,0.50);
+       /* NSMalt: warm amber — energetic but secondary */
+       --nsmaltSupply:#f59e0b;       /* amber-500 */
+       --nsmaltIss:#fcd34d;          /* amber-300 */
+       --nsmaltAnn:#f59e0b;
+       --nsmaltAct:rgba(245,158,11,0.50);
+       /* Handles */
+       --handleBg:rgba(59,130,246,0.92);
+       --handleBorder:#fff;
+       --burnHandleBg:rgba(248,113,113,0.88);--burnHandleBorder:rgba(248,113,113,0.5);
+       --burnEvent:rgba(255,80,80,0.70);
+       /* Chrome */
+       --controlsBg:rgba(2,6,23,0.25); --controlsBorder:rgba(148,163,184,0.15);
+       --btnBg:rgba(2,6,23,0.25); --btnBorder:rgba(148,163,184,0.22);
+       --btnHover:rgba(148,163,184,0.4);
+       --tooltipBg:rgba(15,23,42,0.98); --tooltipBorder:rgba(148,163,184,0.25);
+       --gridLine:rgba(148,163,184,0.08); --capLine:rgba(148,163,184,0.28);
+       --frameBorder:rgba(148,163,184,0.10);
+       --toggleActiveBg:rgba(148,163,184,0.08); --toggleHoverBg:rgba(148,163,184,0.12);
+     }
+     [data-theme="light"]{
+       --bg:#f8fafc; --fg:#1e293b; --muted:#64748b; --panel:#ffffff;
+       /* Default scenario: darker slate */
+       --supplyObs:#64748b;           /* slate-500 */
+       --issObs:#94a3b8;              /* slate-400 */
+       --supplyExp:rgba(100,116,139,0.38);
+       --issExp:rgba(148,163,184,0.38);
+       --annualObs:#64748b;
+       --annualExp:rgba(100,116,139,0.38);
+       /* Events */
+       --eventObs:rgba(59,130,246,0.35); --eventHalv:rgba(220,38,38,0.30);
+       --written:rgba(124,58,237,0.55);
+       /* ZIP 234: deep authoritative blue */
+       --zip234Supply:#1d4ed8;        /* blue-700 */
+       --zip234Iss:#3b82f6;           /* blue-500 */
+       --zip234Ann:#1d4ed8;
+       --zip234Act:rgba(29,78,216,0.40);
+       /* NSMalt: warm amber */
+       --nsmaltSupply:#d97706;        /* amber-600 */
+       --nsmaltIss:#f59e0b;           /* amber-500 */
+       --nsmaltAnn:#d97706;
+       --nsmaltAct:rgba(217,119,6,0.40);
+       /* Handles */
+       --handleBg:rgba(29,78,216,0.92);
+       --handleBorder:#1e293b;
+       --burnHandleBg:rgba(220,38,38,0.88);--burnHandleBorder:rgba(220,38,38,0.5);
+       --burnEvent:rgba(220,38,38,0.60);
+       /* Chrome */
+       --controlsBg:rgba(241,245,249,0.85); --controlsBorder:rgba(148,163,184,0.25);
+       --btnBg:rgba(255,255,255,0.8); --btnBorder:rgba(148,163,184,0.35);
+       --btnHover:rgba(148,163,184,0.55);
+       --tooltipBg:rgba(255,255,255,0.98); --tooltipBorder:rgba(148,163,184,0.35);
+       --gridLine:rgba(148,163,184,0.12); --capLine:rgba(100,116,139,0.28);
+       --frameBorder:rgba(148,163,184,0.18);
+       --toggleActiveBg:rgba(148,163,184,0.12); --toggleHoverBg:rgba(148,163,184,0.18);
+     }
+     *{margin:0;padding:0;box-sizing:border-box}
+     body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;
+       display:flex;flex-direction:column;align-items:center;padding:22px;gap:10px}
+     h1{font-size:1.35rem;color:var(--zip234Supply);margin-bottom:2px}
+     .sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:760px;line-height:1.45}
+     .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
+       background:var(--controlsBg);border:1px solid var(--controlsBorder);border-radius:10px;padding:10px 18px}
+     .controls button{font:600 .78rem/1 system-ui;color:var(--fg);background:var(--btnBg);
+       border:1px solid var(--btnBorder);border-radius:6px;padding:7px 14px;cursor:pointer;transition:background .12s}
+     .controls button:hover{background:var(--btnHover)}
+     .chart-wrap{
+       position:relative;display:inline-block;
+       margin-top:65px;margin-bottom:10px;
+     }
+     canvas{border-radius:8px;background:var(--panel);display:block}
+     .legend{
+       display:flex;flex-direction:column;gap:8px;align-items:stretch;
+       justify-content:center;color:var(--muted);margin-top:8px;position:relative;z-index:1;
+       width:min(960px,calc(100vw - 24px));
+     }
+     .future-row{
+       display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+     }
+     .future-code{
+       min-width:260px;max-width:min(680px,calc(100vw - 64px));width:52vw;
+       font:600 .68rem/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;
+       color:var(--fg);background:var(--btnBg);border:1px solid var(--btnBorder);
+       border-radius:6px;padding:6px 8px;
+     }
+     .future-code[readonly]{opacity:.9}
+     .future-code.error{border-color:rgba(220,38,38,.7);box-shadow:0 0 0 1px rgba(220,38,38,.35) inset;}
+     .legend{
+       display:flex;flex-wrap:wrap;gap:10px 20px;
+       font-size:.78rem;align-items:center;
+       justify-content:center;color:var(--muted);
+       margin-top:8px;position:relative;z-index:1;
+     }
+     .legend span{display:flex;align-items:center;gap:5px}
+     .sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+     .dash{width:18px;height:0;border-top:2px dashed var(--muted);display:inline-block}
+     .ltoggle{cursor:pointer;user-select:none;padding:4px 10px;border-radius:999px;
+       border:1.5px solid transparent;transition:opacity .15s,border-color .15s,background .15s}
+     .ltoggle.active{border-color:var(--btnBorder);background:var(--toggleActiveBg);opacity:1}
+     .ltoggle:not(.active){opacity:.38}
+     .ltoggle:not(.active) .sw{background:var(--muted)!important}
+     .ltoggle:hover{opacity:.85;background:var(--toggleHoverBg)}
+     #actHandle{
+       position:absolute;
+       display:none;
+       z-index:var(--z,20);
+       cursor:ew-resize;
+       transform:translateX(-50%);
+       pointer-events:auto;
+       top:-8px;
+     }
 
-      #actHandle .act-pill{
-      background:var(--handleBg);
-      color:#fff;
-      font:600 .68rem/1 system-ui;
-      padding:5px 8px;
-      border-radius:6px;
-      border:1.5px solid var(--handleBorder);
-      white-space:nowrap;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:4px;
-      box-shadow:0 2px 8px rgba(0,0,0,.3);
-      user-select:none;
-      opacity:0.9;
-      transition:opacity 0.15s, filter 0.15s;
-      }
+     #actHandle .act-pill{
+       background:var(--handleBg);
+       color:#fff;
+       font:600 .68rem/1 system-ui;
+       padding:5px 8px;
+       border-radius:6px;
+       border:1.5px solid var(--handleBorder);
+       white-space:nowrap;
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       gap:4px;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);
+       user-select:none;
+       opacity:0.9;
+       transition:opacity 0.15s, filter 0.15s;
+     }
 
-      #actHandle .act-content{
-      display:flex;
-      align-items:stretch;
-      gap:8px;
-      width:100%;
-      min-height:74px;
-      }
+     #actHandle .act-content{
+       display:flex;
+       align-items:stretch;
+       gap:8px;
+       width:100%;
+       min-height:74px;
+     }
 
-      #actHandle .act-left{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:3px;
-      min-width:90px;
-      text-align:center;
-      }
+     #actHandle .act-left{
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       justify-content:center;
+       gap:3px;
+       min-width:90px;
+       text-align:center;
+     }
 
-      #actHandle .act-pill .act-label{
-      opacity:0.85;
-      font-size:.66rem;
-      }
+     #actHandle .act-pill .act-label{
+       opacity:0.85;
+       font-size:.66rem;
+     }
 
-      #actHandle .act-right{
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      gap:3px;
-      justify-content:center;
-      }
+     #actHandle .act-right{
+       display:flex;
+       flex-direction:column;
+       align-items:flex-end;
+       gap:3px;
+       justify-content:center;
+     }
 
-      #actHandle .act-pill input{
-      width:80px;
-      padding:2px 4px;
-      border-radius:3px;
-      border:1px solid rgba(255,255,255,.3);
-      background:rgba(0,0,0,.25);
-      color:#fff;
-      font:600 .66rem/1 system-ui;
-      text-align:center;
-      }
+     #actHandle .act-pill input{
+       width:80px;
+       padding:2px 4px;
+       border-radius:3px;
+       border:1px solid rgba(255,255,255,.3);
+       background:rgba(0,0,0,.25);
+       color:#fff;
+       font:600 .66rem/1 system-ui;
+       text-align:center;
+     }
 
-      #actHandle .act-pill input.act-date{
-      width:88px;
-      }
+     #actHandle .act-pill input.act-date{
+       width:88px;
+     }
 
-      #actHandle .act-collapse-icon{
-      width:18px;
-      height:18px;
-      border-radius:50%;
-      background:rgba(255,255,255,0.15);
-      color:rgba(255,255,255,0.8);
-      font:600 11px/18px system-ui;
-      text-align:center;
-      cursor:pointer;
-      transition:background 0.12s;
-      }
+     #actHandle .act-collapse-icon{
+       width:18px;
+       height:18px;
+       border-radius:50%;
+       background:rgba(255,255,255,0.15);
+       color:rgba(255,255,255,0.8);
+       font:600 11px/18px system-ui;
+       text-align:center;
+       cursor:pointer;
+       transition:background 0.12s;
+     }
 
-      #actHandle .act-collapse-icon:hover{
-      background:rgba(255,255,255,0.3);
-      }
+     #actHandle .act-collapse-icon:hover{
+       background:rgba(255,255,255,0.3);
+     }
 
-      #actHandle .act-stem{
-      width:2px;
-      background:var(--handleBg);
-      margin:0 auto;
-      }
+     #actHandle .act-stem{
+       width:2px;
+       background:var(--handleBg);
+       margin:0 auto;
+     }
 
-      #actHandle .act-nub{
-      display:none;
-      width:44px;
-      height:16px;
-      border-radius:8px;
-      background:var(--handleBg);
-      border:1.5px solid var(--handleBorder);
-      cursor:ew-resize;
-      margin:0 auto;
-      box-shadow:0 1px 4px rgba(0,0,0,.3);
-      color:#fff;
-      font:600 11px/16px system-ui;
-      text-align:center;
-      letter-spacing:2px;
-      user-select:none;
-      opacity:0.85;
-      transition:opacity 0.15s;
-      }
+     #actHandle .act-nub{
+       display:none;
+       width:44px;
+       height:16px;
+       border-radius:8px;
+       background:var(--handleBg);
+       border:1.5px solid var(--handleBorder);
+       cursor:ew-resize;
+       margin:0 auto;
+       box-shadow:0 1px 4px rgba(0,0,0,.3);
+       color:#fff;
+       font:600 11px/16px system-ui;
+       text-align:center;
+       letter-spacing:2px;
+       user-select:none;
+       opacity:0.85;
+       transition:opacity 0.15s;
+     }
 
-      #actHandle .act-pill:hover{
-      opacity:1;
-      filter:brightness(1.15);
-      }
+     #actHandle .act-pill:hover{
+       opacity:1;
+       filter:brightness(1.15);
+     }
 
-      #actHandle .act-nub:hover{
-      opacity:1;
-      }
+     #actHandle .act-nub:hover{
+       opacity:1;
+     }
 
-      #actHandle.collapsed .act-nub{
-      display:block;
-      }
+     #actHandle.collapsed .act-nub{
+       display:block;
+     }
 
-      #actHandle.collapsed .act-pill{
-      display:none;
-      }
+     #actHandle.collapsed .act-pill{
+       display:none;
+     }
 
-      [data-theme="light"] #actHandle .act-pill input{
-      background:rgba(255,255,255,.5);
-      color:#1e293b;
-      border-color:rgba(0,0,0,.2);
-      }
-      #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
-      background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-      border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;
-      transform:translateX(-50%)}
-      #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
-      pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
-      background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-      #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#60a5fa;font-weight:600}
-      #tooltip .tt-exp{color:var(--written);font-weight:600}
-      @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
-      .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
-      .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
-      .seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
-      background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-      .seg:last-child { border-right: none; }
-      .seg:hover { opacity: 0.85; }
+     [data-theme="light"] #actHandle .act-pill input{
+       background:rgba(255,255,255,.5);
+       color:#1e293b;
+       border-color:rgba(0,0,0,.2);
+     }
+     #writtenTip{position:fixed;display:none;z-index:15;pointer-events:none;
+       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+       border-radius:6px;padding:8px 12px;font-size:.72rem;line-height:1.4;
+       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;
+       transform:translateX(-50%)}
+     #tooltip{position:fixed;display:none;border-radius:8px;padding:10px 14px;font-size:.76rem;
+       pointer-events:none;z-index:10;line-height:1.55;max-width:400px;
+       background:var(--tooltipBg);color:var(--fg);border:1px solid var(--tooltipBorder);
+       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+     #tooltip .tt-muted{color:var(--muted)} #tooltip .tt-obs{color:#60a5fa;font-weight:600}
+     #tooltip .tt-exp{color:var(--written);font-weight:600}
+     @media(max-width:600px){body{padding:10px;gap:8px}h1{font-size:1.1rem}.sub{font-size:.72rem}
+       .controls{padding:8px 10px;gap:6px}.controls button{padding:8px 10px;font-size:.72rem;min-height:36px}
+       .legend{font-size:.7rem;gap:6px 12px}.ltoggle{padding:6px 12px;min-height:36px}}
+     .seg { padding: 3px 10px; font-size: 0.75rem; border: none; border-right: 1px solid var(--controlsBorder);
+       background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+     .seg:last-child { border-right: none; }
+     .seg:hover { opacity: 0.85; }
 
-      .burn-handle{
-      position:absolute;
-      display:none;
-      cursor:ew-resize;
-      transform:translateX(-50%);
-      pointer-events:auto;
-      top:-8px;
-      z-index:var(--z,21);
-      }
+     .burn-handle{
+       position:absolute;
+       display:none;
+       cursor:ew-resize;
+       transform:translateX(-50%);
+       pointer-events:auto;
+       top:-8px;
+       z-index:var(--z,21);
+     }
 
-      .burn-handle .burn-nub{
-      display:none;
-      width:24px;
-      height:16px;
-      border-radius:8px;
-      background:var(--burnHandleBg);
-      color:#fff;
-      font:600 11px/16px system-ui;
-      text-align:center;
-      border:1.5px solid var(--burnHandleBorder);
-      box-shadow:0 2px 8px rgba(0,0,0,.3);
-      opacity:.9;
-      }
+     .burn-handle .burn-nub{
+       display:none;
+       width:24px;
+       height:16px;
+       border-radius:8px;
+       background:var(--burnHandleBg);
+       color:#fff;
+       font:600 11px/16px system-ui;
+       text-align:center;
+       border:1.5px solid var(--burnHandleBorder);
+       box-shadow:0 2px 8px rgba(0,0,0,.3);
+       opacity:.9;
+     }
 
-      .burn-handle.collapsed .burn-nub{
-      display:block;
-      }
+     .burn-handle.collapsed .burn-nub{
+       display:block;
+     }
 
-      .burn-handle.collapsed .burn-pill{
-      display:none;
-      }
+     .burn-handle.collapsed .burn-pill{
+       display:none;
+     }
 
-      .burn-handle .burn-pill{
-      background:var(--burnHandleBg);
-      color:#fff;
-      font:600 .68rem/1 system-ui;
-      padding:6px 8px;
-      border-radius:6px;
-      border:1.5px solid var(--burnHandleBorder);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:5px;
-      position:relative;
-      box-shadow:0 2px 8px rgba(0,0,0,.3);
-      opacity:.92;
-      transition:opacity .15s,filter .15s;
-      }
+     .burn-handle .burn-pill{
+       background:var(--burnHandleBg);
+       color:#fff;
+       font:600 .68rem/1 system-ui;
+       padding:6px 8px;
+       border-radius:6px;
+       border:1.5px solid var(--burnHandleBorder);
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       gap:5px;
+       position:relative;
+       box-shadow:0 2px 8px rgba(0,0,0,.3);
+       opacity:.92;
+       transition:opacity .15s,filter .15s;
+     }
 
-      .burn-handle .burn-pill:hover{
-      opacity:1;
-      filter:brightness(1.1);
-      }
+     .burn-handle .burn-pill:hover{
+       opacity:1;
+       filter:brightness(1.1);
+     }
 
-      .burn-handle .burn-title{
-      width:100%;
-      text-align:center;
-      font-size:.70rem;
-      opacity:.92;
-      }
+     .burn-handle .burn-title{
+       width:100%;
+       text-align:center;
+       font-size:.70rem;
+       opacity:.92;
+     }
 
-      .burn-handle .burn-content{
-      display:flex;
-      align-items:stretch;
-      justify-content:center;
-      gap:10px;
-      width:100%;
-      min-height:74px;
-      }
+     .burn-handle .burn-content{
+       display:flex;
+       align-items:stretch;
+       justify-content:center;
+       gap:10px;
+       width:100%;
+       min-height:74px;
+     }
 
-      .burn-handle .burn-left,
-      .burn-handle .burn-right{
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      gap:3px;
-      }
+     .burn-handle .burn-left,
+     .burn-handle .burn-right{
+       display:flex;
+       flex-direction:column;
+       justify-content:center;
+       align-items:center;
+       gap:3px;
+     }
 
-      .field-chip{
-      font:600 .55rem/1 system-ui;
-      letter-spacing:.03em;
-      opacity:.78;
-      text-transform:uppercase;
-      }
+     .field-chip{
+       font:600 .55rem/1 system-ui;
+       letter-spacing:.03em;
+       opacity:.78;
+       text-transform:uppercase;
+     }
 
-      .field-chain{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:2px;
-      }
+     .field-chain{
+       display:flex;
+       flex-direction:column;
+       align-items:center;
+       gap:2px;
+     }
 
-      .field-chain span{
-      width:2px;
-      height:6px;
-      border-radius:2px;
-      background:rgba(255,255,255,.55);
-      }
+     .field-chain span{
+       width:2px;
+       height:6px;
+       border-radius:2px;
+       background:rgba(255,255,255,.55);
+     }
 
-      .ctrl-input{
-      padding:2px 4px;
-      border-radius:3px;
-      border:1px solid rgba(255,255,255,.3);
-      background:rgba(0,0,0,.25);
-      color:#fff;
-      font:600 .66rem/1 system-ui;
-      text-align:center;
-      }
+     .ctrl-input{
+       padding:2px 4px;
+       border-radius:3px;
+       border:1px solid rgba(255,255,255,.3);
+       background:rgba(0,0,0,.25);
+       color:#fff;
+       font:600 .66rem/1 system-ui;
+       text-align:center;
+     }
 
-      .ctrl-input-block{
-      width:80px;
-      }
+     .ctrl-input-block{
+       width:80px;
+     }
 
-      .ctrl-input-date{
-      width:88px;
-      }
+     .ctrl-input-date{
+       width:88px;
+     }
 
-      .burn-handle .burn-amt-row{
-      display:flex;
-      align-items:center;
-      gap:4px;
-      }
+     .burn-handle .burn-amt-row{
+       display:flex;
+       align-items:center;
+       gap:4px;
+     }
 
-      .burn-handle .burn-amt-input{
-      width:88px;
-      }
+     .burn-handle .burn-amt-input{
+       width:88px;
+     }
 
-      .burn-handle .burn-unit{
-      opacity:.75;
-      font-size:.62rem;
-      }
+     .burn-handle .burn-unit{
+       opacity:.75;
+       font-size:.62rem;
+     }
 
-      .burn-handle .burn-mode-row{
-      display:flex;
-      align-items:center;
-      gap:4px;
-      margin-top:2px;
-      }
+     .burn-handle .burn-mode-row{
+       display:flex;
+       align-items:center;
+       gap:4px;
+       margin-top:2px;
+     }
 
-      .burn-handle .burn-mode-group{
-      display:inline-flex;
-      border:1px solid rgba(255,255,255,.25);
-      border-radius:4px;
-      overflow:hidden;
-      }
+     .burn-handle .burn-mode-group{
+       display:inline-flex;
+       border:1px solid rgba(255,255,255,.25);
+       border-radius:4px;
+       overflow:hidden;
+     }
 
-      .burn-handle .burn-mode-btn{
-      padding:1px 6px;
-      font:600 .58rem/1.2 system-ui;
-      border:none;
-      border-right:1px solid rgba(255,255,255,.2);
-      background:transparent;
-      color:rgba(255,255,255,.62);
-      cursor:pointer;
-      }
+     .burn-handle .burn-mode-btn{
+       padding:1px 6px;
+       font:600 .58rem/1.2 system-ui;
+       border:none;
+       border-right:1px solid rgba(255,255,255,.2);
+       background:transparent;
+       color:rgba(255,255,255,.62);
+       cursor:pointer;
+     }
 
-      .burn-handle .burn-mode-btn:last-child{
-      border-right:none;
-      }
+     .burn-handle .burn-mode-btn:last-child{
+       border-right:none;
+     }
 
-      .burn-handle .burn-mode-btn:hover{
-      background:rgba(255,255,255,.12);
-      }
+     .burn-handle .burn-mode-btn:hover{
+       background:rgba(255,255,255,.12);
+     }
 
-      .burn-handle .burn-mode-btn.active{
-      background:rgba(255,255,255,.2);
-      color:#fff;
-      }
+     .burn-handle .burn-mode-btn.active{
+       background:rgba(255,255,255,.2);
+       color:#fff;
+     }
 
-      .burn-handle .burn-collapse-icon{
-      width:18px;
-      height:18px;
-      border-radius:50%;
-      background:rgba(255,255,255,.15);
-      color:rgba(255,255,255,.9);
-      font:600 11px/18px system-ui;
-      text-align:center;
-      cursor:pointer;
-      }
+     .burn-handle .burn-collapse-icon{
+       width:18px;
+       height:18px;
+       border-radius:50%;
+       background:rgba(255,255,255,.15);
+       color:rgba(255,255,255,.9);
+       font:600 11px/18px system-ui;
+       text-align:center;
+       cursor:pointer;
+     }
 
-      .burn-handle .burn-collapse-icon:hover{
-      background:rgba(255,255,255,.28);
-      }
+     .burn-handle .burn-collapse-icon:hover{
+       background:rgba(255,255,255,.28);
+     }
 
-      .burn-handle .burn-delete{
-      position:absolute;
-      right:-8px;
-      bottom:-8px;
-      width:18px;
-      height:18px;
-      border-radius:50%;
-      background:rgba(0,0,0,.5);
-      color:#fff;
-      font:600 11px/18px system-ui;
-      text-align:center;
-      cursor:pointer;
-      border:1.5px solid rgba(255,255,255,.3);
-      }
+     .burn-handle .burn-delete{
+       position:absolute;
+       right:-8px;
+       bottom:-8px;
+       width:18px;
+       height:18px;
+       border-radius:50%;
+       background:rgba(0,0,0,.5);
+       color:#fff;
+       font:600 11px/18px system-ui;
+       text-align:center;
+       cursor:pointer;
+       border:1.5px solid rgba(255,255,255,.3);
+     }
 
-      .burn-handle .burn-delete:hover{
-      background:rgba(220,38,38,.9);
-      }
+     .burn-handle .burn-delete:hover{
+       background:rgba(220,38,38,.9);
+     }
 
-      .burn-handle.collapsed .burn-delete{
-      display:none;
-      }
+     .burn-handle.collapsed .burn-delete{
+       display:none;
+     }
 
-      .burn-handle .burn-stem{
-      width:2px;
-      background:var(--burnEvent);
-      margin:0 auto;
-      }
+     .burn-handle .burn-stem{
+       width:2px;
+       background:var(--burnEvent);
+       margin:0 auto;
+     }
 
-      [data-theme="light"] .ctrl-input{
-      background:rgba(255,255,255,.5);
-      color:#1e293b;
-      border-color:rgba(0,0,0,.2);
-      }
+     [data-theme="light"] .ctrl-input{
+       background:rgba(255,255,255,.5);
+       color:#1e293b;
+       border-color:rgba(0,0,0,.2);
+     }
 
-      
-      /* BYOI compile-error UX */
-      .code-field-wrap{
-      position:relative;
-      display:flex;
-      align-items:center;
-      gap:6px;
-      flex:1 1 auto;
-      min-width:260px;
-      max-width:min(680px,calc(100vw - 64px));
-      }
+     
+     /* BYOI compile-error UX */
+     .code-field-wrap{
+       position:relative;
+       display:flex;
+       align-items:center;
+       gap:6px;
+       flex:1 1 auto;
+       min-width:260px;
+       max-width:min(680px,calc(100vw - 64px));
+     }
 
-      .code-field-wrap .future-code{
-      flex:1 1 auto;
-      min-width:0;
-      }
+     .code-field-wrap .future-code{
+       flex:1 1 auto;
+       min-width:0;
+     }
 
-      .code-field-wrap .future-code.compile-error{
-      border-color:#ef4444 !important;
-      box-shadow:0 0 0 2px rgba(239,68,68,0.18);
-      outline:none;
-      }
+     .code-field-wrap .future-code.compile-error{
+       border-color:#ef4444 !important;
+       box-shadow:0 0 0 2px rgba(239,68,68,0.18);
+       outline:none;
+     }
 
-      .compile-warn{
-      position:relative;
-      flex:0 0 auto;
-      width:18px;
-      height:18px;
-      border:none;
-      border-radius:50%;
-      background:transparent;
-      padding:0;
-      cursor:pointer;
-      display:none;
-      color:#ef4444;
-      font:700 14px/18px system-ui;
-      }
+     .compile-warn{
+       position:relative;
+       flex:0 0 auto;
+       width:18px;
+       height:18px;
+       border:none;
+       border-radius:50%;
+       background:transparent;
+       padding:0;
+       cursor:pointer;
+       display:none;
+       color:#ef4444;
+       font:700 14px/18px system-ui;
+     }
 
-      .compile-warn.show{
-      display:inline-block;
-      }
+     .compile-warn.show{
+       display:inline-block;
+     }
 
-      .compile-warn-tip{
-      position:absolute;
-      right:0;
-      top:24px;
-      min-width:260px;
-      max-width:520px;
-      padding:8px 10px;
-      border-radius:8px;
-      border:1px solid rgba(239,68,68,0.55);
-      background:var(--tooltipBg);
-      color:var(--fg);
-      font:500 .72rem/1.35 system-ui;
-      box-shadow:0 8px 24px rgba(0,0,0,.25);
-      white-space:normal;
-      z-index:50;
-      display:none;
-      }
+     .compile-warn-tip{
+       position:absolute;
+       right:0;
+       top:24px;
+       min-width:260px;
+       max-width:520px;
+       padding:8px 10px;
+       border-radius:8px;
+       border:1px solid rgba(239,68,68,0.55);
+       background:var(--tooltipBg);
+       color:var(--fg);
+       font:500 .72rem/1.35 system-ui;
+       box-shadow:0 8px 24px rgba(0,0,0,.25);
+       white-space:normal;
+       z-index:50;
+       display:none;
+     }
 
-      .compile-warn-tip.show{
-      display:block;
-      }
+     .compile-warn-tip.show{
+       display:block;
+     }
 
-      .compile-warn-tip .muted{
-      color:var(--muted);
-      }
+     .compile-warn-tip .muted{
+       color:var(--muted);
+     }
 
     </style>
   </head>
@@ -635,7 +635,7 @@
       <button id="btnAddBurn">+ Add burn event</button>
     </div>
     <script>
-     const DEFAULT_STATE_HASH = 'z=BbEBluzz1KEp3OGRn_FI04XhAQS1pYYCgODu4uSGEQKJ3_UDgMivoCUD1r6GBYDIr6AlA7SFuQOAgL-1ndINAgCAgIbUtpz0A4CA3Z2kF7DqAQ';
+     const DEFAULT_STATE_HASH = '';
      
      function min(a, b) { return a < b ? a : b; }
      function max(a, b) { return a > b ? a : b; }
@@ -982,6 +982,8 @@
 
      const byoiWarnBtn = document.getElementById("byoiWarnBtn");
      const byoiWarnTip = document.getElementById("byoiWarnTip");
+
+     let byoiCodeFromHash = null;
 
      function escapeHtml(s){
        return String(s).replace(/[&<>"']/g, ch =>
@@ -1433,7 +1435,7 @@
 
        const xP = t => MG.left + ((t - view.tMin) / (view.tMax - view.tMin)) * PW;
 
-       const hasAltFuture = showZip234() || showNsmalt();
+       const hasAltFuture = showZip234() || showNsmalt() || showByoi();
        const defaultCutoffH = showDefaultFuture() ? 0x7FFFFFFFFFFFFFn : (hasAltFuture ? zip234ActivationHeight : WRITTEN_HEIGHT);
        const D = scenarios.default.data.filter(d => d.time >= view.tMin && d.time <= view.tMax && d.h <= defaultCutoffH);
        const Z = (showZip234() && scenarios.zip234.data.length >= 1)
@@ -1625,6 +1627,7 @@
          const parts=[];
          if(showZip234())parts.push('ZIP 234');
          if(showNsmalt())parts.push('NSMalt');
+         if(showByoi())parts.push('BYOI');
          const t=blockToTime(zip234ActivationHeight);if(t>=view.tMin&&t<=view.tMax){
            ctx.fillStyle=T.zip234Act;ctx.save();ctx.translate(xP(t)-2,MG.top+PH-4);ctx.rotate(-Math.PI/2);
            ctx.textAlign="left";ctx.font="9px system-ui";ctx.fillText(parts.join(' / ')+' activation',0,0);ctx.restore();
@@ -2504,11 +2507,115 @@
      /* ================================================================
         URL state sharing (compact bundle, strict parser)
         ================================================================ */
+
+     function getByoiCodeForState() {
+       const el = document.getElementById("codeByoi");
+       return el ? String(el.value || "") : String(byoiCode || "");
+     }
+
+     function utf8Encode(s) {
+       return new TextEncoder().encode(String(s));
+     }
+
+     function utf8Decode(bytes) {
+       return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+     }
+
+     function writeBytes(out, bytes) {
+       writeVarUint(out, BigInt(bytes.length));
+       for (let i = 0; i < bytes.length; i++) out.push(bytes[i]);
+     }
+
+     function readBytes(bytes, st) {
+       const n = Number(readVarUint(bytes, st));
+       if (!Number.isInteger(n) || n < 0) throw new Error("invalid byte length");
+       if (st.i + n > bytes.length) throw new Error("truncated bytes");
+       const part = bytes.slice(st.i, st.i + n);
+       st.i += n;
+       return part;
+     }
+
+     function lzwCompressBytes(input) {
+       if (!input || input.length === 0) return new Uint8Array(0);
+       const dict = new Map();
+       for (let i = 0; i < 256; i++) dict.set(String.fromCharCode(i), i);
+       let dictSize = 256;
+       let w = "";
+       const codes = [];
+       for (let i = 0; i < input.length; i++) {
+         const c = String.fromCharCode(input[i]);
+         const wc = w + c;
+         if (dict.has(wc)) {
+           w = wc;
+         } else {
+           codes.push(dict.get(w));
+           dict.set(wc, dictSize++);
+           w = c;
+         }
+       }
+       if (w !== "") codes.push(dict.get(w));
+       const out = [];
+       for (let i = 0; i < codes.length; i++) writeVarUint(out, BigInt(codes[i]));
+       return Uint8Array.from(out);
+     }
+
+     function lzwDecompressBytes(comp) {
+       if (!comp || comp.length === 0) return new Uint8Array(0);
+       const st = { i: 0 };
+       const codes = [];
+       while (st.i < comp.length) codes.push(Number(readVarUint(comp, st)));
+       if (codes.length === 0) return new Uint8Array(0);
+
+       const dict = [];
+       for (let i = 0; i < 256; i++) dict[i] = String.fromCharCode(i);
+       let dictSize = 256;
+
+       let w = dict[codes[0]];
+       if (w === undefined) throw new Error("bad lzw stream");
+       const chunks = [w];
+
+       for (let i = 1; i < codes.length; i++) {
+         const k = codes[i];
+         let entry;
+         if (dict[k] !== undefined) entry = dict[k];
+         else if (k === dictSize) entry = w + w[0];
+         else throw new Error("bad lzw code");
+         chunks.push(entry);
+         dict[dictSize++] = w + entry[0];
+         w = entry;
+       }
+
+       let total = 0;
+       for (let i = 0; i < chunks.length; i++) total += chunks[i].length;
+       const out = new Uint8Array(total);
+       let p = 0;
+       for (let i = 0; i < chunks.length; i++) {
+         const s = chunks[i];
+         for (let j = 0; j < s.length; j++) out[p++] = s.charCodeAt(j);
+       }
+       return out;
+     }
+
+     function encodeStringForState(str) {
+       const raw = utf8Encode(str);
+       const cmp = lzwCompressBytes(raw);
+       return cmp.length < raw.length
+                         ? { mode: 1, bytes: cmp }
+                         : { mode: 0, bytes: raw };
+     }
+
+     function decodeStringFromState(mode, bytes) {
+       if (mode === 0) return utf8Decode(bytes);
+       if (mode === 1) return utf8Decode(lzwDecompressBytes(bytes));
+       throw new Error("unknown string codec");
+     }
+
      let urlSyncEnabled = false;
      let lastUrlSyncTime = 0;
 
      const STATE_BUNDLE_KEY = "z";
-     const STATE_BUNDLE_VER = 5;
+     const STATE_BUNDLE_VER = 7;
+     const STATE_BUNDLE_VER_V6 = 6;
 
      function b64urlFromBytes(bytes) {
        let bin = "";
@@ -2552,7 +2659,7 @@
        const out = [];
        out.push(STATE_BUNDLE_VER);
 
-       // v4 flags byte:
+       // v7 flags byte:
        // bit0 showFuture.default, bit1 showFuture.zip234,
        // bit2 showFuture.nsmalt, bit3 showFuture.byoi,
        // bit4 supply, bit5 issDay, bit6 annPct, bit7 themeLight
@@ -2591,6 +2698,10 @@
        if (!Number.isFinite(yaMilli) || yaMilli < 0) throw new Error("invalid annMax");
        writeVarUint(out, BigInt(yaMilli));
 
+       const byoiEnc = encodeStringForState(getByoiCodeForState());
+       out.push(byoiEnc.mode);
+       writeBytes(out, byoiEnc.bytes);
+
        const payload = b64urlFromBytes(Uint8Array.from(out));
        return "#" + STATE_BUNDLE_KEY + "=" + payload;
      }
@@ -2608,27 +2719,37 @@
 
        try {
          const st = { i: 0 };
-
-         const ver = bytes[st.i++];
-         if (ver !== STATE_BUNDLE_VER) return false;
-
-         if (ver !== STATE_BUNDLE_VER) return false;
-         const flags = bytes[st.i++];
          if (st.i >= bytes.length) return false;
-         const flags2 = bytes[st.i++];
-         const newShowFuture = {
+         const ver = bytes[st.i++];
+         if (
+           ver !== STATE_BUNDLE_VER_V6 &&
+           ver !== STATE_BUNDLE_VER
+         ) return false;
+
+         if (st.i >= bytes.length) return false;
+         const flags = bytes[st.i++];
+
+         let newShowFuture;
+         let newShow;
+         let newTheme;
+         let newActCollapsed;
+
+         if (st.i >= bytes.length) return false;
+         const actByte = bytes[st.i++];
+         if (actByte & 0b11111110) return false;
+         newShowFuture = {
            default: !!(flags & (1 << 0)),
            zip234:  !!(flags & (1 << 1)),
            nsmalt:  !!(flags & (1 << 2)),
            byoi:    !!(flags & (1 << 3)),
          };
-         const newShow = {
+         newShow = {
            supply: !!(flags & (1 << 4)),
            issDay: !!(flags & (1 << 5)),
            annPct: !!(flags & (1 << 6)),
          };
-         const newTheme = (flags & (1 << 7)) ? "light" : "dark";
-         const newActCollapsed = !!(flags2 & 1);
+         newTheme = (flags & (1 << 7)) ? "light" : "dark";
+         newActCollapsed = !!(actByte & 1);
 
          const tMin = Number(readVarUint(bytes, st));
          const tMax = Number(readVarUint(bytes, st));
@@ -2645,13 +2766,13 @@
            const bz = readVarUint(bytes, st);
            if (st.i >= bytes.length) return false;
            const meta = bytes[st.i++];
-
            if (meta & 0b11111100) return false;
-
-           const mode = (meta & 1) ? "perday" : "once";
-           const collapsed = !!(meta & 2);
-
-           burns.push({ h: bh, zat: bz, mode, collapsed });
+           burns.push({
+             h: bh,
+             zat: bz,
+             mode: (meta & 1) ? "perday" : "once",
+             collapsed: !!(meta & 2),
+           });
          }
 
          const ysMin = readVarUint(bytes, st);
@@ -2660,7 +2781,17 @@
          const yaMilli = readVarUint(bytes, st);
          const ya = Number(yaMilli) / 1000;
 
-         if (st.i !== bytes.length) return false;
+         let loadedByoiCode = null;
+         if (st.i < bytes.length) {
+           const byoiMode = bytes[st.i++];
+           const byoiBytes = readBytes(bytes, st);
+           if (byoiBytes.length > 200000) return false;
+           loadedByoiCode = decodeStringFromState(byoiMode, byoiBytes);
+           if (loadedByoiCode.length > 200000) return false;
+         }
+
+         byoiCodeFromHash = loadedByoiCode;
+         if (loadedByoiCode !== null) byoiCode = loadedByoiCode;
 
          if (!Number.isFinite(tMin) || !Number.isFinite(tMax) || !(tMax > tMin)) return false;
          if (actH < WRITTEN_HEIGHT) return false;
@@ -2687,6 +2818,8 @@
            nb.collapsed = b.collapsed;
            BURN_EVENTS.push(nb);
          }
+
+         if (loadedByoiCode !== null) byoiCode = loadedByoiCode;
 
          setTheme(newTheme);
          actCollapsed = newActCollapsed;
@@ -2810,26 +2943,25 @@
      document.getElementById("codeNsmalt").value = NSMALT_CODE;
      const codeByoiEl = document.getElementById("codeByoi");
      codeByoiEl.value = byoiCode;
-     function applyByoiCode() {
-       yLockedFromURL = false;
+
+     function applyByoiCode(opts = {}) {
+       if (!opts.keepYLock) yLockedFromURL = false;
+       const src = codeByoiEl.value;
+       byoiCode = src;
        try {
-         byoiFn = compileByoi(codeByoiEl.value);
-         byoiCode = codeByoiEl.value.trim();
+         byoiFn = compileByoi(src);
          byoiError = "";
          clearByoiCompileErrorUI();
-         truncateScenarioData("byoi", zip234ActivationHeight);
-         invalidateSimulation();
-         requestDraw();
+         invalidateScenarioFrom('byoi', zip234ActivationHeight);
        } catch (e) {
          byoiFn = null;
-         byoiError = e.message || "BYOI compile error";
+         byoiError = String(e && e.message || e);
          setByoiCompileErrorUI(byoiError);
-         truncateScenarioData("byoi", zip234ActivationHeight);
-         invalidateSimulation();
-         requestDraw();
+         invalidateScenarioFrom('byoi', zip234ActivationHeight);
        }
      }
-     applyByoiCode();
+     applyByoiCode({ keepYLock: loadedFromURL });
+
      codeByoiEl.addEventListener("change", applyByoiCode);
      codeByoiEl.addEventListener("blur", applyByoiCode);
      codeByoiEl.addEventListener("keydown", e => {
