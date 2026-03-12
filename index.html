@@ -635,8 +635,8 @@
       <button id="btnAddBurn">+ Add burn event</button>
     </div>
     <script>
-     const DEFAULT_STATE_HASH = '';
-     
+     const DEFAULT_STATE_HASH = '#z=B7EBxN7FmfUqpvXY4vM6mMLjAQWy5NcBgLCiyqj9AwKz-f8BgNCHhOuOBQLrjKkCgKzH8DcD9cvkAoC4yeWuBAOescwBgODu4uSGEQIAgICG1Lac9AOAgN2dpBew6gEBEnJldHVybiAxMDBfiAKJAosCOw';
+
      function min(a, b) { return a < b ? a : b; }
      function max(a, b) { return a > b ? a : b; }
      function abs(a) { return a < 0 ? - a : a; }
@@ -1960,6 +1960,8 @@
            if (typedZat !== null) {
              if (burn.mode === 'once') burn.onceZat = typedZat;
              else burn.perdayZat = typedZat;
+             if (newMode === 'once') burn.onceZat = typedZat;
+             else burn.perdayZat = typedZat;
            }
 
            burn.mode = newMode;
@@ -2707,7 +2709,7 @@
      }
 
      function loadStateFromHash(rawOverride) {
-       const raw = rawOverride || location.hash.slice(1);
+       const raw = (rawOverride || location.hash).replace(/^#/, "");
        if (!raw) return false;
        if (!raw.startsWith(STATE_BUNDLE_KEY + "=")) return false;
 
